@@ -18,6 +18,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import com.google.e_recept.ui.BottomNavItem
 import com.google.e_recept.ui.theme.MainAc
 
@@ -28,8 +29,9 @@ fun MainScreen() {
     Scaffold(
         bottomBar = {
             NavigationBar(
+                modifier = Modifier.padding(horizontal = 5.dp),
                 containerColor = MaterialTheme.colorScheme.background,
-                contentColor = MaterialTheme.colorScheme.onBackground
+                contentColor = MaterialTheme.colorScheme.onBackground,
             ) {
                 BottomNavItem.entries.forEach { item ->
                     val isSelected = currentRoute == item.route

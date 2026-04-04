@@ -31,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -165,15 +166,14 @@ fun HomeScreen() {
 fun DoctorProfileCard(initial: String, fullName: String) {
     Card(
         onClick = { /* TODO: Открыть профиль врача */ },
-        modifier = Modifier.fillMaxWidth()
-            .drawBehind{
-                drawRoundRect(
-                    color = Color.Black.copy(alpha = 0.2f),
-                    topLeft = Offset(0f, size.height * 0.05f),
-                    size = size.copy(height = size.height),
-                    cornerRadius = CornerRadius(16.dp.toPx())
-                )
-            },
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = 8.dp,
+                shape = RoundedCornerShape(16.dp),
+                ambientColor = Color.Transparent,
+                spotColor = Color.Black.copy(alpha = 0.3f)
+            ),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = SecBg)
     ) {
@@ -214,14 +214,13 @@ fun ActionCard(
 ) {
     Card(
         onClick = { /* TODO: Навигация */ },
-        modifier = modifier.height(100.dp).drawBehind{
-            drawRoundRect(
-                color = Color.Black.copy(alpha = 0.2f),
-                topLeft = Offset(0f, size.height * 0.05f),
-                size = size.copy(height = size.height),
-                cornerRadius = CornerRadius(16.dp.toPx())
-            )
-        },
+        modifier = modifier.height(100.dp)
+            .shadow(
+                elevation = 8.dp,
+                shape = RoundedCornerShape(16.dp),
+                ambientColor = Color.Transparent,
+                spotColor = Color.Black
+            ),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MainAc)
     ) {
