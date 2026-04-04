@@ -64,13 +64,30 @@ fun MainScreen() {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding),
-            contentAlignment = Alignment.Center
+                .padding(innerPadding)
         ) {
-            Text(
-                text = "Экран: $currentRoute",
-                style = MaterialTheme.typography.headlineLarge
-            )
+            when (currentRoute) {
+                BottomNavItem.Home.route -> HomeScreen()
+                BottomNavItem.Patients.route -> Text(
+                    "Экран Пациентов",
+                    Modifier.align(Alignment.Center)
+                )
+
+                BottomNavItem.Recipes.route -> Text(
+                    "Экран Рецептов",
+                    Modifier.align(Alignment.Center)
+                )
+
+                BottomNavItem.History.route -> Text(
+                    "Экран Истории",
+                    Modifier.align(Alignment.Center)
+                )
+
+                BottomNavItem.Profile.route -> Text(
+                    "Экран Профиля",
+                    Modifier.align(Alignment.Center)
+                )
+            }
         }
     }
 }
