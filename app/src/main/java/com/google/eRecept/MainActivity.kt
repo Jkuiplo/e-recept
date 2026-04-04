@@ -1,13 +1,11 @@
-package com.google.e_recept
+package com.google.eRecept
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.google.e_recept.ui.screens.AddPatientScreen
-import com.google.e_recept.ui.screens.LoginScreen // Импортируем наш новый экран
-import com.google.e_recept.ui.screens.MainScreen
-import com.google.e_recept.ui.theme.EreceptTheme
+import com.google.eRecept.ui.screens.MainScreen
+import com.google.eRecept.ui.theme.EreceptTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

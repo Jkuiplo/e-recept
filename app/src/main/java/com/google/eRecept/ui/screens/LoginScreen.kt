@@ -1,4 +1,4 @@
-package com.google.e_recept.ui.screens
+package com.google.eRecept.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -46,7 +46,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.e_recept.ui.theme.MainAc
+import com.google.eRecept.ui.theme.MainAc
 
 @Composable
 fun LoginScreen() {

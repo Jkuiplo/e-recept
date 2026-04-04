@@ -1,6 +1,6 @@
 @file:Suppress("DEPRECATION")
 
-package com.google.e_recept.ui.screens
+package com.google.eRecept.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -42,11 +42,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.e_recept.R
-import com.google.e_recept.ui.theme.MainAc
-import com.google.e_recept.ui.theme.PrimaryPurple
-import com.google.e_recept.ui.theme.SecAc
-import com.google.e_recept.ui.theme.SecBg
+import com.google.eRecept.R
+import com.google.eRecept.ui.theme.MainAc
+import com.google.eRecept.ui.theme.PrimaryPurple
+import com.google.eRecept.ui.theme.SecAc
+import com.google.eRecept.ui.theme.SecBg
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale

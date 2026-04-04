@@ -1,4 +1,4 @@
-package com.google.e_recept.ui
+package com.google.eRecept.ui
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment

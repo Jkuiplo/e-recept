@@ -1,4 +1,4 @@
-package com.google.e_recept.ui.screens
+package com.google.eRecept.ui.screens.PatientsScreen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -34,9 +33,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.google.e_recept.ui.theme.MainAc
-import com.google.e_recept.ui.theme.SecBg
+import com.google.eRecept.ui.screens.PatientCard
+import com.google.eRecept.ui.theme.MainAc
+import com.google.eRecept.ui.theme.SecBg
 
 @Composable
 fun PatientsScreen(

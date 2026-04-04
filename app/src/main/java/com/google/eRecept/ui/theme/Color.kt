@@ -1,4 +1,4 @@
-package com.google.e_recept.ui.theme
+package com.google.eRecept.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

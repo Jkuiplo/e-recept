@@ -1,6 +1,6 @@
 @file:Suppress("DEPRECATION")
 
-package com.google.e_recept.ui.theme
+package com.google.eRecept.ui.theme
 
 import android.app.Activity
 import androidx.compose.material3.MaterialTheme
