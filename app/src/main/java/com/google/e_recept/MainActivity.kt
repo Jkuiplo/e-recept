@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import com.google.e_recept.ui.screens.AddPatientScreen
 import com.google.e_recept.ui.screens.LoginScreen // Импортируем наш новый экран
 import com.google.e_recept.ui.screens.MainScreen
 import com.google.e_recept.ui.theme.EreceptTheme

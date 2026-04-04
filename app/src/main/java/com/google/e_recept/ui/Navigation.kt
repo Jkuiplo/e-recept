@@ -17,36 +17,36 @@ enum class BottomNavItem(
     val route: String,
     val title: String,
     val selectedIcon: ImageVector,
-    val unselectedIcon: ImageVector
+    val unselectedIcon: ImageVector,
 ) {
     Home(
         route = "home",
         title = "Главная",
         selectedIcon = Icons.Filled.Home,
-        unselectedIcon = Icons.Outlined.Home
+        unselectedIcon = Icons.Outlined.Home,
     ),
     Patients(
         route = "patients",
         title = "Пациенты",
         selectedIcon = Icons.Filled.People,
-        unselectedIcon = Icons.Outlined.People
+        unselectedIcon = Icons.Outlined.People,
     ),
     Recipes(
         route = "recipes",
         title = "Рецепты",
         selectedIcon = Icons.AutoMirrored.Filled.Assignment,
-        unselectedIcon = Icons.AutoMirrored.Outlined.Assignment
+        unselectedIcon = Icons.AutoMirrored.Outlined.Assignment,
     ),
     History(
         route = "history",
         title = "История",
         selectedIcon = Icons.Filled.History,
-        unselectedIcon = Icons.Outlined.History
+        unselectedIcon = Icons.Outlined.History,
     ),
     Profile(
         route = "profile",
         title = "Профиль",
         selectedIcon = Icons.Filled.AccountCircle,
-        unselectedIcon = Icons.Outlined.AccountCircle
-    )
+        unselectedIcon = Icons.Outlined.AccountCircle,
+    ),
 }

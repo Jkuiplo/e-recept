@@ -30,10 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -56,39 +53,42 @@ import java.util.Locale
 
 @Composable
 fun HomeScreen() {
-    val currentDate = remember {
-        val sdf = SimpleDateFormat("EEEE, d MMMM, yyyy", Locale("ru"))
-        val formatted = sdf.format(Date())
-        formatted.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale("ru")) else it.toString() }
-    }
+    val currentDate =
+        remember {
+            val sdf = SimpleDateFormat("EEEE, d MMMM, yyyy", Locale("ru"))
+            val formatted = sdf.format(Date())
+            formatted.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale("ru")) else it.toString() }
+        }
 
-    val dummyPatients = listOf(
-        "Қазыбек Нұрым Байболсынұлы",
-        "Қазыбек Нұрым Байболсынұлы",
-        "Қазыбек Нұрым Байболсынұлы",
-        "Қазыбек Нұрым Байболсынұлы"
-    )
+    val dummyPatients =
+        listOf(
+            "Қазыбек Нұрым Байболсынұлы",
+            "Қазыбек Нұрым Байболсынұлы",
+            "Қазыбек Нұрым Байболсынұлы",
+            "Қазыбек Нұрым Байболсынұлы",
+        )
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(horizontal = 20.dp)
-            .verticalScroll(rememberScrollState())
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(horizontal = 20.dp)
+                .verticalScroll(rememberScrollState()),
     ) {
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
             text = "Главная",
             style = MaterialTheme.typography.headlineLarge,
-            color = MaterialTheme.colorScheme.onBackground
+            color = MaterialTheme.colorScheme.onBackground,
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         DoctorProfileCard(
             initial = "А",
-            fullName = "Молдабекова Дана Ғабиденқызы"
+            fullName = "Молдабекова Дана Ғабиденқызы",
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -96,34 +96,34 @@ fun HomeScreen() {
         Text(
             text = currentDate,
             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Medium),
-            color = MaterialTheme.colorScheme.onBackground
+            color = MaterialTheme.colorScheme.onBackground,
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             ActionCard(
                 iconVector = Icons.Default.PersonAdd,
                 text = "Добавить\nпациента",
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             )
             ActionCard(
                 iconResId = R.drawable.ic_assignment_add_filled,
                 text = "Создать\nрецепт",
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             )
             ActionCard(
                 iconResId = R.drawable.ic_pill_filled,
                 text = "Поиск\nпрепаратов",
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             )
             ActionCard(
                 iconVector = Icons.Default.Group,
                 text = "Поиск\nпациентов",
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             )
         }
 
@@ -132,28 +132,29 @@ fun HomeScreen() {
         Text(
             text = "Последние пациенты",
             style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onBackground
+            color = MaterialTheme.colorScheme.onBackground,
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Column(
-            verticalArrangement = Arrangement.spacedBy(2.dp)
+            verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             val cornerRadius = 12.dp
 
             dummyPatients.forEachIndexed { index, name ->
-                val shape = when (index) {
-                    0 -> RoundedCornerShape(topStart = cornerRadius, topEnd = cornerRadius)
-                    dummyPatients.lastIndex -> RoundedCornerShape(bottomStart = cornerRadius, bottomEnd = cornerRadius)
-                    else -> RoundedCornerShape(0.dp)
-                }
+                val shape =
+                    when (index) {
+                        0 -> RoundedCornerShape(topStart = cornerRadius, topEnd = cornerRadius)
+                        dummyPatients.lastIndex -> RoundedCornerShape(bottomStart = cornerRadius, bottomEnd = cornerRadius)
+                        else -> RoundedCornerShape(0.dp)
+                    }
 
                 PatientCard(
                     ageAndGender = "68 лет · Мужчина",
                     name = name,
                     notes = "Аллергия (пеницилин), Сахарный диабет II типа, Ишемическая болезнь сердца",
-                    shape = shape
+                    shape = shape,
                 )
             }
         }
@@ -163,35 +164,40 @@ fun HomeScreen() {
 }
 
 @Composable
-fun DoctorProfileCard(initial: String, fullName: String) {
+fun DoctorProfileCard(
+    initial: String,
+    fullName: String,
+) {
     Card(
         onClick = { /* TODO: Открыть профиль врача */ },
-        modifier = Modifier
-            .fillMaxWidth()
-            .shadow(
-                elevation = 8.dp,
-                shape = RoundedCornerShape(16.dp),
-                ambientColor = Color.Transparent,
-                spotColor = Color.Black.copy(alpha = 0.3f)
-            ),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .shadow(
+                    elevation = 8.dp,
+                    shape = RoundedCornerShape(16.dp),
+                    ambientColor = Color.Transparent,
+                    spotColor = Color.Black,
+                ),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = SecBg)
+        colors = CardDefaults.cardColors(containerColor = SecBg),
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(PrimaryPurple),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(PrimaryPurple),
+                contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = initial,
                     color = Color.White,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 )
             }
 
@@ -199,7 +205,7 @@ fun DoctorProfileCard(initial: String, fullName: String) {
                 text = fullName,
                 modifier = Modifier.padding(start = 16.dp),
                 style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onBackground
+                color = MaterialTheme.colorScheme.onBackground,
             )
         }
     }
@@ -210,52 +216,56 @@ fun ActionCard(
     text: String,
     modifier: Modifier = Modifier,
     iconVector: ImageVector? = null,
-    iconResId: Int? = null
+    iconResId: Int? = null,
 ) {
     Card(
         onClick = { /* TODO: Навигация */ },
-        modifier = modifier.height(100.dp)
-            .shadow(
-                elevation = 8.dp,
-                shape = RoundedCornerShape(16.dp),
-                ambientColor = Color.Transparent,
-                spotColor = Color.Black
-            ),
+        modifier =
+            modifier
+                .height(100.dp)
+                .shadow(
+                    elevation = 8.dp,
+                    shape = RoundedCornerShape(16.dp),
+                    ambientColor = Color.Transparent,
+                    spotColor = Color.Black,
+                ),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MainAc)
+        colors = CardDefaults.cardColors(containerColor = MainAc),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Center,
         ) {
             if (iconVector != null) {
                 Icon(
                     imageVector = iconVector,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier.size(28.dp),
                 )
             } else if (iconResId != null) {
                 Icon(
                     painter = painterResource(id = iconResId),
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier.size(28.dp),
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = text,
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 12.sp,
-                    lineHeight = 14.sp,
-                    fontWeight = FontWeight.Bold
-                ),
+                style =
+                    MaterialTheme.typography.bodyMedium.copy(
+                        fontSize = 12.sp,
+                        lineHeight = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                    ),
                 color = MaterialTheme.colorScheme.onBackground,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
             )
         }
     }
@@ -266,39 +276,40 @@ fun PatientCard(
     ageAndGender: String,
     name: String,
     notes: String,
-    shape: Shape
+    shape: Shape,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = shape,
         colors = CardDefaults.cardColors(containerColor = SecAc),
-        onClick = { /* TODO: Открыть профиль пациента */ }
+        onClick = { /* TODO: Открыть профиль пациента */ },
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text(
                 text = ageAndGender,
                 style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp),
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = name,
                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                color = MaterialTheme.colorScheme.onBackground
+                color = MaterialTheme.colorScheme.onBackground,
             )
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                text = buildAnnotatedString {
-                    withStyle(style = SpanStyle(color = Color.Red)) {
-                        append("Примечания: ")
-                    }
-                    append(notes)
-                },
+                text =
+                    buildAnnotatedString {
+                        withStyle(style = SpanStyle(color = Color.Red)) {
+                            append("Примечания: ")
+                        }
+                        append(notes)
+                    },
                 style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
-                color = MaterialTheme.colorScheme.onBackground
+                color = MaterialTheme.colorScheme.onBackground,
             )
         }
     }

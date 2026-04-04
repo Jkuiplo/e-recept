@@ -12,23 +12,22 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-private val LightColorScheme = lightColorScheme(
-    background = MainBg,
-    onBackground = MainTx,
-    surface = SecBg,
-    onSurface = SecTx,
-    primary = PrimaryPurple,
-    onPrimary = Color.White,
-    secondary = MainAc,
-    onSecondary = MainTx,
-    tertiary = SecAc,
-    onTertiary = MainTx
-)
+private val LightColorScheme =
+    lightColorScheme(
+        background = MainBg,
+        onBackground = MainTx,
+        surface = SecBg,
+        onSurface = SecTx,
+        primary = PrimaryPurple,
+        onPrimary = Color.White,
+        secondary = MainAc,
+        onSecondary = MainTx,
+        tertiary = SecAc,
+        onTertiary = MainTx,
+    )
 
 @Composable
-fun EreceptTheme(
-    content: @Composable () -> Unit
-) {
+fun EreceptTheme(content: @Composable () -> Unit) {
     val colorScheme = LightColorScheme
     val view = LocalView.current
 
@@ -43,6 +42,6 @@ fun EreceptTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
-        content = content
+        content = content,
     )
 }

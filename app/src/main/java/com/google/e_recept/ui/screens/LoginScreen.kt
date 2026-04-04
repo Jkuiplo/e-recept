@@ -37,11 +37,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -57,36 +56,37 @@ fun LoginScreen() {
     var rememberMe by remember { mutableStateOf(false) }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .imePadding(),
-        contentAlignment = Alignment.Center
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .imePadding(),
+        contentAlignment = Alignment.Center,
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-
             Text(
                 text = "Вход",
                 style = MaterialTheme.typography.displayLarge.copy(fontSize = 56.sp),
-                color = MaterialTheme.colorScheme.onBackground
+                color = MaterialTheme.colorScheme.onBackground,
             )
 
             Spacer(modifier = Modifier.height(48.dp))
 
-            // Поле ИИН
+            // ИИН
             OutlinedTextField(
                 value = iin,
                 onValueChange = { iin = it },
                 label = { Text("ИИН") },
                 placeholder = { Text("Введите ИИН") },
                 supportingText = { Text("Например: 012 345 678 910") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
                 trailingIcon = {
                     if (iin.isNotEmpty()) {
                         IconButton(onClick = { iin = "" }) {
@@ -96,19 +96,20 @@ fun LoginScreen() {
                 },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(8.dp),
-
                 // в макете цвета нет, но с ним выглядит поинтереснее
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                ),
-                singleLine = true
+                colors =
+                    OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                    ),
+                singleLine = true,
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Пароль
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
@@ -124,39 +125,42 @@ fun LoginScreen() {
                 },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(8.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                ),
-                singleLine = true
+                colors =
+                    OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                    ),
+                singleLine = true,
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .clickable { rememberMe = !rememberMe }
-                    .padding(vertical = 8.dp, horizontal = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { rememberMe = !rememberMe }
+                        .padding(vertical = 8.dp, horizontal = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Checkbox(
                     checked = rememberMe,
                     onCheckedChange = null,
-                    colors = CheckboxDefaults.colors(
-                        checkedColor = MaterialTheme.colorScheme.primary,
-                        uncheckedColor = MaterialTheme.colorScheme.onSurface
-                    )
+                    colors =
+                        CheckboxDefaults.colors(
+                            checkedColor = MaterialTheme.colorScheme.primary,
+                            uncheckedColor = MaterialTheme.colorScheme.onSurface,
+                        ),
                 )
                 Text(
                     text = "Запомнить меня на этом устройстве",
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(start = 8.dp)
+                    modifier = Modifier.padding(start = 8.dp),
                 )
             }
 
@@ -164,33 +168,34 @@ fun LoginScreen() {
 
             Spacer(modifier = Modifier.height(48.dp))
 
-            // Кнопка "Войти"
+            // Войти
             Button(
                 onClick = { /* TODO: Логика авторизации */ },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .drawBehind{
-                        drawRoundRect(
-                            color = Color.Black.copy(alpha = 0.2f),
-                            topLeft = Offset(0f, size.height * 0.05f),
-                            size = size.copy(height = size.height),
-                            cornerRadius = CornerRadius(24.dp.toPx())
-                        )
-                    },
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .shadow(
+                            elevation = 8.dp,
+                            shape = RoundedCornerShape(16.dp),
+                            ambientColor = Color.Transparent,
+                            spotColor = Color.Black,
+                        ),
                 shape = RoundedCornerShape(24.dp),
-                elevation = ButtonDefaults.buttonElevation(
-                    defaultElevation = 0.dp,
-                    pressedElevation = 0.dp
-                ),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MainAc,
-                    contentColor = MaterialTheme.colorScheme.onBackground
-                )
+                elevation =
+                    ButtonDefaults.buttonElevation(
+                        defaultElevation = 0.dp,
+                        pressedElevation = 0.dp,
+                    ),
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor = MainAc,
+                        contentColor = MaterialTheme.colorScheme.onBackground,
+                    ),
             ) {
                 Text(
                     text = "Войти",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 )
             }
 

@@ -1,5 +1,9 @@
 package com.google.e_recept.ui.screens
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -46,49 +50,46 @@ fun MainScreen() {
                         label = {
                             Text(
                                 text = item.title,
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                                )
+                                style =
+                                    MaterialTheme.typography.bodyMedium.copy(
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    ),
                             )
                         },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = MaterialTheme.colorScheme.onBackground,
-                            selectedTextColor = MaterialTheme.colorScheme.onBackground,
-                            indicatorColor = MainAc,
-                            unselectedIconColor = MaterialTheme.colorScheme.onSurface,
-                            unselectedTextColor = MaterialTheme.colorScheme.onSurface
-                        )
+                        colors =
+                            NavigationBarItemDefaults.colors(
+                                selectedIconColor = MaterialTheme.colorScheme.onBackground,
+                                selectedTextColor = MaterialTheme.colorScheme.onBackground,
+                                indicatorColor = MainAc,
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurface,
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurface,
+                            ),
                     )
                 }
             }
-        }
+        },
     ) { innerPadding ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
         ) {
-            when (currentRoute) {
-                BottomNavItem.Home.route -> HomeScreen()
-                BottomNavItem.Patients.route -> Text(
-                    "Экран Пациентов",
-                    Modifier.align(Alignment.Center)
-                )
-
-                BottomNavItem.Recipes.route -> Text(
-                    "Экран Рецептов",
-                    Modifier.align(Alignment.Center)
-                )
-
-                BottomNavItem.History.route -> Text(
-                    "Экран Истории",
-                    Modifier.align(Alignment.Center)
-                )
-
-                BottomNavItem.Profile.route -> Text(
-                    "Экран Профиля",
-                    Modifier.align(Alignment.Center)
-                )
+            AnimatedContent(
+                targetState = currentRoute,
+                transitionSpec = {
+                    // Плавное появление (Fade in) и затухание (Fade out)
+                    fadeIn() togetherWith fadeOut()
+                },
+                label = "bottom_nav_animation",
+            ) { targetRoute ->
+                when (targetRoute) {
+                    BottomNavItem.Home.route -> HomeScreen()
+                    BottomNavItem.Patients.route -> PatientsScreen(onAddPatientClick = {})
+                    BottomNavItem.Recipes.route -> Text("Экран Рецептов", Modifier.align(Alignment.Center))
+                    BottomNavItem.History.route -> Text("Экран Истории", Modifier.align(Alignment.Center))
+                    BottomNavItem.Profile.route -> Text("Экран Профиля", Modifier.align(Alignment.Center))
+                }
             }
         }
     }
