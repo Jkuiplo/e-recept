@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.google.e_recept.ui.screens.LoginScreen // Импортируем наш новый экран
+import com.google.e_recept.ui.screens.MainScreen
 import com.google.e_recept.ui.theme.EreceptTheme
 
 class MainActivity : ComponentActivity() {
@@ -13,8 +14,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             EreceptTheme {
-                // Просто вызываем наш экран здесь
-                LoginScreen()
+                MainScreen()
             }
         }
     }
