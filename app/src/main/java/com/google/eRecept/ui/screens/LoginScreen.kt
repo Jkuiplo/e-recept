@@ -37,17 +37,22 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.eRecept.ui.theme.MainAc
 
+@Preview()
 @Composable
 fun LoginScreen() {
     var iin by remember { mutableStateOf("") }
@@ -175,11 +180,34 @@ fun LoginScreen() {
                     Modifier
                         .fillMaxWidth()
                         .height(56.dp)
-                        .shadow(
-                            elevation = 8.dp,
-                            shape = RoundedCornerShape(16.dp),
-                            ambientColor = Color.Transparent,
-                            spotColor = Color.Black,
+                        .drawBehind {
+                            drawIntoCanvas { canvas ->
+                                val paint =
+                                    Paint().apply {
+                                        asFrameworkPaint().apply {
+                                            isAntiAlias = true
+                                            color = android.graphics.Color.TRANSPARENT
+                                            setShadowLayer(
+                                                12f,
+                                                0f,
+                                                6f,
+                                                android.graphics.Color.argb(80, 0, 0, 0),
+                                            )
+                                        }
+                                    }
+                                canvas.drawRoundRect(
+                                    left = 0f,
+                                    top = 0f,
+                                    right = size.width,
+                                    bottom = size.height,
+                                    radiusX = 100.dp.toPx(),
+                                    radiusY = 100.dp.toPx(),
+                                    paint = paint,
+                                )
+                            }
+                        }.background(
+                            color = Color(0xFFCFC6BC),
+                            shape = RoundedCornerShape(100.dp),
                         ),
                 shape = RoundedCornerShape(24.dp),
                 elevation =

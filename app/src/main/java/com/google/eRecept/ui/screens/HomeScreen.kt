@@ -30,9 +30,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
@@ -40,6 +43,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.eRecept.R
@@ -51,6 +55,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+@Preview(showBackground = true)
 @Composable
 fun HomeScreen() {
     val currentDate =
@@ -173,11 +178,34 @@ fun DoctorProfileCard(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .shadow(
-                    elevation = 8.dp,
-                    shape = RoundedCornerShape(16.dp),
-                    ambientColor = Color.Transparent,
-                    spotColor = Color.Black,
+                .drawBehind {
+                    drawIntoCanvas { canvas ->
+                        val paint =
+                            Paint().apply {
+                                asFrameworkPaint().apply {
+                                    isAntiAlias = true
+                                    color = android.graphics.Color.TRANSPARENT
+                                    setShadowLayer(
+                                        8f,
+                                        0f,
+                                        6f,
+                                        android.graphics.Color.argb(80, 0, 0, 0),
+                                    )
+                                }
+                            }
+                        canvas.drawRoundRect(
+                            left = 0f,
+                            top = 0f,
+                            right = size.width,
+                            bottom = size.height,
+                            radiusX = 16.dp.toPx(),
+                            radiusY = 16.dp.toPx(),
+                            paint = paint,
+                        )
+                    }
+                }.background(
+                    color = Color(0xFFCFC6BC),
+                    shape = RoundedCornerShape(100.dp),
                 ),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = SecBg),
@@ -211,6 +239,7 @@ fun DoctorProfileCard(
     }
 }
 
+@Suppress("ktlint:standard:function-naming")
 @Composable
 fun ActionCard(
     text: String,
@@ -223,11 +252,34 @@ fun ActionCard(
         modifier =
             modifier
                 .height(100.dp)
-                .shadow(
-                    elevation = 8.dp,
-                    shape = RoundedCornerShape(16.dp),
-                    ambientColor = Color.Transparent,
-                    spotColor = Color.Black,
+                .drawBehind {
+                    drawIntoCanvas { canvas ->
+                        val paint =
+                            Paint().apply {
+                                asFrameworkPaint().apply {
+                                    isAntiAlias = true
+                                    color = android.graphics.Color.TRANSPARENT
+                                    setShadowLayer(
+                                        8f,
+                                        0f,
+                                        6f,
+                                        android.graphics.Color.argb(80, 0, 0, 0),
+                                    )
+                                }
+                            }
+                        canvas.drawRoundRect(
+                            left = 0f,
+                            top = 0f,
+                            right = size.width,
+                            bottom = size.height,
+                            radiusX = 16.dp.toPx(),
+                            radiusY = 16.dp.toPx(),
+                            paint = paint,
+                        )
+                    }
+                }.background(
+                    color = Color(0xFFCFC6BC),
+                    shape = RoundedCornerShape(100.dp),
                 ),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MainAc),

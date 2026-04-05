@@ -110,7 +110,7 @@ fun MainScreen() {
             }
 
             composable(BottomNavItem.Recipes.route) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Экран Рецептов") }
+                CreateRecipeScreen()
             }
 
             composable(BottomNavItem.History.route) {

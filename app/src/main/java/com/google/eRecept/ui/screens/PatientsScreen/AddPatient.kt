@@ -46,7 +46,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -317,7 +320,39 @@ fun AddPatientScreen(onBackClick: () -> Unit) {
 
         Button(
             onClick = { /* TODO: Сохранить */ },
-            modifier = Modifier.fillMaxWidth().height(56.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .drawBehind {
+                        drawIntoCanvas { canvas ->
+                            val paint =
+                                Paint().apply {
+                                    asFrameworkPaint().apply {
+                                        isAntiAlias = true
+                                        color = android.graphics.Color.TRANSPARENT
+                                        setShadowLayer(
+                                            8f,
+                                            0f,
+                                            6f,
+                                            android.graphics.Color.argb(80, 0, 0, 0),
+                                        )
+                                    }
+                                }
+                            canvas.drawRoundRect(
+                                left = 0f,
+                                top = 0f,
+                                right = size.width,
+                                bottom = size.height,
+                                radiusX = 24.dp.toPx(),
+                                radiusY = 24.dp.toPx(),
+                                paint = paint,
+                            )
+                        }
+                    }.background(
+                        color = Color(0xFFCFC6BC),
+                        shape = RoundedCornerShape(100.dp),
+                    ),
             shape = RoundedCornerShape(24.dp),
             colors = ButtonDefaults.buttonColors(containerColor = MainAc, contentColor = MaterialTheme.colorScheme.onBackground),
         ) {
@@ -328,7 +363,39 @@ fun AddPatientScreen(onBackClick: () -> Unit) {
 
         Button(
             onClick = onBackClick,
-            modifier = Modifier.fillMaxWidth().height(56.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .drawBehind {
+                        drawIntoCanvas { canvas ->
+                            val paint =
+                                Paint().apply {
+                                    asFrameworkPaint().apply {
+                                        isAntiAlias = true
+                                        color = android.graphics.Color.TRANSPARENT
+                                        setShadowLayer(
+                                            8f,
+                                            0f,
+                                            6f,
+                                            android.graphics.Color.argb(80, 0, 0, 0),
+                                        )
+                                    }
+                                }
+                            canvas.drawRoundRect(
+                                left = 0f,
+                                top = 0f,
+                                right = size.width,
+                                bottom = size.height,
+                                radiusX = 24.dp.toPx(),
+                                radiusY = 24.dp.toPx(),
+                                paint = paint,
+                            )
+                        }
+                    }.background(
+                        color = Color(0xFFCFC6BC),
+                        shape = RoundedCornerShape(100.dp),
+                    ),
             shape = RoundedCornerShape(24.dp),
             colors = ButtonDefaults.buttonColors(containerColor = SecBg, contentColor = MaterialTheme.colorScheme.onBackground),
         ) {
