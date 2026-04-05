@@ -1,32 +1,40 @@
 package com.google.eRecept.ui.screens
 
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -40,35 +48,42 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.toSize
+import androidx.compose.ui.window.PopupProperties
 import com.google.eRecept.ui.theme.MainAc
 import com.google.eRecept.ui.theme.SecBg
 
+@OptIn(ExperimentalLayoutApi::class)
 @Suppress("ktlint:standard:function-naming")
-@OptIn(ExperimentalMaterial3Api::class) // Нужен для ExposedDropdownMenuBox
 @Composable
 fun CreateRecipeScreen() {
     val focusManager = LocalFocusManager.current
+    val density = LocalDensity.current
 
-    // --- Стейты Пациента ---
+    // Стейты Пациента
     var patientExpanded by remember { mutableStateOf(false) }
     var patientQuery by remember { mutableStateOf("") }
+    var patientTextFieldSize by remember { mutableStateOf(androidx.compose.ui.geometry.Size.Zero) }
 
-    // --- Стейты Препарата ---
+    // Стейты Препарата
     var medExpanded by remember { mutableStateOf(false) }
     var medQuery by remember { mutableStateOf("") }
+    var medTextFieldSize by remember { mutableStateOf(androidx.compose.ui.geometry.Size.Zero) }
 
-    // --- Остальные стейты ---
     var selectedDosage by remember { mutableStateOf("20 мг") }
     var notes by remember { mutableStateOf("") }
 
-    // --- Mock Данные (с имитацией нескольких результатов поиска) ---
     val mockPatients =
         listOf(
             "Қазыбек Нұрым Байболсынұлы",
@@ -89,13 +104,11 @@ fun CreateRecipeScreen() {
 
     val dosages = listOf("20 мг", "35 мг", "40 мг", "50 мг", "75 мг", "100 мг", "120 мг", "200 мг")
 
-    // UI
     Column(
         modifier =
             Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
-                .imePadding()
                 .padding(horizontal = 20.dp)
                 .verticalScroll(rememberScrollState()),
     ) {
@@ -110,23 +123,42 @@ fun CreateRecipeScreen() {
         Spacer(modifier = Modifier.height(24.dp))
 
         // ==========================================
-        // БЛОК: ПАЦИЕНТ (Нативный Overlay Поиск)
+        // БЛОК: ПАЦИЕНТ
         // ==========================================
-        ExposedDropdownMenuBox(
-            expanded = patientExpanded,
-            onExpandedChange = { patientExpanded = !patientExpanded },
-        ) {
+        Box {
             OutlinedTextField(
                 value = patientQuery,
                 onValueChange = {
                     patientQuery = it
-                    patientExpanded = true // Открываем меню при вводе
+                    patientExpanded = true
                 },
                 label = { Text("Пациент") },
                 placeholder = { Text("Поиск пациента") },
-                trailingIcon = { Icon(Icons.Default.Search, contentDescription = "Поиск") },
-                // modifier.menuAnchor() - магия, которая делает ширину выпадающего списка равной полю ввода!
-                modifier = Modifier.menuAnchor().fillMaxWidth(),
+                // КРЕСТИК ИЛИ ЛУПА В ЗАВИСИМОСТИ ОТ ВВОДА
+                trailingIcon = {
+                    if (patientQuery.isNotEmpty()) {
+                        IconButton(onClick = {
+                            patientQuery = ""
+                            patientExpanded = false
+                        }) {
+                            Icon(Icons.Default.Clear, contentDescription = "Очистить")
+                        }
+                    } else {
+                        Icon(Icons.Default.Search, contentDescription = "Поиск")
+                    }
+                },
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                keyboardActions =
+                    KeyboardActions(onNext = {
+                        patientExpanded = false
+                        focusManager.moveFocus(FocusDirection.Down)
+                    }),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .onGloballyPositioned { coordinates ->
+                            patientTextFieldSize = coordinates.size.toSize()
+                        },
                 shape = RoundedCornerShape(8.dp),
                 colors =
                     OutlinedTextFieldDefaults.colors(
@@ -135,46 +167,44 @@ fun CreateRecipeScreen() {
                 singleLine = true,
             )
 
-            // Выпадающий список (Overlay)
-            if (patientQuery.isNotEmpty() && mockPatients.isNotEmpty()) {
-                ExposedDropdownMenu(
-                    expanded = patientExpanded,
-                    onDismissRequest = { patientExpanded = false },
-                    modifier = Modifier.background(SecBg), // Твой бежевый цвет из макета
-                ) {
-                    mockPatients.forEachIndexed { index, patientName ->
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    text = patientName,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                )
-                            },
-                            onClick = {
-                                patientQuery = patientName
-                                patientExpanded = false
-                                focusManager.clearFocus() // Убираем клавиатуру после выбора
-                            },
-                        )
-                        // Тонкая линия-разделитель (кроме последнего элемента)
-                        if (index < mockPatients.lastIndex) {
-                            HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
-                        }
+            DropdownMenu(
+                expanded = patientExpanded && patientQuery.isNotEmpty() && mockPatients.isNotEmpty(),
+                onDismissRequest = { patientExpanded = false },
+                properties = PopupProperties(focusable = false),
+                modifier =
+                    Modifier
+                        .width(with(density) { patientTextFieldSize.width.toDp() })
+                        .heightIn(max = 240.dp)
+                        .background(SecBg),
+            ) {
+                mockPatients.forEachIndexed { index, patientName ->
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = patientName,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onBackground,
+                            )
+                        },
+                        onClick = {
+                            patientQuery = patientName
+                            patientExpanded = false
+                            focusManager.moveFocus(FocusDirection.Down)
+                        },
+                    )
+                    if (index < mockPatients.lastIndex) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
                     }
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         // ==========================================
-        // БЛОК: ПРЕПАРАТ 1 (Нативный Overlay Поиск)
+        // БЛОК: ПРЕПАРАТ 1
         // ==========================================
-        ExposedDropdownMenuBox(
-            expanded = medExpanded,
-            onExpandedChange = { medExpanded = !medExpanded },
-        ) {
+        Box {
             OutlinedTextField(
                 value = medQuery,
                 onValueChange = {
@@ -183,8 +213,30 @@ fun CreateRecipeScreen() {
                 },
                 label = { Text("Препарат 1") },
                 placeholder = { Text("Поиск препарата") },
-                trailingIcon = { Icon(Icons.Default.Search, contentDescription = "Поиск") },
-                modifier = Modifier.menuAnchor().fillMaxWidth(),
+                trailingIcon = {
+                    if (medQuery.isNotEmpty()) {
+                        IconButton(onClick = {
+                            medQuery = ""
+                            medExpanded = false
+                        }) {
+                            Icon(Icons.Default.Clear, contentDescription = "Очистить")
+                        }
+                    } else {
+                        Icon(Icons.Default.Search, contentDescription = "Поиск")
+                    }
+                },
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                keyboardActions =
+                    KeyboardActions(onNext = {
+                        medExpanded = false
+                        focusManager.moveFocus(FocusDirection.Down)
+                    }),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .onGloballyPositioned { coordinates ->
+                            medTextFieldSize = coordinates.size.toSize()
+                        },
                 shape = RoundedCornerShape(8.dp),
                 colors =
                     OutlinedTextFieldDefaults.colors(
@@ -193,30 +245,33 @@ fun CreateRecipeScreen() {
                 singleLine = true,
             )
 
-            if (medQuery.isNotEmpty() && mockMeds.isNotEmpty()) {
-                ExposedDropdownMenu(
-                    expanded = medExpanded,
-                    onDismissRequest = { medExpanded = false },
-                    modifier = Modifier.background(SecBg),
-                ) {
-                    mockMeds.forEachIndexed { index, medName ->
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    text = medName,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                )
-                            },
-                            onClick = {
-                                medQuery = medName
-                                medExpanded = false
-                                focusManager.clearFocus()
-                            },
-                        )
-                        if (index < mockMeds.lastIndex) {
-                            HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
-                        }
+            DropdownMenu(
+                expanded = medExpanded && medQuery.isNotEmpty() && mockMeds.isNotEmpty(),
+                onDismissRequest = { medExpanded = false },
+                properties = PopupProperties(focusable = false),
+                modifier =
+                    Modifier
+                        .width(with(density) { medTextFieldSize.width.toDp() })
+                        .heightIn(max = 150.dp)
+                        .background(SecBg),
+            ) {
+                mockMeds.forEachIndexed { index, medName ->
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = medName,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onBackground,
+                            )
+                        },
+                        onClick = {
+                            medQuery = medName
+                            medExpanded = false
+                            focusManager.moveFocus(FocusDirection.Down)
+                        },
+                    )
+                    if (index < mockMeds.lastIndex) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
                     }
                 }
             }
@@ -257,8 +312,10 @@ fun CreateRecipeScreen() {
                                                 )
                                             },
                                         shape = RoundedCornerShape(8.dp),
-                                    ).clickable { selectedDosage = dosage }
-                                    .padding(vertical = 10.dp),
+                                    ).clickable {
+                                        selectedDosage = dosage
+                                        focusManager.clearFocus()
+                                    }.padding(vertical = 10.dp),
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(
@@ -321,6 +378,8 @@ fun CreateRecipeScreen() {
             onValueChange = { notes = it },
             label = { Text("Примечания") },
             placeholder = { Text("Введите примечание") },
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
             modifier = Modifier.fillMaxWidth().height(100.dp),
             shape = RoundedCornerShape(16.dp),
         )
@@ -395,7 +454,13 @@ fun CreateRecipeScreen() {
         ) {
             Text("Отмена", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
         }
+        val isKeyboardOpen = WindowInsets.isImeVisible
 
-        Spacer(modifier = Modifier.height(32.dp))
+        val bottomSpacerHeight by animateDpAsState(
+            targetValue = if (isKeyboardOpen) 200.dp else 32.dp,
+            label = "keyboard_spacer_animation",
+        )
+
+        Spacer(modifier = Modifier.height(bottomSpacerHeight).imePadding())
     }
 }
