@@ -1,54 +1,26 @@
-@file:Suppress("DEPRECATION")
-
 package com.google.eRecept.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.PersonAdd
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Paint
-import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.eRecept.R
 import com.google.eRecept.ui.theme.MainAc
 import com.google.eRecept.ui.theme.PrimaryPurple
-import com.google.eRecept.ui.theme.SecAc
 import com.google.eRecept.ui.theme.SecBg
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -56,25 +28,49 @@ import java.util.Locale
 
 @Composable
 fun HomeScreen(
-    onProfileClick: () -> Unit,
-    onCreateRecipeClick: () -> Unit,
-    onSearchPatientsClick: () -> Unit,
-    onSearchMedsClick: () -> Unit,
-    onAddPatientClick: () -> Unit,
+    onProfileClick: () -> Unit = {},
+    onCreateRecipeClick: () -> Unit = {},
+    onSearchPatientsClick: () -> Unit = {},
+    onSearchMedsClick: () -> Unit = {},
+    onAddPatientClick: () -> Unit = {},
 ) {
+    // Получаем текущую дату в нужном формате ("Понедельник, 7 апреля")
     val currentDate =
         remember {
-            val sdf = SimpleDateFormat("EEEE, d MMMM, yyyy", Locale("ru"))
-            val formatted = sdf.format(Date())
-            formatted.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale("ru")) else it.toString() }
+            val sdf = SimpleDateFormat("EEEE, d MMMM", Locale("ru"))
+            sdf.format(Date()).replaceFirstChar { it.titlecase(Locale("ru")) }
         }
 
-    val dummyPatients =
+    // Заглушка для расписания
+    val schedule =
         listOf(
-            "Қазыбек Нұрым Байболсынұлы",
-            "Қазыбек Нұрым Байболсынұлы",
-            "Қазыбек Нұрым Байболсынұлы",
-            "Қазыбек Нұрым Байболсынұлы",
+            Appointment(
+                time = "09:00",
+                name = "Қазыбек Нұрым",
+                age = "68 лет",
+                gender = "М",
+                status = "Состоялась",
+                isCompleted = true,
+                allergy = "пенициллин",
+            ),
+            Appointment(
+                time = "11:30",
+                name = "Иванова Анна",
+                age = "34 года",
+                gender = "Ж",
+                status = "Запланирована",
+                isCompleted = false,
+                allergy = null,
+            ),
+            Appointment(
+                time = "14:00",
+                name = "Смирнов Петр",
+                age = "45 лет",
+                gender = "М",
+                status = "Запланирована",
+                isCompleted = false,
+                allergy = null,
+            ),
         )
 
     Column(
@@ -87,293 +83,190 @@ fun HomeScreen(
     ) {
         Spacer(modifier = Modifier.height(24.dp))
 
-        Text(
-            text = "Главная",
-            style = MaterialTheme.typography.headlineLarge,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        DoctorProfileCard(
-            initial = "А",
-            fullName = "Молдабекова Дана Ғабиденқызы",
-            onClick = onProfileClick
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Text(
-            text = currentDate,
-            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Medium),
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
+        // Шапка: Сегодня + Дата и Аватар
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            ActionCard(
-                iconVector = Icons.Default.PersonAdd,
-                text = "Добавить\nпациента",
-                onClick = onAddPatientClick,
-                modifier = Modifier.weight(1f),
-            )
-            ActionCard(
-                iconResId = R.drawable.ic_assignment_add_filled,
-                text = "Создать\nрецепт",
-                onClick = onCreateRecipeClick,
-                modifier = Modifier.weight(1f),
-            )
-            ActionCard(
-                iconResId = R.drawable.ic_pill_filled,
-                text = "Поиск\nпрепаратов",
-                onClick = onSearchMedsClick,
-                modifier = Modifier.weight(1f),
-            )
-            ActionCard(
-                iconVector = Icons.Default.Group,
-                text = "Поиск\nпациентов",
-                onClick = onSearchPatientsClick,
-                modifier = Modifier.weight(1f),
-            )
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Text(
-            text = "Последние пациенты",
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Column(
-            verticalArrangement = Arrangement.spacedBy(2.dp),
-        ) {
-            val cornerRadius = 12.dp
-
-            dummyPatients.forEachIndexed { index, name ->
-                val shape =
-                    when (index) {
-                        0 -> RoundedCornerShape(topStart = cornerRadius, topEnd = cornerRadius)
-                        dummyPatients.lastIndex -> RoundedCornerShape(bottomStart = cornerRadius, bottomEnd = cornerRadius)
-                        else -> RoundedCornerShape(0.dp)
-                    }
-
-                PatientCard(
-                    ageAndGender = "68 лет · Мужчина",
-                    name = name,
-                    notes = "Аллергия (пеницилин), Сахарный диабет II типа, Ишемическая болезнь сердца",
-                    shape = shape,
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-    }
-}
-
-@Composable
-fun DoctorProfileCard(
-    initial: String,
-    fullName: String,
-    onClick: () -> Unit
-) {
-    Card(
-        onClick = onClick,
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .drawBehind {
-                    drawIntoCanvas { canvas ->
-                        val paint =
-                            Paint().apply {
-                                asFrameworkPaint().apply {
-                                    isAntiAlias = true
-                                    color = android.graphics.Color.TRANSPARENT
-                                    setShadowLayer(
-                                        8f,
-                                        0f,
-                                        6f,
-                                        android.graphics.Color.argb(80, 0, 0, 0),
-                                    )
-                                }
-                            }
-                        canvas.drawRoundRect(
-                            left = 0f,
-                            top = 0f,
-                            right = size.width,
-                            bottom = size.height,
-                            radiusX = 16.dp.toPx(),
-                            radiusY = 16.dp.toPx(),
-                            paint = paint,
-                        )
-                    }
-                }.background(
-                    color = Color(0xFFCFC6BC),
-                    shape = RoundedCornerShape(100.dp),
-                ),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = SecBg),
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            Column {
+                Text(
+                    text = "Сегодня",
+                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+                Text(
+                    text = currentDate,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            // Аватар врача
             Box(
                 modifier =
                     Modifier
                         .size(48.dp)
                         .clip(CircleShape)
-                        .background(PrimaryPurple),
+                        .background(PrimaryPurple)
+                        .clickable { onProfileClick() },
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = initial,
+                    text = "А", // Инициал
                     color = Color.White,
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 )
             }
-
-            Text(
-                text = fullName,
-                modifier = Modifier.padding(start = 16.dp),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
         }
-    }
-}
 
-@Suppress("ktlint:standard:function-naming")
-@Composable
-fun ActionCard(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    iconVector: ImageVector? = null,
-    iconResId: Int? = null,
-) {
-    Card(
-        onClick = onClick,
-        modifier =
-            modifier
-                .height(100.dp)
-                .drawBehind {
-                    drawIntoCanvas { canvas ->
-                        val paint =
-                            Paint().apply {
-                                asFrameworkPaint().apply {
-                                    isAntiAlias = true
-                                    color = android.graphics.Color.TRANSPARENT
-                                    setShadowLayer(
-                                        8f,
-                                        0f,
-                                        6f,
-                                        android.graphics.Color.argb(80, 0, 0, 0),
-                                    )
-                                }
-                            }
-                        canvas.drawRoundRect(
-                            left = 0f,
-                            top = 0f,
-                            right = size.width,
-                            bottom = size.height,
-                            radiusX = 16.dp.toPx(),
-                            radiusY = 16.dp.toPx(),
-                            paint = paint,
-                        )
-                    }
-                }.background(
-                    color = Color(0xFFCFC6BC),
-                    shape = RoundedCornerShape(100.dp),
-                ),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MainAc),
-    ) {
-        Column(
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Главная кнопка действия
+        Button(
+            onClick = onAddPatientClick,
             modifier =
                 Modifier
-                    .fillMaxSize()
-                    .padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
+                    .fillMaxWidth()
+                    .height(56.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors =
+                ButtonDefaults.buttonColors(
+                    containerColor = SecBg, // Приглушенный цвет по ТЗ
+                    contentColor = MainAc,
+                ),
         ) {
-            if (iconVector != null) {
-                Icon(
-                    imageVector = iconVector,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.size(28.dp),
+            Text(
+                text = "+ Записать пациента",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+            )
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Text(
+            text = "Расписание",
+            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Список приемов
+        if (schedule.isEmpty()) {
+            EmptyScheduleState(onAddPatientClick)
+        } else {
+            schedule.forEach { appointment ->
+                AppointmentCard(appointment)
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+    }
+}
+
+// Модель данных для приема
+data class Appointment(
+    val time: String,
+    val name: String,
+    val age: String,
+    val gender: String,
+    val status: String,
+    val isCompleted: Boolean,
+    val allergy: String?,
+)
+
+@Composable
+fun AppointmentCard(appointment: Appointment) {
+    Card(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable { /* TODO: Открыть детальный экран записи */ },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // Время приема слева
+            Text(
+                text = appointment.time,
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.width(60.dp),
+            )
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // Данные пациента по центру
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = appointment.name,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onBackground,
                 )
-            } else if (iconResId != null) {
-                Icon(
-                    painter = painterResource(id = iconResId),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.size(28.dp),
+                Text(
+                    text = "${appointment.age} · ${appointment.gender}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+
+                // Предупреждение об аллергии (если есть)
+                if (appointment.allergy != null) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "⚠ аллергия: ${appointment.allergy}",
+                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+
+            // Бейдж статуса справа
+            val badgeColor = if (appointment.isCompleted) Color(0xFF10B981) else Color(0xFFF59E0B)
+            val badgeBg = badgeColor.copy(alpha = 0.15f)
+
+            Box(
+                modifier =
+                    Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(badgeBg)
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+            ) {
+                Text(
+                    text = appointment.status,
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                    color = badgeColor,
                 )
             }
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = text,
-                style =
-                    MaterialTheme.typography.bodyMedium.copy(
-                        fontSize = 12.sp,
-                        lineHeight = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                    ),
-                color = MaterialTheme.colorScheme.onBackground,
-                textAlign = TextAlign.Center,
-            )
         }
     }
 }
 
 @Composable
-fun PatientCard(
-    ageAndGender: String,
-    name: String,
-    notes: String,
-    shape: Shape,
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = shape,
-        colors = CardDefaults.cardColors(containerColor = SecAc),
-        onClick = { /* TODO: Открыть профиль пациента */ },
+fun EmptyScheduleState(onAddPatientClick: () -> Unit) {
+    Column(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 40.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-        ) {
-            Text(
-                text = ageAndGender,
-                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp),
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = name,
-                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text =
-                    buildAnnotatedString {
-                        withStyle(style = SpanStyle(color = Color.Red)) {
-                            append("Примечания: ")
-                        }
-                        append(notes)
-                    },
-                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-        }
+        Icon(
+            imageVector = Icons.Default.CalendarToday,
+            contentDescription = null,
+            modifier = Modifier.size(64.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "Записей на сегодня нет",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }

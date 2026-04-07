@@ -1,11 +1,12 @@
 package com.google.eRecept.ui.screens
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -15,42 +16,37 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.google.eRecept.ui.BottomNavItem
-import com.google.eRecept.ui.theme.MainAc
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    var showMedSearchSheet by remember { mutableStateOf(false) }
-    var showAddPatientSheet by remember { mutableStateOf(false) }
-    var showCreateRecipeSheet by remember { mutableStateOf(false) }
-
-    val addPatientSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val createRecipeSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
     Scaffold(
         bottomBar = {
             NavigationBar(
-                modifier = Modifier.padding(horizontal = 5.dp),
                 containerColor = MaterialTheme.colorScheme.background,
                 contentColor = MaterialTheme.colorScheme.onBackground,
-                tonalElevation = 0.dp,
+                tonalElevation = 8.dp, // Добавляем мягкую тень над навигацией
             ) {
                 BottomNavItem.entries.forEach { item ->
-                    val isSelected = currentRoute?.startsWith(item.route) == true
+                    val isSelected = currentRoute == item.route
 
                     NavigationBarItem(
                         selected = isSelected,
                         onClick = {
-                            navController.navigate(item.route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
+                            if (!isSelected) {
+                                navController.navigate(item.route) {
+                                    // Избегаем создания бесконечного стека при кликах по табам
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    // Предотвращаем создание дубликатов одного экрана
+                                    launchSingleTop = true
+                                    // Восстанавливаем состояние (например, скролл), если возвращаемся на таб
+                                    restoreState = true
                                 }
-                                launchSingleTop = true
-                                restoreState = true
                             }
                         },
                         icon = {
@@ -68,11 +64,13 @@ fun MainScreen() {
                         },
                         colors =
                             NavigationBarItemDefaults.colors(
-                                selectedIconColor = MaterialTheme.colorScheme.onBackground,
+                                // Цвет иконки внутри активного "пузыря"
+                                selectedIconColor = MaterialTheme.colorScheme.onSecondaryContainer,
                                 selectedTextColor = MaterialTheme.colorScheme.onBackground,
-                                indicatorColor = MainAc,
-                                unselectedIconColor = MaterialTheme.colorScheme.onSurface,
-                                unselectedTextColor = MaterialTheme.colorScheme.onSurface,
+                                // Цвет самого "пузыря" выделения (используем мягкий акцентный цвет)
+                                indicatorColor = MaterialTheme.colorScheme.secondaryContainer,
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             ),
                     )
                 }
@@ -81,91 +79,32 @@ fun MainScreen() {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = BottomNavItem.Home.route,
+            startDestination = BottomNavItem.Schedule.route,
             modifier = Modifier.padding(innerPadding),
+            // Настраиваем плавные анимации перехода: экраны будут мягко растворяться друг в друге
+            enterTransition = { fadeIn(animationSpec = tween(300)) },
+            exitTransition = { fadeOut(animationSpec = tween(300)) },
+            popEnterTransition = { fadeIn(animationSpec = tween(300)) },
+            popExitTransition = { fadeOut(animationSpec = tween(300)) },
         ) {
-            composable(BottomNavItem.Home.route) {
-                HomeScreen(
-                    onProfileClick = { navController.navigate(BottomNavItem.Profile.route) },
-                    onCreateRecipeClick = { showCreateRecipeSheet = true },
-                    onSearchPatientsClick = { navController.navigate("${BottomNavItem.Patients.route}?focus=true") },
-                    onSearchMedsClick = { showMedSearchSheet = true },
-                    onAddPatientClick = { showAddPatientSheet = true }
-                )
-            }
+            // Временно подставляем старые экраны в новые роуты.
+            // Позже мы их полностью перепишем.
 
-            composable("${BottomNavItem.Patients.route}?focus={focus}") { backStackEntry ->
-                val focus = backStackEntry.arguments?.getString("focus") == "true"
-                PatientsScreen(
-                    focusSearchOnStart = focus,
-                    onAddPatientClick = { showAddPatientSheet = true }
-                )
-            }
-
-            composable(BottomNavItem.Patients.route) {
-                PatientsScreen(
-                    focusSearchOnStart = false,
-                    onAddPatientClick = { showAddPatientSheet = true }
-                )
+            composable(BottomNavItem.Schedule.route) {
+                HomeScreen() // Будущее "Расписание"
             }
 
             composable(BottomNavItem.Recipes.route) {
-                CreateRecipeScreen()
+                RecipeScreen()
             }
 
-            composable(BottomNavItem.History.route) {
-                HistoryScreen(
-                    onCreateRecipeClick = { showCreateRecipeSheet = true }
-                )
+            composable(BottomNavItem.Search.route) {
+                // Будущий экран поиска с двумя вкладками
             }
 
             composable(BottomNavItem.Profile.route) {
-                ProfileScreen(onLogoutClick = { /* TODO: Логика выхода */ })
+                ProfileScreen(onLogoutClick = { /* TODO */ })
             }
-        }
-    }
-
-    if (showMedSearchSheet) {
-        ModalBottomSheet(
-            onDismissRequest = { showMedSearchSheet = false },
-            containerColor = MaterialTheme.colorScheme.background,
-        ) {
-            Column(modifier = Modifier.padding(20.dp).fillMaxWidth().height(400.dp)) {
-                Text("Поиск препаратов", style = MaterialTheme.typography.headlineMedium)
-                Spacer(modifier = Modifier.height(16.dp))
-                OutlinedTextField(
-                    value = "",
-                    onValueChange = {},
-                    placeholder = { Text("Название препарата") },
-                    trailingIcon = { Icon(Icons.Default.Search, "") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                )
-            }
-        }
-    }
-
-    if (showAddPatientSheet) {
-        ModalBottomSheet(
-            onDismissRequest = { showAddPatientSheet = false },
-            sheetState = addPatientSheetState,
-            containerColor = MaterialTheme.colorScheme.background,
-            modifier = Modifier.fillMaxHeight(0.9f),
-            dragHandle = null
-        ) {
-            AddPatientScreenContent(onBackClick = { showAddPatientSheet = false })
-        }
-    }
-
-    if (showCreateRecipeSheet) {
-        ModalBottomSheet(
-            onDismissRequest = { showCreateRecipeSheet = false },
-            sheetState = createRecipeSheetState,
-            containerColor = MaterialTheme.colorScheme.background,
-            modifier = Modifier.fillMaxHeight(0.9f),
-            dragHandle = null
-        ) {
-            CreateRecipeContent(onBackClick = { showCreateRecipeSheet = false })
         }
     }
 }

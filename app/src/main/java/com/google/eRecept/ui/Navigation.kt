@@ -4,13 +4,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.automirrored.outlined.Assignment
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.AccountCircle
-import androidx.compose.material.icons.outlined.History
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.People
+import androidx.compose.material.icons.outlined.CalendarToday
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.ui.graphics.vector.ImageVector
 
 enum class BottomNavItem(
@@ -19,34 +17,28 @@ enum class BottomNavItem(
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector,
 ) {
-    Home(
-        route = "home",
-        title = "Главная",
-        selectedIcon = Icons.Filled.Home,
-        unselectedIcon = Icons.Outlined.Home,
-    ),
-    Patients(
-        route = "patients",
-        title = "Пациенты",
-        selectedIcon = Icons.Filled.People,
-        unselectedIcon = Icons.Outlined.People,
+    Schedule(
+        route = "schedule",
+        title = "Расписание",
+        selectedIcon = Icons.Filled.CalendarToday, // Иконка календаря для рабочего дня
+        unselectedIcon = Icons.Outlined.CalendarToday,
     ),
     Recipes(
         route = "recipes",
         title = "Рецепты",
-        selectedIcon = Icons.AutoMirrored.Filled.Assignment,
+        selectedIcon = Icons.AutoMirrored.Filled.Assignment, // Иконка документа (рецепта)
         unselectedIcon = Icons.AutoMirrored.Outlined.Assignment,
     ),
-    History(
-        route = "history",
-        title = "История",
-        selectedIcon = Icons.Filled.History,
-        unselectedIcon = Icons.Outlined.History,
+    Search(
+        route = "search",
+        title = "Поиск",
+        selectedIcon = Icons.Filled.Search, // Иконка лупы
+        unselectedIcon = Icons.Outlined.Search,
     ),
     Profile(
         route = "profile",
         title = "Профиль",
-        selectedIcon = Icons.Filled.AccountCircle,
+        selectedIcon = Icons.Filled.AccountCircle, // Иконка силуэта
         unselectedIcon = Icons.Outlined.AccountCircle,
     ),
 }
