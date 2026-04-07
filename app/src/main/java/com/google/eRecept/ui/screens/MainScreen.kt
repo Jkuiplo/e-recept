@@ -28,7 +28,7 @@ fun MainScreen() {
             NavigationBar(
                 containerColor = MaterialTheme.colorScheme.background,
                 contentColor = MaterialTheme.colorScheme.onBackground,
-                tonalElevation = 8.dp, // Добавляем мягкую тень над навигацией
+                tonalElevation = 8.dp,
             ) {
                 BottomNavItem.entries.forEach { item ->
                     val isSelected = currentRoute == item.route
@@ -38,13 +38,10 @@ fun MainScreen() {
                         onClick = {
                             if (!isSelected) {
                                 navController.navigate(item.route) {
-                                    // Избегаем создания бесконечного стека при кликах по табам
                                     popUpTo(navController.graph.findStartDestination().id) {
                                         saveState = true
                                     }
-                                    // Предотвращаем создание дубликатов одного экрана
                                     launchSingleTop = true
-                                    // Восстанавливаем состояние (например, скролл), если возвращаемся на таб
                                     restoreState = true
                                 }
                             }
@@ -64,10 +61,8 @@ fun MainScreen() {
                         },
                         colors =
                             NavigationBarItemDefaults.colors(
-                                // Цвет иконки внутри активного "пузыря"
                                 selectedIconColor = MaterialTheme.colorScheme.onSecondaryContainer,
                                 selectedTextColor = MaterialTheme.colorScheme.onBackground,
-                                // Цвет самого "пузыря" выделения (используем мягкий акцентный цвет)
                                 indicatorColor = MaterialTheme.colorScheme.secondaryContainer,
                                 unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
                                 unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -87,11 +82,8 @@ fun MainScreen() {
             popEnterTransition = { fadeIn(animationSpec = tween(300)) },
             popExitTransition = { fadeOut(animationSpec = tween(300)) },
         ) {
-            // Временно подставляем старые экраны в новые роуты.
-            // Позже мы их полностью перепишем.
-
             composable(BottomNavItem.Schedule.route) {
-                HomeScreen() // Будущее "Расписание"
+                HomeScreen()
             }
 
             composable(BottomNavItem.Recipes.route) {
@@ -99,11 +91,11 @@ fun MainScreen() {
             }
 
             composable(BottomNavItem.Search.route) {
-                // Будущий экран поиска с двумя вкладками
+                SearchScreen()
             }
 
             composable(BottomNavItem.Profile.route) {
-                ProfileScreen(onLogoutClick = { /* TODO */ })
+                ProfileScreen()
             }
         }
     }

@@ -36,11 +36,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.window.PopupProperties
-import com.google.eRecept.ui.theme.MainAc
-import com.google.eRecept.ui.theme.SecTx
 import java.util.UUID
 
-// Модель для хранения данных препарата
 data class MedicationEntry(
     val id: String = UUID.randomUUID().toString(),
     var name: String = "",
@@ -50,21 +47,17 @@ data class MedicationEntry(
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun RecipeScreen() {
-    // --- Состояние окон ---
     var showCreateSheet by remember { mutableStateOf(false) }
     var showCancelDialog by remember { mutableStateOf(false) }
 
-    // --- Состояние формы ---
     var patientQuery by remember { mutableStateOf("") }
     var medications by remember { mutableStateOf(listOf(MedicationEntry())) }
     var notes by remember { mutableStateOf("") }
 
-    // skipPartiallyExpanded = true фиксит дерганья модалки при появлении клавиатуры и новых элементов
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val focusManager = LocalFocusManager.current
     val density = LocalDensity.current
 
-    // Моковые данные
     val mockPatients =
         listOf(
             "Қазыбек Нұрым Байболсынұлы",
@@ -97,7 +90,6 @@ fun RecipeScreen() {
         notes = ""
     }
 
-    // --- Главный экран ---
     Column(
         modifier =
             Modifier
@@ -121,11 +113,15 @@ fun RecipeScreen() {
                     .fillMaxWidth()
                     .height(56.dp),
             shape = RoundedCornerShape(16.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = MainAc),
+            colors =
+                ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ),
         ) {
-            Icon(Icons.Default.Add, contentDescription = null, tint = Color.White)
+            Icon(Icons.Default.Add, contentDescription = null)
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Создать рецепт", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = Color.White)
+            Text("Создать рецепт", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
         }
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -146,13 +142,21 @@ fun RecipeScreen() {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text(text = "12 апреля 2026", style = MaterialTheme.typography.labelMedium, color = SecTx)
+                        Text(
+                            text = "12 апреля 2026",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(text = patient, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                        Text(
+                            text = patient,
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "Препараты: $meds",
@@ -165,12 +169,11 @@ fun RecipeScreen() {
         }
     }
 
-    // --- Модальное окно создания рецепта ---
     if (showCreateSheet) {
         ModalBottomSheet(
             onDismissRequest = { showCreateSheet = false },
             sheetState = sheetState,
-            containerColor = MaterialTheme.colorScheme.background,
+            containerColor = MaterialTheme.colorScheme.surface,
         ) {
             var patientExpanded by remember { mutableStateOf(false) }
             var patientTextFieldSize by remember { mutableStateOf(Size.Zero) }
@@ -185,12 +188,11 @@ fun RecipeScreen() {
                 Text(
                     text = "Создать рецепт",
                     style = MaterialTheme.typography.headlineLarge.copy(fontSize = 32.sp, fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onBackground,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // БЛОК: ПАЦИЕНТ
                 Box {
                     OutlinedTextField(
                         value = patientQuery,
@@ -213,7 +215,6 @@ fun RecipeScreen() {
                             }
                         },
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                        // FocusDirection.Next корректно перекидывает на следующее поле
                         keyboardActions =
                             KeyboardActions(onNext = {
                                 patientExpanded = false
@@ -228,6 +229,7 @@ fun RecipeScreen() {
                         shape = RoundedCornerShape(8.dp),
                         colors =
                             OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
                                 unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                             ),
                         singleLine = true,
@@ -249,7 +251,7 @@ fun RecipeScreen() {
                                     Text(
                                         text = patientName,
                                         style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.onBackground,
+                                        color = MaterialTheme.colorScheme.onSurface,
                                     )
                                 },
                                 onClick = {
@@ -267,7 +269,6 @@ fun RecipeScreen() {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // БЛОК: ПРЕПАРАТЫ
                 medications.forEachIndexed { index, med ->
                     MedicationItem(
                         index = index,
@@ -287,7 +288,6 @@ fun RecipeScreen() {
                     Spacer(modifier = Modifier.height(16.dp))
                 }
 
-                // Кнопка добавления нового препарата
                 Button(
                     onClick = { medications = medications + MedicationEntry() },
                     modifier =
@@ -296,20 +296,19 @@ fun RecipeScreen() {
                             .height(56.dp)
                             .drawShadowBackground(),
                     shape = RoundedCornerShape(24.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = MainAc),
+                    colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                        ),
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = null, tint = Color.White)
+                    Icon(Icons.Default.Add, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        "Добавить препарат",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = Color.White,
-                    )
+                    Text("Добавить препарат", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Примечания (последнее поле, поэтому ImeAction.Done)
                 OutlinedTextField(
                     value = notes,
                     onValueChange = { notes = it },
@@ -322,11 +321,15 @@ fun RecipeScreen() {
                             .fillMaxWidth()
                             .height(100.dp),
                     shape = RoundedCornerShape(16.dp),
+                    colors =
+                        OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                        ),
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Финальные кнопки
                 Button(
                     onClick = {
                         showCreateSheet = false
@@ -338,13 +341,13 @@ fun RecipeScreen() {
                             .height(56.dp)
                             .drawShadowBackground(),
                     shape = RoundedCornerShape(24.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = MainAc),
+                    colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                        ),
                 ) {
-                    Text(
-                        "Создать рецепт",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = Color.White,
-                    )
+                    Text("Создать рецепт", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -360,24 +363,23 @@ fun RecipeScreen() {
                     colors =
                         ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                            contentColor = MaterialTheme.colorScheme.onBackground,
+                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                         ),
                 ) {
                     Text("Отмена", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                 }
 
-                // Дополнительный спейсер снизу, чтобы при скролле элементы не прилипали к краю
                 Spacer(modifier = Modifier.height(32.dp))
             }
         }
     }
 
-    // --- Диалог подтверждения отмены ---
     if (showCancelDialog) {
         AlertDialog(
             onDismissRequest = { showCancelDialog = false },
             title = { Text("Отменить создание?") },
             text = { Text("Все введенные данные будут потеряны. Вы уверены?") },
+            containerColor = MaterialTheme.colorScheme.surface,
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -391,7 +393,7 @@ fun RecipeScreen() {
             },
             dismissButton = {
                 TextButton(onClick = { showCancelDialog = false }) {
-                    Text("Продолжить заполнение")
+                    Text("Продолжить заполнение", color = MaterialTheme.colorScheme.primary)
                 }
             },
         )
@@ -420,7 +422,7 @@ fun MedicationItem(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("Препарат ${index + 1}", fontWeight = FontWeight.Bold, color = MainAc)
+            Text("Препарат ${index + 1}", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
             if (onRemove != null) {
                 IconButton(onClick = onRemove, modifier = Modifier.size(24.dp)) {
                     Icon(Icons.Default.Close, contentDescription = "Удалить", tint = MaterialTheme.colorScheme.error)
@@ -455,7 +457,7 @@ fun MedicationItem(
                 keyboardActions =
                     KeyboardActions(onNext = {
                         medExpanded = false
-                        focusManager.moveFocus(FocusDirection.Next) // Правильный переход к следующему полю
+                        focusManager.moveFocus(FocusDirection.Next)
                     }),
                 modifier =
                     Modifier
@@ -466,6 +468,7 @@ fun MedicationItem(
                 shape = RoundedCornerShape(8.dp),
                 colors =
                     OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                     ),
                 singleLine = true,
@@ -487,7 +490,7 @@ fun MedicationItem(
                             Text(
                                 text = medName,
                                 style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onBackground,
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
                         },
                         onClick = {
@@ -505,7 +508,6 @@ fun MedicationItem(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // БЛОК: ДОЗИРОВКИ (CHIPS)
         Column(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -524,7 +526,7 @@ fun MedicationItem(
                                 Modifier
                                     .weight(1f)
                                     .clip(RoundedCornerShape(8.dp))
-                                    .background(if (isSelected) MainAc else Color.Transparent)
+                                    .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
                                     .border(
                                         width = 1.dp,
                                         color =
@@ -537,7 +539,6 @@ fun MedicationItem(
                                             },
                                         shape = RoundedCornerShape(8.dp),
                                     ).clickable {
-                                        // УБРАЛ clearFocus(), чтобы клавиатура не пропадала при выборе граммовки!
                                         onMedicationChange(medication.copy(dosage = dosage))
                                     }.padding(vertical = 10.dp),
                             contentAlignment = Alignment.Center,
@@ -548,8 +549,7 @@ fun MedicationItem(
                                     MaterialTheme.typography.bodyMedium.copy(
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                     ),
-                                // Если чипс выбран (он синий), текст будет БЕЛЫМ. Иначе обычным.
-                                color = if (isSelected) Color.White else MaterialTheme.colorScheme.onBackground,
+                                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                             )
                         }
                     }
@@ -559,27 +559,25 @@ fun MedicationItem(
     }
 }
 
-// Экстеншен для тени: убрал хардкод .background(), чтобы он не перебивал цвета ButtonDefaults
 fun Modifier.drawShadowBackground(): Modifier =
-    this
-        .drawBehind {
-            drawIntoCanvas { canvas ->
-                val paint =
-                    Paint().apply {
-                        asFrameworkPaint().apply {
-                            isAntiAlias = true
-                            color = android.graphics.Color.TRANSPARENT
-                            setShadowLayer(8f, 0f, 6f, android.graphics.Color.argb(40, 0, 0, 0)) // Сделал тень чуть мягче (40 вместо 80)
-                        }
+    this.drawBehind {
+        drawIntoCanvas { canvas ->
+            val paint =
+                Paint().apply {
+                    asFrameworkPaint().apply {
+                        isAntiAlias = true
+                        color = android.graphics.Color.TRANSPARENT
+                        setShadowLayer(8f, 0f, 6f, android.graphics.Color.argb(40, 0, 0, 0))
                     }
-                canvas.drawRoundRect(
-                    left = 0f,
-                    top = 0f,
-                    right = size.width,
-                    bottom = size.height,
-                    radiusX = 24.dp.toPx(),
-                    radiusY = 24.dp.toPx(),
-                    paint = paint,
-                )
-            }
+                }
+            canvas.drawRoundRect(
+                left = 0f,
+                top = 0f,
+                right = size.width,
+                bottom = size.height,
+                radiusX = 24.dp.toPx(),
+                radiusY = 24.dp.toPx(),
+                paint = paint,
+            )
         }
+    }
