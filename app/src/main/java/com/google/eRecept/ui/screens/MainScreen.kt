@@ -1,20 +1,11 @@
 package com.google.eRecept.ui.screens
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.isImeVisible
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -24,16 +15,21 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.google.eRecept.ui.BottomNavItem
-import com.google.eRecept.ui.screens.PatientsScreen.AddPatientScreen
-import com.google.eRecept.ui.screens.PatientsScreen.PatientsScreen
 import com.google.eRecept.ui.theme.MainAc
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()
-
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+
+    var showMedSearchSheet by remember { mutableStateOf(false) }
+    var showAddPatientSheet by remember { mutableStateOf(false) }
+    var showCreateRecipeSheet by remember { mutableStateOf(false) }
+
+    val addPatientSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val createRecipeSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     Scaffold(
         bottomBar = {
@@ -44,9 +40,7 @@ fun MainScreen() {
                 tonalElevation = 0.dp,
             ) {
                 BottomNavItem.entries.forEach { item ->
-                    val isSelected =
-                        currentRoute == item.route ||
-                            (item.route == BottomNavItem.Patients.route && currentRoute == "add_patient")
+                    val isSelected = currentRoute?.startsWith(item.route) == true
 
                     NavigationBarItem(
                         selected = isSelected,
@@ -85,29 +79,33 @@ fun MainScreen() {
             }
         },
     ) { innerPadding ->
-
         NavHost(
             navController = navController,
             startDestination = BottomNavItem.Home.route,
             modifier = Modifier.padding(innerPadding),
         ) {
             composable(BottomNavItem.Home.route) {
-                HomeScreen()
+                HomeScreen(
+                    onProfileClick = { navController.navigate(BottomNavItem.Profile.route) },
+                    onCreateRecipeClick = { showCreateRecipeSheet = true },
+                    onSearchPatientsClick = { navController.navigate("${BottomNavItem.Patients.route}?focus=true") },
+                    onSearchMedsClick = { showMedSearchSheet = true },
+                    onAddPatientClick = { showAddPatientSheet = true }
+                )
+            }
+
+            composable("${BottomNavItem.Patients.route}?focus={focus}") { backStackEntry ->
+                val focus = backStackEntry.arguments?.getString("focus") == "true"
+                PatientsScreen(
+                    focusSearchOnStart = focus,
+                    onAddPatientClick = { showAddPatientSheet = true }
+                )
             }
 
             composable(BottomNavItem.Patients.route) {
                 PatientsScreen(
-                    onAddPatientClick = {
-                        navController.navigate("add_patient")
-                    },
-                )
-            }
-
-            composable("add_patient") {
-                AddPatientScreen(
-                    onBackClick = {
-                        navController.popBackStack()
-                    },
+                    focusSearchOnStart = false,
+                    onAddPatientClick = { showAddPatientSheet = true }
                 )
             }
 
@@ -116,12 +114,58 @@ fun MainScreen() {
             }
 
             composable(BottomNavItem.History.route) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Экран Истории") }
+                HistoryScreen(
+                    onCreateRecipeClick = { showCreateRecipeSheet = true }
+                )
             }
 
             composable(BottomNavItem.Profile.route) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Экран Профиля") }
+                ProfileScreen(onLogoutClick = { /* TODO: Логика выхода */ })
             }
+        }
+    }
+
+    if (showMedSearchSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showMedSearchSheet = false },
+            containerColor = MaterialTheme.colorScheme.background,
+        ) {
+            Column(modifier = Modifier.padding(20.dp).fillMaxWidth().height(400.dp)) {
+                Text("Поиск препаратов", style = MaterialTheme.typography.headlineMedium)
+                Spacer(modifier = Modifier.height(16.dp))
+                OutlinedTextField(
+                    value = "",
+                    onValueChange = {},
+                    placeholder = { Text("Название препарата") },
+                    trailingIcon = { Icon(Icons.Default.Search, "") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                )
+            }
+        }
+    }
+
+    if (showAddPatientSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showAddPatientSheet = false },
+            sheetState = addPatientSheetState,
+            containerColor = MaterialTheme.colorScheme.background,
+            modifier = Modifier.fillMaxHeight(0.9f),
+            dragHandle = null
+        ) {
+            AddPatientScreenContent(onBackClick = { showAddPatientSheet = false })
+        }
+    }
+
+    if (showCreateRecipeSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showCreateRecipeSheet = false },
+            sheetState = createRecipeSheetState,
+            containerColor = MaterialTheme.colorScheme.background,
+            modifier = Modifier.fillMaxHeight(0.9f),
+            dragHandle = null
+        ) {
+            CreateRecipeContent(onBackClick = { showCreateRecipeSheet = false })
         }
     }
 }

@@ -3,6 +3,7 @@
 package com.google.eRecept.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,7 +32,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Shape
@@ -43,7 +43,6 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.eRecept.R
@@ -55,9 +54,14 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-@Preview(showBackground = true)
 @Composable
-fun HomeScreen() {
+fun HomeScreen(
+    onProfileClick: () -> Unit,
+    onCreateRecipeClick: () -> Unit,
+    onSearchPatientsClick: () -> Unit,
+    onSearchMedsClick: () -> Unit,
+    onAddPatientClick: () -> Unit,
+) {
     val currentDate =
         remember {
             val sdf = SimpleDateFormat("EEEE, d MMMM, yyyy", Locale("ru"))
@@ -94,6 +98,7 @@ fun HomeScreen() {
         DoctorProfileCard(
             initial = "А",
             fullName = "Молдабекова Дана Ғабиденқызы",
+            onClick = onProfileClick
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -113,21 +118,25 @@ fun HomeScreen() {
             ActionCard(
                 iconVector = Icons.Default.PersonAdd,
                 text = "Добавить\nпациента",
+                onClick = onAddPatientClick,
                 modifier = Modifier.weight(1f),
             )
             ActionCard(
                 iconResId = R.drawable.ic_assignment_add_filled,
                 text = "Создать\nрецепт",
+                onClick = onCreateRecipeClick,
                 modifier = Modifier.weight(1f),
             )
             ActionCard(
                 iconResId = R.drawable.ic_pill_filled,
                 text = "Поиск\nпрепаратов",
+                onClick = onSearchMedsClick,
                 modifier = Modifier.weight(1f),
             )
             ActionCard(
                 iconVector = Icons.Default.Group,
                 text = "Поиск\nпациентов",
+                onClick = onSearchPatientsClick,
                 modifier = Modifier.weight(1f),
             )
         }
@@ -172,9 +181,10 @@ fun HomeScreen() {
 fun DoctorProfileCard(
     initial: String,
     fullName: String,
+    onClick: () -> Unit
 ) {
     Card(
-        onClick = { /* TODO: Открыть профиль врача */ },
+        onClick = onClick,
         modifier =
             Modifier
                 .fillMaxWidth()
@@ -243,12 +253,13 @@ fun DoctorProfileCard(
 @Composable
 fun ActionCard(
     text: String,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
     iconVector: ImageVector? = null,
     iconResId: Int? = null,
 ) {
     Card(
-        onClick = { /* TODO: Навигация */ },
+        onClick = onClick,
         modifier =
             modifier
                 .height(100.dp)

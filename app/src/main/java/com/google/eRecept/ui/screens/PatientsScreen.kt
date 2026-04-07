@@ -1,21 +1,9 @@
-@file:Suppress("DEPRECATION")
-
-package com.google.eRecept.ui.screens.PatientsScreen
+package com.google.eRecept.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -23,30 +11,15 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
@@ -71,7 +44,123 @@ import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddPatientScreen(onBackClick: () -> Unit) {
+fun PatientsScreen(
+    focusSearchOnStart: Boolean = false,
+    onAddPatientClick: () -> Unit
+) {
+    var searchQuery by remember { mutableStateOf("") }
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(focusSearchOnStart) {
+        if (focusSearchOnStart) {
+            focusRequester.requestFocus()
+        }
+    }
+
+    val dummyPatients = listOf(
+        "Қазыбек Нұрым Байболсынұлы",
+        "Иванов Иван Иванович",
+        "Смирнова Анна Сергеевна",
+        "Қазыбек Нұрым Байболсынұлы",
+        "Қазыбек Нұрым Байболсынұлы",
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .padding(horizontal = 20.dp)
+            .verticalScroll(rememberScrollState())
+    ) {
+        Spacer(modifier = Modifier.height(24.dp))
+        Text(
+            text = "Пациенты", 
+            style = MaterialTheme.typography.headlineLarge, 
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+
+        TextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            placeholder = { Text("Поиск пациента") },
+            trailingIcon = { Icon(Icons.Default.Search, contentDescription = "Поиск") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(focusRequester)
+                .drawShadowCustom(radius = 24.dp)
+                .background(Color(0xFFCFC6BC), RoundedCornerShape(24.dp)),
+            shape = RoundedCornerShape(24.dp),
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = SecBg, 
+                unfocusedContainerColor = SecBg,
+                focusedIndicatorColor = Color.Transparent, 
+                unfocusedIndicatorColor = Color.Transparent
+            ),
+            singleLine = true
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = onAddPatientClick,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .drawShadowCustom(radius = 24.dp),
+            shape = RoundedCornerShape(24.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MainAc, 
+                contentColor = MaterialTheme.colorScheme.onBackground
+            )
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.PersonAdd, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Добавить пациента", 
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(32.dp))
+        Text(
+            text = "Мои пациенты", 
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Column(
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            val cornerRadius = 16.dp
+
+            dummyPatients.forEachIndexed { index, name ->
+                val shape =
+                    when {
+                        dummyPatients.size == 1 -> RoundedCornerShape(cornerRadius)
+                        index == 0 -> RoundedCornerShape(topStart = cornerRadius, topEnd = cornerRadius)
+                        index == dummyPatients.lastIndex -> RoundedCornerShape(bottomStart = cornerRadius, bottomEnd = cornerRadius)
+                        else -> RoundedCornerShape(0.dp)
+                    }
+
+                PatientCard(
+                    ageAndGender = "68 лет · Мужчина",
+                    name = name,
+                    notes = "Аллергия (пеницилин), Сахарный диабет II типа, Ишемическая болезнь сердца",
+                    shape = shape,
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(24.dp))
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddPatientScreenContent(onBackClick: () -> Unit) {
     var iin by remember { mutableStateOf("") }
     var lastName by remember { mutableStateOf("") }
     var firstName by remember { mutableStateOf("") }
@@ -112,34 +201,27 @@ fun AddPatientScreen(onBackClick: () -> Unit) {
     }
 
     Column(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .imePadding()
-                .padding(horizontal = 20.dp)
-                .verticalScroll(rememberScrollState()),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp)
+            .verticalScroll(rememberScrollState())
+            .padding(bottom = 32.dp)
     ) {
-        Spacer(modifier = Modifier.height(24.dp))
-
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)
         ) {
             IconButton(onClick = onBackClick) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад", modifier = Modifier.size(28.dp))
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
             }
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = "Добавить пациента",
-                style = MaterialTheme.typography.headlineLarge.copy(fontSize = 32.sp),
-                color = MaterialTheme.colorScheme.onBackground,
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onBackground
             )
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // ИИН
         OutlinedTextField(
             value = iin,
             onValueChange = { iin = it },
@@ -159,7 +241,6 @@ fun AddPatientScreen(onBackClick: () -> Unit) {
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Фамилия
         OutlinedTextField(
             value = lastName,
             onValueChange = { lastName = it },
@@ -173,7 +254,6 @@ fun AddPatientScreen(onBackClick: () -> Unit) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Имя
         OutlinedTextField(
             value = firstName,
             onValueChange = { firstName = it },
@@ -187,7 +267,6 @@ fun AddPatientScreen(onBackClick: () -> Unit) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Отчество
         OutlinedTextField(
             value = middleName,
             onValueChange = { middleName = it },
@@ -201,7 +280,6 @@ fun AddPatientScreen(onBackClick: () -> Unit) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Дата рождения
         OutlinedTextField(
             value = birthDate,
             onValueChange = { newValue ->
@@ -304,7 +382,6 @@ fun AddPatientScreen(onBackClick: () -> Unit) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Примечания
         OutlinedTextField(
             value = notes,
             onValueChange = { notes = it },
@@ -320,39 +397,7 @@ fun AddPatientScreen(onBackClick: () -> Unit) {
 
         Button(
             onClick = { /* TODO: Сохранить */ },
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .drawBehind {
-                        drawIntoCanvas { canvas ->
-                            val paint =
-                                Paint().apply {
-                                    asFrameworkPaint().apply {
-                                        isAntiAlias = true
-                                        color = android.graphics.Color.TRANSPARENT
-                                        setShadowLayer(
-                                            8f,
-                                            0f,
-                                            6f,
-                                            android.graphics.Color.argb(80, 0, 0, 0),
-                                        )
-                                    }
-                                }
-                            canvas.drawRoundRect(
-                                left = 0f,
-                                top = 0f,
-                                right = size.width,
-                                bottom = size.height,
-                                radiusX = 24.dp.toPx(),
-                                radiusY = 24.dp.toPx(),
-                                paint = paint,
-                            )
-                        }
-                    }.background(
-                        color = Color(0xFFCFC6BC),
-                        shape = RoundedCornerShape(100.dp),
-                    ),
+            modifier = Modifier.fillMaxWidth().height(56.dp).drawShadowCustom(radius = 24.dp),
             shape = RoundedCornerShape(24.dp),
             colors = ButtonDefaults.buttonColors(containerColor = MainAc, contentColor = MaterialTheme.colorScheme.onBackground),
         ) {
@@ -363,50 +408,46 @@ fun AddPatientScreen(onBackClick: () -> Unit) {
 
         Button(
             onClick = onBackClick,
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .drawBehind {
-                        drawIntoCanvas { canvas ->
-                            val paint =
-                                Paint().apply {
-                                    asFrameworkPaint().apply {
-                                        isAntiAlias = true
-                                        color = android.graphics.Color.TRANSPARENT
-                                        setShadowLayer(
-                                            8f,
-                                            0f,
-                                            6f,
-                                            android.graphics.Color.argb(80, 0, 0, 0),
-                                        )
-                                    }
-                                }
-                            canvas.drawRoundRect(
-                                left = 0f,
-                                top = 0f,
-                                right = size.width,
-                                bottom = size.height,
-                                radiusX = 24.dp.toPx(),
-                                radiusY = 24.dp.toPx(),
-                                paint = paint,
-                            )
-                        }
-                    }.background(
-                        color = Color(0xFFCFC6BC),
-                        shape = RoundedCornerShape(100.dp),
-                    ),
+            modifier = Modifier.fillMaxWidth().height(56.dp).drawShadowCustom(radius = 24.dp),
             shape = RoundedCornerShape(24.dp),
             colors = ButtonDefaults.buttonColors(containerColor = SecBg, contentColor = MaterialTheme.colorScheme.onBackground),
         ) {
             Text("Отмена", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
         }
-
-        Spacer(modifier = Modifier.height(32.dp))
     }
 }
 
-// вспомогательная функция и класс
+fun Modifier.drawShadowCustom(
+    radius: androidx.compose.ui.unit.Dp,
+    alpha: Int = 80,
+    shadowRadius: Float = 8f,
+    offsetY: Float = 6f
+) = this.drawBehind {
+    drawIntoCanvas { canvas ->
+        val paint = Paint().apply {
+            asFrameworkPaint().apply {
+                isAntiAlias = true
+                color = android.graphics.Color.TRANSPARENT
+                setShadowLayer(
+                    shadowRadius,
+                    0f,
+                    offsetY,
+                    android.graphics.Color.argb(alpha, 0, 0, 0),
+                )
+            }
+        }
+        canvas.drawRoundRect(
+            left = 0f,
+            top = 0f,
+            right = size.width,
+            bottom = size.height,
+            radiusX = radius.toPx(),
+            radiusY = radius.toPx(),
+            paint = paint,
+        )
+    }
+}
+
 fun isValidDate(input: String): Boolean {
     if (input.length != 8) return false
     return try {
