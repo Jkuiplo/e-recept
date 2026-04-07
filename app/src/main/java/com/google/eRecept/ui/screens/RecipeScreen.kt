@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -44,11 +45,12 @@ data class MedicationEntry(
     var dosage: String = "20 мг",
 )
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecipeScreen() {
     var showCreateSheet by remember { mutableStateOf(false) }
     var showCancelDialog by remember { mutableStateOf(false) }
+    var showQrDialog by remember { mutableStateOf(false) }
 
     var patientQuery by remember { mutableStateOf("") }
     var medications by remember { mutableStateOf(listOf(MedicationEntry())) }
@@ -72,7 +74,7 @@ fun RecipeScreen() {
             "Омепразол (Тева)",
             "Омепразол (Акрихин)",
             "Омепразол (Ozon)",
-            "Пеницилин",
+            "Пенициллин",
             "Аспирин",
         )
     val dosages = listOf("20 мг", "35 мг", "40 мг", "50 мг", "75 мг", "100 мг", "120 мг", "200 мг")
@@ -140,9 +142,12 @@ fun RecipeScreen() {
         ) {
             items(dummyHistory) { (patient, meds) ->
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showQrDialog = true },
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    // Используем тот же цвет, что и в HomeScreen для консистентности
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
@@ -167,6 +172,26 @@ fun RecipeScreen() {
                 }
             }
         }
+    }
+
+    if (showQrDialog) {
+        AlertDialog(
+            onDismissRequest = { showQrDialog = false },
+            confirmButton = {
+                TextButton(onClick = { showQrDialog = false }) { Text("Закрыть") }
+            },
+            title = { Text("QR-код рецепта") },
+            text = {
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    Icon(
+                        Icons.Default.QrCode,
+                        contentDescription = null,
+                        modifier = Modifier.size(200.dp),
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+        )
     }
 
     if (showCreateSheet) {
@@ -226,11 +251,11 @@ fun RecipeScreen() {
                                 .onGloballyPositioned { coordinates ->
                                     patientTextFieldSize = coordinates.size.toSize()
                                 },
-                        shape = RoundedCornerShape(8.dp),
+                        shape = RoundedCornerShape(12.dp),
                         colors =
                             OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
                             ),
                         singleLine = true,
                     )
@@ -293,13 +318,12 @@ fun RecipeScreen() {
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .height(56.dp)
-                            .drawShadowBackground(),
-                    shape = RoundedCornerShape(24.dp),
+                            .height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
                     colors =
                         ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
                         ),
                 ) {
                     Icon(Icons.Default.Add, contentDescription = null)
@@ -320,11 +344,11 @@ fun RecipeScreen() {
                         Modifier
                             .fillMaxWidth()
                             .height(100.dp),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(12.dp),
                     colors =
                         OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
                         ),
                 )
 
@@ -338,9 +362,8 @@ fun RecipeScreen() {
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .height(56.dp)
-                            .drawShadowBackground(),
-                    shape = RoundedCornerShape(24.dp),
+                            .height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
                     colors =
                         ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary,
@@ -357,9 +380,8 @@ fun RecipeScreen() {
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .height(56.dp)
-                            .drawShadowBackground(),
-                    shape = RoundedCornerShape(24.dp),
+                            .height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
                     colors =
                         ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -465,11 +487,11 @@ fun MedicationItem(
                         .onGloballyPositioned { coordinates ->
                             medTextFieldSize = coordinates.size.toSize()
                         },
-                shape = RoundedCornerShape(8.dp),
+                shape = RoundedCornerShape(12.dp),
                 colors =
                     OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
                     ),
                 singleLine = true,
             )
@@ -525,7 +547,7 @@ fun MedicationItem(
                             modifier =
                                 Modifier
                                     .weight(1f)
-                                    .clip(RoundedCornerShape(8.dp))
+                                    .clip(RoundedCornerShape(12.dp))
                                     .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
                                     .border(
                                         width = 1.dp,
@@ -533,14 +555,12 @@ fun MedicationItem(
                                             if (isSelected) {
                                                 Color.Transparent
                                             } else {
-                                                MaterialTheme.colorScheme.onSurface.copy(
-                                                    alpha = 0.5f,
-                                                )
+                                                MaterialTheme.colorScheme.outline
                                             },
-                                        shape = RoundedCornerShape(8.dp),
+                                        shape = RoundedCornerShape(12.dp),
                                     ).clickable {
                                         onMedicationChange(medication.copy(dosage = dosage))
-                                    }.padding(vertical = 10.dp),
+                                    }.padding(vertical = 12.dp),
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(
@@ -558,26 +578,3 @@ fun MedicationItem(
         }
     }
 }
-
-fun Modifier.drawShadowBackground(): Modifier =
-    this.drawBehind {
-        drawIntoCanvas { canvas ->
-            val paint =
-                Paint().apply {
-                    asFrameworkPaint().apply {
-                        isAntiAlias = true
-                        color = android.graphics.Color.TRANSPARENT
-                        setShadowLayer(8f, 0f, 6f, android.graphics.Color.argb(40, 0, 0, 0))
-                    }
-                }
-            canvas.drawRoundRect(
-                left = 0f,
-                top = 0f,
-                right = size.width,
-                bottom = size.height,
-                radiusX = 24.dp.toPx(),
-                radiusY = 24.dp.toPx(),
-                paint = paint,
-            )
-        }
-    }

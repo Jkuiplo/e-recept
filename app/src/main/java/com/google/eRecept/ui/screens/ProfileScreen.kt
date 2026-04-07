@@ -19,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -26,46 +27,34 @@ import androidx.compose.ui.unit.sp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen() {
-    // --- Состояния ---
     var showLogoutDialog by remember { mutableStateOf(false) }
-
-    // В реальном приложении это состояние должно приходить из ViewModel/DataStore
-    // 0 = Системная, 1 = Светлая, 2 = Темная
     var selectedThemeIndex by remember { mutableStateOf(0) }
     val themeOptions = listOf("Авто", "Светлая", "Темная")
 
-    // Моковые данные врача (нельзя редактировать напрямую тут)
     val doctorName = "Иванов Иван Иванович"
     val doctorSpecialization = "Врач-терапевт, Кардиолог"
 
     Column(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(horizontal = 20.dp)
-                .verticalScroll(rememberScrollState()),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .padding(horizontal = 20.dp)
+            .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(modifier = Modifier.height(32.dp))
 
-        // ==========================================
-        // БЛОК: АВАТАРКА
-        // ==========================================
         Box(
             contentAlignment = Alignment.BottomEnd,
             modifier = Modifier.padding(bottom = 24.dp),
         ) {
-            // Сама аватарка
             Box(
-                modifier =
-                    Modifier
-                        .size(120.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primaryContainer),
+                modifier = Modifier
+                    .size(120.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center,
             ) {
-                // Заглушка, если нет фото. Позже тут будет AsyncImage из Coil
                 Icon(
                     imageVector = Icons.Default.Person,
                     contentDescription = "Аватар",
@@ -74,20 +63,16 @@ fun ProfileScreen() {
                 )
             }
 
-            // Кнопка редактирования аватарки
             FilledIconButton(
-                onClick = { /* TODO: Вызов лончера для выбора картинки из галереи */ },
-                modifier =
-                    Modifier
-                        .size(36.dp)
-                        .offset(x = 8.dp, y = 8.dp),
-                // Слегка выносим за пределы круга
+                onClick = { /* TODO */ },
+                modifier = Modifier
+                    .size(36.dp)
+                    .offset(x = 4.dp, y = 4.dp),
                 shape = CircleShape,
-                colors =
-                    IconButtonDefaults.filledIconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                    ),
+                colors = IconButtonDefaults.filledIconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ),
             ) {
                 Icon(
                     imageVector = Icons.Default.Edit,
@@ -97,9 +82,6 @@ fun ProfileScreen() {
             }
         }
 
-        // ==========================================
-        // БЛОК: ИНФО (Только для чтения)
-        // ==========================================
         Text(
             text = doctorName,
             style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
@@ -114,9 +96,6 @@ fun ProfileScreen() {
 
         Spacer(modifier = Modifier.height(48.dp))
 
-        // ==========================================
-        // БЛОК: НАСТРОЙКИ
-        // ==========================================
         Column(modifier = Modifier.fillMaxWidth()) {
             Text(
                 text = "Настройки",
@@ -125,40 +104,42 @@ fun ProfileScreen() {
                 modifier = Modifier.padding(bottom = 16.dp, start = 8.dp),
             )
 
-            // Смена темы (Сегментированные кнопки)
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                ),
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Palette, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Icon(Icons.Default.Palette, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Spacer(modifier = Modifier.width(16.dp))
-                        Text("Оформление", style = MaterialTheme.typography.titleMedium)
+                        Text("Оформление", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     }
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    SingleChoiceSegmentedButtonRow(
+                    // Замена SegmentedButton на более однородные кнопки выбора (как в RecipeScreen)
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         themeOptions.forEachIndexed { index, title ->
-                            SegmentedButton(
-                                selected = selectedThemeIndex == index,
-                                onClick = {
-                                    selectedThemeIndex = index
-                                    // TODO: Отправить Intent/State вверх во ViewModel для реальной смены темы
-                                },
-                                shape = SegmentedButtonDefaults.itemShape(index = index, count = themeOptions.size),
-                                colors =
-                                    SegmentedButtonDefaults.colors(
-                                        activeContainerColor = MaterialTheme.colorScheme.primary,
-                                        activeContentColor = MaterialTheme.colorScheme.onPrimary,
-                                        inactiveContainerColor = MaterialTheme.colorScheme.surface,
-                                        inactiveContentColor = MaterialTheme.colorScheme.onSurface,
-                                    ),
+                            val isSelected = selectedThemeIndex == index
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
+                                    .clickable { selectedThemeIndex = index }
+                                    .padding(vertical = 12.dp),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Text(title)
+                                Text(
+                                    text = title,
+                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium)
+                                )
                             }
                         }
                     }
@@ -167,25 +148,24 @@ fun ProfileScreen() {
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Смена пароля
             Card(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .clickable { /* TODO: Переход на экран смены пароля */ },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { /* TODO */ },
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                ),
             ) {
                 Row(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(Icons.Default.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Icon(Icons.Default.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.width(16.dp))
-                    Text("Сменить пароль", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                    Text("Сменить пароль", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                     Icon(
                         Icons.AutoMirrored.Filled.KeyboardArrowRight,
                         contentDescription = null,
@@ -195,24 +175,19 @@ fun ProfileScreen() {
             }
         }
 
-        Spacer(modifier = Modifier.weight(1f)) // Выталкивает кнопку выхода вниз
+        Spacer(modifier = Modifier.weight(1f))
         Spacer(modifier = Modifier.height(32.dp))
 
-        // ==========================================
-        // БЛОК: ВЫХОД
-        // ==========================================
         Button(
             onClick = { showLogoutDialog = true },
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
             shape = RoundedCornerShape(16.dp),
-            colors =
-                ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                    contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                ),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.error,
+                contentColor = MaterialTheme.colorScheme.onError,
+            ),
         ) {
             Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null)
             Spacer(modifier = Modifier.width(8.dp))
@@ -222,26 +197,19 @@ fun ProfileScreen() {
         Spacer(modifier = Modifier.height(32.dp))
     }
 
-    // --- Диалог подтверждения выхода ---
     if (showLogoutDialog) {
         AlertDialog(
             onDismissRequest = { showLogoutDialog = false },
-            icon = { Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null) },
+            icon = { Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
             title = { Text("Выход из аккаунта") },
             text = { Text("Вы уверены, что хотите выйти? Вам потребуется заново ввести логин и пароль.") },
             confirmButton = {
-                Button(
+                TextButton(
                     onClick = {
                         showLogoutDialog = false
-                        // TODO: Логика очистки токенов и переход на экран авторизации
                     },
-                    colors =
-                        ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.error,
-                            contentColor = MaterialTheme.colorScheme.onError,
-                        ),
                 ) {
-                    Text("Выйти")
+                    Text("Выйти", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
