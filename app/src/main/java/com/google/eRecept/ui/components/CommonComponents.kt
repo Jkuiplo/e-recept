@@ -1,9 +1,13 @@
 package com.google.eRecept.ui.components
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -69,6 +73,16 @@ fun CustomSegmentedButton(
             options.forEachIndexed { index, title ->
                 val isSelected = selectedIndex == index
                 
+                // Анимация веса для эффекта расширения
+                val weight by animateFloatAsState(
+                    targetValue = if (isSelected) 1.2f else 0.8f,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioLowBouncy,
+                        stiffness = Spring.StiffnessLow
+                    ),
+                    label = "weight"
+                )
+
                 val textColor by animateColorAsState(
                     targetValue = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                     animationSpec = tween(300),
@@ -83,11 +97,14 @@ fun CustomSegmentedButton(
 
                 Box(
                     modifier = Modifier
-                        .weight(1f)
+                        .weight(weight)
                         .fillMaxHeight()
                         .clip(RoundedCornerShape(12.dp))
                         .background(bgColor)
-                        .clickable { onOptionSelected(index) },
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null // Убираем стандартный тинт, анимация веса и цвета достаточно информативна
+                        ) { onOptionSelected(index) },
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -95,8 +112,9 @@ fun CustomSegmentedButton(
                         color = textColor,
                         style = MaterialTheme.typography.bodyMedium.copy(
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                            fontSize = 14.sp
-                        )
+                            fontSize = 13.sp
+                        ),
+                        maxLines = 1
                     )
                 }
             }

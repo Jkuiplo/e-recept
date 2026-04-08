@@ -1,5 +1,7 @@
 package com.google.eRecept.ui.screens
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -10,21 +12,31 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.eRecept.ui.components.CustomSegmentedButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen() {
     var showLogoutDialog by remember { mutableStateOf(false) }
+    
+    var selectedLanguageIndex by remember { mutableStateOf(0) }
+    val languages = listOf("Русский", "Қазақша", "English")
+    
+    var selectedThemeIndex by remember { mutableStateOf(0) }
+    val themes = listOf("Светлая", "Темная", "Система")
 
     val doctorName = "Иванов Иван Иванович"
     val doctorSpecialization = "Врач-терапевт, Кардиолог"
@@ -78,9 +90,32 @@ fun ProfileScreen() {
                 modifier = Modifier.padding(bottom = 16.dp, start = 8.dp),
             )
 
+            // Выбор языка
+            SettingsCard(icon = Icons.Default.Language, title = "Язык приложения") {
+                CustomSegmentedButton(
+                    options = languages,
+                    selectedIndex = selectedLanguageIndex,
+                    onOptionSelected = { selectedLanguageIndex = it }
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            // Выбор темы
+            SettingsCard(icon = Icons.Default.Palette, title = "Оформление") {
+                CustomSegmentedButton(
+                    options = themes,
+                    selectedIndex = selectedThemeIndex,
+                    onOptionSelected = { selectedThemeIndex = it }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
                     .clickable { /* TODO */ },
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
@@ -150,5 +185,30 @@ fun ProfileScreen() {
             containerColor = MaterialTheme.colorScheme.surface,
             textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+    }
+}
+
+@Composable
+fun SettingsCard(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    content: @Composable () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        ),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.width(16.dp))
+                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            content()
+        }
     }
 }

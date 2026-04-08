@@ -3,6 +3,7 @@ package com.google.eRecept.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -43,6 +44,12 @@ fun HomeScreen(
 
     var selectedDayIndex by remember { mutableStateOf(0) }
     val days = listOf("Сегодня", "Завтра", "Послезавтра")
+
+    val calendar = Calendar.getInstance()
+    calendar.add(Calendar.DAY_OF_YEAR, selectedDayIndex)
+    val selectedDate = calendar.time
+    val dateFormatter = SimpleDateFormat("d MMMM, EEEE", Locale("ru"))
+    val formattedDate = dateFormatter.format(selectedDate)
 
     val schedule = remember(selectedDayIndex) {
         if (selectedDayIndex == 0) {
@@ -96,6 +103,13 @@ fun HomeScreen(
             style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold, fontSize = 32.sp),
             color = MaterialTheme.colorScheme.onBackground,
         )
+        
+        Text(
+            text = formattedDate,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(top = 4.dp)
+        )
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -135,7 +149,7 @@ fun HomeScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         if (schedule.isEmpty()) {
-            EmptyScheduleState { showAddPatientSheet = true }
+            EmptyScheduleState()
         } else {
             Column(
                 modifier = Modifier
@@ -203,6 +217,7 @@ fun AppointmentCard(
         modifier = Modifier
             .fillMaxWidth()
             .height(100.dp)
+            .clip(RoundedCornerShape(16.dp)) // Clip before clickable for rounded ripple
             .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
@@ -277,8 +292,34 @@ fun AddPatientBottomSheetContent(onClose: () -> Unit) {
     var errorMessage by remember { mutableStateOf("") }
     
     var appointmentDate by remember { mutableStateOf("") }
+    var selectedTime by remember { mutableStateOf("") }
     var selectedType by remember { mutableStateOf("Первичный") }
+    
+    val times = listOf("09:00", "09:20", "09:40", "10:00", "10:20", "10:40", "11:00", "11:20")
     val types = listOf("Первичный", "Повторный", "Консультация", "Осмотр")
+    
+    var showDatePicker by remember { mutableStateOf(false) }
+    val datePickerState = rememberDatePickerState()
+
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let {
+                        val sdf = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
+                        appointmentDate = sdf.format(Date(it))
+                    }
+                    showDatePicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) { Text("Отмена") }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
 
     fun searchPatient(query: String) {
         if (query.length == 12) {
@@ -349,26 +390,6 @@ fun AddPatientBottomSheetContent(onClose: () -> Unit) {
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp)
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                OutlinedTextField(
-                    value = patientAge,
-                    onValueChange = {},
-                    label = { Text("Возраст") },
-                    readOnly = true,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp)
-                )
-                OutlinedTextField(
-                    value = patientGender,
-                    onValueChange = {},
-                    label = { Text("Пол") },
-                    readOnly = true,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(12.dp)
-                )
-            }
-
             Spacer(modifier = Modifier.height(16.dp))
             
             OutlinedTextField(
@@ -377,10 +398,47 @@ fun AddPatientBottomSheetContent(onClose: () -> Unit) {
                 label = { Text("Дата приема") },
                 placeholder = { Text("ДД.ММ.ГГГГ") },
                 visualTransformation = DateTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                trailingIcon = {
+                    IconButton(onClick = { showDatePicker = true }) {
+                        Icon(Icons.Default.CalendarToday, contentDescription = null)
+                    }
+                },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp)
             )
+
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Text("Время приема", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            times.chunked(4).forEach { rowTimes ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    rowTimes.forEach { time ->
+                        val isSelected = selectedTime == time
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                                .clickable { selectedTime = time }
+                                .padding(vertical = 10.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = time,
+                                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
             
@@ -398,12 +456,7 @@ fun AddPatientBottomSheetContent(onClose: () -> Unit) {
                             modifier = Modifier
                                 .weight(1f)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
-                                .border(
-                                    width = 1.dp,
-                                    color = if (isSelected) Color.Transparent else MaterialTheme.colorScheme.outline,
-                                    shape = RoundedCornerShape(12.dp)
-                                )
+                                .background(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                                 .clickable { selectedType = type }
                                 .padding(vertical = 12.dp),
                             contentAlignment = Alignment.Center
@@ -424,7 +477,7 @@ fun AddPatientBottomSheetContent(onClose: () -> Unit) {
 
         Button(
             onClick = onClose,
-            enabled = patientName.isNotEmpty() && appointmentDate.length == 8,
+            enabled = patientName.isNotEmpty() && appointmentDate.length == 10 || (appointmentDate.length == 8 && !appointmentDate.contains(".")),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
@@ -513,36 +566,36 @@ fun AppointmentDetailsBottomSheetContent(
 }
 
 @Composable
-fun EmptyScheduleState(onAddPatientClick: () -> Unit) {
-    Column(
+fun EmptyScheduleState() {
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .fillMaxHeight(0.6f),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .fillMaxHeight(),
+        contentAlignment = Alignment.Center
     ) {
-        Icon(
-            imageVector = Icons.Default.CalendarToday,
-            contentDescription = null,
-            modifier = Modifier.size(80.dp),
-            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-        Text(
-            text = "Записей пока нет",
-            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "На этот день у вас не запланировано\nни одного приема",
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-        )
-        Spacer(modifier = Modifier.height(32.dp))
-        TextButton(onClick = onAddPatientClick) {
-            Text("Записать пациента", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.CalendarToday,
+                contentDescription = null,
+                modifier = Modifier.size(80.dp),
+                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(
+                text = "Записей пока нет",
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "На этот день у вас не запланировано\nни одного приема",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
         }
     }
 }

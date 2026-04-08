@@ -19,7 +19,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -90,16 +89,16 @@ fun CustomBottomNavigation(
         modifier = Modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 24.dp, vertical = 16.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         color = Color.Transparent
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(68.dp)
-                .clip(RoundedCornerShape(24.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.95f))
-                .padding(6.dp)
+                .height(64.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f))
+                .padding(4.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxSize(),
@@ -109,40 +108,30 @@ fun CustomBottomNavigation(
                 BottomNavItem.entries.forEach { item ->
                     val isSelected = currentRoute == item.route
                     
-                    // Анимация цвета контента
+                    val weight by animateFloatAsState(
+                        targetValue = if (isSelected) 1.3f else 0.7f,
+                        animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow),
+                        label = "weight"
+                    )
+
                     val contentColor by animateColorAsState(
                         targetValue = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        animationSpec = tween(durationMillis = 300),
                         label = "contentColor"
                     )
-                    
-                    // Анимация фона кнопки
                     val backgroundColor by animateColorAsState(
                         targetValue = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
-                        animationSpec = tween(durationMillis = 300),
                         label = "backgroundColor"
-                    )
-                    
-                    // Анимация масштаба при выборе (spring эффект)
-                    val scale by animateFloatAsState(
-                        targetValue = if (isSelected) 1.05f else 1.0f,
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessLow
-                        ),
-                        label = "scale"
                     )
 
                     Box(
                         modifier = Modifier
-                            .weight(1f)
+                            .weight(weight)
                             .fillMaxHeight()
-                            .scale(scale)
-                            .clip(RoundedCornerShape(18.dp))
+                            .clip(RoundedCornerShape(16.dp))
                             .background(backgroundColor)
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
-                                indication = null // Убираем стандартный ripple, так как у нас своя анимация
+                                indication = null
                             ) {
                                 if (!isSelected) {
                                     onItemClick(item)
@@ -158,17 +147,19 @@ fun CustomBottomNavigation(
                                 imageVector = if (isSelected) item.selectedIcon else item.unselectedIcon,
                                 contentDescription = item.title,
                                 tint = contentColor,
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(22.dp)
                             )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = item.title,
-                                color = contentColor,
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                    fontSize = 11.sp
+                            if (isSelected) {
+                                Text(
+                                    text = item.title,
+                                    color = contentColor,
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 10.sp
+                                    ),
+                                    maxLines = 1
                                 )
-                            )
+                            }
                         }
                     }
                 }
