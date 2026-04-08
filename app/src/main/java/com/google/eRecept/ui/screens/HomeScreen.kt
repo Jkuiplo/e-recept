@@ -10,7 +10,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,6 +20,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.google.eRecept.ui.components.CustomSegmentedButton
+import com.google.eRecept.ui.components.DateTransformation
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -39,72 +41,45 @@ fun HomeScreen(
     var selectedAppointment by remember { mutableStateOf<Appointment?>(null) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    var selectedDate by remember { mutableStateOf(Date()) }
-    var showDatePicker by remember { mutableStateOf(false) }
+    var selectedDayIndex by remember { mutableStateOf(0) }
+    val days = listOf("Сегодня", "Завтра", "Послезавтра")
 
-    val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = selectedDate.time
-    )
-
-    val dateDisplayFormat = remember { SimpleDateFormat("EEEE, d MMMM", Locale("ru")) }
-    val formattedDate = dateDisplayFormat.format(selectedDate).replaceFirstChar { it.titlecase(Locale("ru")) }
-
-    val schedule = remember(selectedDate) {
-        // Здесь в будущем будет загрузка расписания на выбранную дату
-        listOf(
-            Appointment(
-                time = "09:00",
-                name = "Қазыбек Нұрым",
-                age = "68 лет",
-                gender = "М",
-                status = "Состоялась",
-                isCompleted = true,
-                allergy = "пенициллин",
-                history = "Хронический бронхит, артериальная гипертензия.",
-            ),
-            Appointment(
-                time = "11:30",
-                name = "Иванова Анна",
-                age = "34 года",
-                gender = "Ж",
-                status = "Запланирована",
-                isCompleted = false,
-                allergy = null,
-                history = "Жалоб нет, плановый осмотр.",
-            ),
-            Appointment(
-                time = "14:00",
-                name = "Смирнов Петр",
-                age = "45 лет",
-                gender = "М",
-                status = "Запланирована",
-                isCompleted = false,
-                allergy = null,
-                history = "Остеохондроз поясничного отдела.",
-            ),
-        )
-    }
-
-    if (showDatePicker) {
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    datePickerState.selectedDateMillis?.let {
-                        selectedDate = Date(it)
-                    }
-                    showDatePicker = false
-                }) {
-                    Text("OK")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) {
-                    Text("Отмена")
-                }
-            }
-        ) {
-            DatePicker(state = datePickerState)
+    val schedule = remember(selectedDayIndex) {
+        if (selectedDayIndex == 0) {
+            listOf(
+                Appointment(
+                    time = "09:00",
+                    name = "Қазыбек Нұрым",
+                    age = "68 лет",
+                    gender = "М",
+                    status = "Состоялась",
+                    isCompleted = true,
+                    allergy = "пенициллин",
+                    history = "Хронический бронхит, артериальная гипертензия.",
+                ),
+                Appointment(
+                    time = "11:30",
+                    name = "Иванова Анна",
+                    age = "34 года",
+                    gender = "Ж",
+                    status = "Запланирована",
+                    isCompleted = false,
+                    allergy = null,
+                    history = "Жалоб нет, плановый осмотр.",
+                ),
+                Appointment(
+                    time = "14:00",
+                    name = "Смирнов Петр",
+                    age = "45 лет",
+                    gender = "М",
+                    status = "Запланирована",
+                    isCompleted = false,
+                    allergy = null,
+                    history = "Остеохондроз поясничного отдела.",
+                ),
+            )
+        } else {
+            emptyList()
         }
     }
 
@@ -112,39 +87,23 @@ fun HomeScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(horizontal = 20.dp)
-            .verticalScroll(rememberScrollState()),
+            .padding(horizontal = 20.dp),
     ) {
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Шапка
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .clickable { showDatePicker = true }
-                .padding(vertical = 4.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column {
-                Text(
-                    text = if (isToday(selectedDate)) "Сегодня" else SimpleDateFormat("d MMMM yyyy", Locale("ru")).format(selectedDate),
-                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-                Text(
-                    text = formattedDate,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Icon(
-                Icons.Default.DateRange,
-                contentDescription = "Выбрать дату",
-                tint = MaterialTheme.colorScheme.primary
-            )
-        }
+        Text(
+            text = "Главная",
+            style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold, fontSize = 32.sp),
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        CustomSegmentedButton(
+            options = days,
+            selectedIndex = selectedDayIndex,
+            onOptionSelected = { selectedDayIndex = it }
+        )
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -178,16 +137,21 @@ fun HomeScreen(
         if (schedule.isEmpty()) {
             EmptyScheduleState { showAddPatientSheet = true }
         } else {
-            schedule.forEach { appointment ->
-                AppointmentCard(
-                    appointment = appointment,
-                    onClick = { selectedAppointment = appointment },
-                )
-                Spacer(modifier = Modifier.height(12.dp))
+            Column(
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .weight(1f)
+            ) {
+                schedule.forEach { appointment ->
+                    AppointmentCard(
+                        appointment = appointment,
+                        onClick = { selectedAppointment = appointment },
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+                Spacer(modifier = Modifier.height(24.dp))
             }
         }
-
-        Spacer(modifier = Modifier.height(24.dp))
     }
 
     if (showAddPatientSheet) {
@@ -219,14 +183,6 @@ fun HomeScreen(
     }
 }
 
-fun isToday(date: Date): Boolean {
-    val cal1 = Calendar.getInstance()
-    val cal2 = Calendar.getInstance()
-    cal2.time = date
-    return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
-            cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
-}
-
 data class Appointment(
     val time: String,
     val name: String,
@@ -246,7 +202,7 @@ fun AppointmentCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(100.dp) // Фиксированная высота для однородности
+            .height(100.dp)
             .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
@@ -288,7 +244,6 @@ fun AppointmentCard(
                         maxLines = 1
                     )
                 } else {
-                    // Spacer для сохранения высоты, если нет аллергии
                     Spacer(modifier = Modifier.height(16.dp))
                 }
             }
@@ -416,10 +371,15 @@ fun AddPatientBottomSheetContent(onClose: () -> Unit) {
 
             Spacer(modifier = Modifier.height(16.dp))
             
-            ManualDatePickerField(
-                label = "Дата приема",
+            OutlinedTextField(
                 value = appointmentDate,
-                onValueChange = { appointmentDate = it }
+                onValueChange = { if (it.length <= 8) appointmentDate = it },
+                label = { Text("Дата приема") },
+                placeholder = { Text("ДД.ММ.ГГГГ") },
+                visualTransformation = DateTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -464,7 +424,7 @@ fun AddPatientBottomSheetContent(onClose: () -> Unit) {
 
         Button(
             onClick = onClose,
-            enabled = patientName.isNotEmpty() && appointmentDate.length == 10,
+            enabled = patientName.isNotEmpty() && appointmentDate.length == 8,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
@@ -472,75 +432,6 @@ fun AddPatientBottomSheetContent(onClose: () -> Unit) {
         ) {
             Text("Подтвердить запись")
         }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ManualDatePickerField(
-    label: String,
-    value: String,
-    onValueChange: (String) -> Unit
-) {
-    var showPicker by remember { mutableStateOf(false) }
-    val datePickerState = rememberDatePickerState()
-
-    if (showPicker) {
-        DatePickerDialog(
-            onDismissRequest = { showPicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    datePickerState.selectedDateMillis?.let {
-                        val sdf = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
-                        onValueChange(sdf.format(Date(it)))
-                    }
-                    showPicker = false
-                }) { Text("OK") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showPicker = false }) { Text("Отмена") }
-            }
-        ) {
-            DatePicker(state = datePickerState)
-        }
-    }
-
-    OutlinedTextField(
-        value = value,
-        onValueChange = { input ->
-            // Маска для даты DD.MM.YYYY
-            val clean = input.replace(".", "").take(8)
-            val formatted = buildString {
-                for (i in clean.indices) {
-                    append(clean[i])
-                    if ((i == 1 || i == 3) && i != clean.lastIndex) append(".")
-                }
-            }
-            onValueChange(formatted)
-        },
-        label = { Text(label) },
-        placeholder = { Text("ДД.ММ.ГГГГ") },
-        trailingIcon = {
-            IconButton(onClick = { showPicker = true }) {
-                Icon(Icons.Default.CalendarToday, contentDescription = null)
-            }
-        },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        isError = value.isNotEmpty() && !isValidDate(value)
-    )
-}
-
-fun isValidDate(dateStr: String): Boolean {
-    if (dateStr.length != 10) return false
-    return try {
-        val sdf = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
-        sdf.isLenient = false
-        sdf.parse(dateStr)
-        true
-    } catch (e: Exception) {
-        false
     }
 }
 
@@ -626,20 +517,32 @@ fun EmptyScheduleState(onAddPatientClick: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 40.dp),
+            .fillMaxHeight(0.6f),
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
         Icon(
             imageVector = Icons.Default.CalendarToday,
             contentDescription = null,
-            modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+            modifier = Modifier.size(80.dp),
+            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
         )
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
         Text(
-            text = "Записей на сегодня нет",
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            text = "Записей пока нет",
+            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onSurface,
         )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "На этот день у вас не запланировано\nни одного приема",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
+        Spacer(modifier = Modifier.height(32.dp))
+        TextButton(onClick = onAddPatientClick) {
+            Text("Записать пациента", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+        }
     }
 }

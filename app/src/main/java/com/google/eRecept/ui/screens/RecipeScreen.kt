@@ -22,12 +22,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Paint
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
@@ -45,12 +42,20 @@ data class MedicationEntry(
     var dosage: String = "20 мг",
 )
 
+data class RecipeHistoryItem(
+    val id: String = UUID.randomUUID().toString(),
+    val patientName: String,
+    val date: String,
+    val medications: List<String>,
+    val isActive: Boolean
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecipeScreen() {
     var showCreateSheet by remember { mutableStateOf(false) }
     var showCancelDialog by remember { mutableStateOf(false) }
-    var showQrDialog by remember { mutableStateOf(false) }
+    var selectedRecipe by remember { mutableStateOf<RecipeHistoryItem?>(null) }
 
     var patientQuery by remember { mutableStateOf("") }
     var medications by remember { mutableStateOf(listOf(MedicationEntry())) }
@@ -81,9 +86,9 @@ fun RecipeScreen() {
 
     val dummyHistory =
         listOf(
-            "Қазыбек Нұрым Байболсынұлы" to "Аспирин, Парацетамол",
-            "Иванова Анна" to "Амоксициллин",
-            "Смирнов Петр" to "Ибупрофен, Витамин С, Сироп от кашля",
+            RecipeHistoryItem(patientName = "Қазыбек Нұрым Байболсынұлы", date = "12 апреля 2024", medications = listOf("Аспирин", "Парацетамол"), isActive = true),
+            RecipeHistoryItem(patientName = "Иванова Анна", date = "05 марта 2024", medications = listOf("Амоксициллин"), isActive = false),
+            RecipeHistoryItem(patientName = "Смирнов Петр", date = "20 февраля 2024", medications = listOf("Ибупрофен", "Витамин С", "Сироп от кашля"), isActive = false),
         )
 
     val resetForm = {
@@ -102,7 +107,7 @@ fun RecipeScreen() {
         Spacer(modifier = Modifier.height(24.dp))
         Text(
             text = "Рецепты",
-            style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
+            style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold, fontSize = 32.sp),
             color = MaterialTheme.colorScheme.onBackground,
         )
 
@@ -140,58 +145,14 @@ fun RecipeScreen() {
             verticalArrangement = Arrangement.spacedBy(12.dp),
             contentPadding = PaddingValues(bottom = 24.dp),
         ) {
-            items(dummyHistory) { (patient, meds) ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { showQrDialog = true },
-                    shape = RoundedCornerShape(16.dp),
-                    // Используем тот же цвет, что и в HomeScreen для консистентности
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "12 апреля 2026",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = patient,
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Препараты: $meds",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
+            items(dummyHistory) { recipe ->
+                RecipeHistoryCard(recipe = recipe, onClick = { selectedRecipe = recipe })
             }
         }
     }
 
-    if (showQrDialog) {
-        AlertDialog(
-            onDismissRequest = { showQrDialog = false },
-            confirmButton = {
-                TextButton(onClick = { showQrDialog = false }) { Text("Закрыть") }
-            },
-            title = { Text("QR-код рецепта") },
-            text = {
-                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    Icon(
-                        Icons.Default.QrCode,
-                        contentDescription = null,
-                        modifier = Modifier.size(200.dp),
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-            }
-        )
+    if (selectedRecipe != null) {
+        RecipeDetailsDialog(recipe = selectedRecipe!!, onDismiss = { selectedRecipe = null })
     }
 
     if (showCreateSheet) {
@@ -420,6 +381,92 @@ fun RecipeScreen() {
             },
         )
     }
+}
+
+@Composable
+fun RecipeHistoryCard(recipe: RecipeHistoryItem, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = recipe.date,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = recipe.patientName,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Препараты: ${recipe.medications.joinToString(", ")}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1
+                )
+            }
+            
+            val statusColor = if (recipe.isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+            val statusBg = statusColor.copy(alpha = 0.1f)
+            
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(statusBg)
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+            ) {
+                Text(
+                    text = if (recipe.isActive) "Активен" else "Просрочен",
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                    color = statusColor
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun RecipeDetailsDialog(recipe: RecipeHistoryItem, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Закрыть") }
+        },
+        title = { Text("Детали рецепта") },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    Icon(
+                        Icons.Default.QrCode,
+                        contentDescription = null,
+                        modifier = Modifier.size(160.dp),
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Пациент: ${recipe.patientName}", fontWeight = FontWeight.Bold)
+                Text("Дата: ${recipe.date}")
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Список препаратов:", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                recipe.medications.forEach { med ->
+                    Text("• $med")
+                }
+            }
+        }
+    )
 }
 
 @Composable
