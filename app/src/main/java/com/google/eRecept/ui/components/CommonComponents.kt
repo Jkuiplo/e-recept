@@ -1,9 +1,8 @@
 package com.google.eRecept.ui.components
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -11,6 +10,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -61,61 +61,65 @@ fun CustomSegmentedButton(
     onOptionSelected: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(52.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-            .padding(4.dp)
+    val cornerRadius = 12.dp
+
+    Surface(
+        shape = RoundedCornerShape(cornerRadius),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        modifier = modifier.height(52.dp).fillMaxWidth()
     ) {
-        Row(modifier = Modifier.fillMaxSize()) {
-            options.forEachIndexed { index, title ->
-                val isSelected = selectedIndex == index
-                
-                // Анимация веса для эффекта расширения
-                val weight by animateFloatAsState(
-                    targetValue = if (isSelected) 1.2f else 0.8f,
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioLowBouncy,
-                        stiffness = Spring.StiffnessLow
-                    ),
-                    label = "weight"
-                )
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val itemWidth = maxWidth / options.size
 
-                val textColor by animateColorAsState(
-                    targetValue = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    animationSpec = tween(300),
-                    label = "textColor"
-                )
-                
-                val bgColor by animateColorAsState(
-                    targetValue = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
-                    animationSpec = tween(300),
-                    label = "bgColor"
-                )
+            val indicatorOffset by animateDpAsState(
+                targetValue = itemWidth * selectedIndex,
+                animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+                label = "indicatorOffset"
+            )
 
-                Box(
-                    modifier = Modifier
-                        .weight(weight)
-                        .fillMaxHeight()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(bgColor)
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null // Убираем стандартный тинт, анимация веса и цвета достаточно информативна
-                        ) { onOptionSelected(index) },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = title,
-                        color = textColor,
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                            fontSize = 13.sp
-                        ),
-                        maxLines = 1
+            // Индикатор выбора (тот самый "бегунок")
+            Surface(
+                modifier = Modifier
+                    .offset(x = indicatorOffset)
+                    .width(itemWidth)
+                    .fillMaxHeight()
+                    .padding(4.dp),
+                shape = RoundedCornerShape(cornerRadius - 2.dp),
+                color = MaterialTheme.colorScheme.primary,
+                shadowElevation = 4.dp
+            ) {}
+
+            Row(modifier = Modifier.fillMaxSize()) {
+                options.forEachIndexed { index, title ->
+                    val isSelected = selectedIndex == index
+                    
+                    val textColor by animateColorAsState(
+                        targetValue = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        animationSpec = tween(300),
+                        label = "textColor"
                     )
+
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = { onOptionSelected(index) }
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = title,
+                            color = textColor,
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                fontSize = 14.sp
+                            ),
+                            maxLines = 1
+                        )
+                    }
                 }
             }
         }
