@@ -6,7 +6,6 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -77,7 +76,7 @@ fun CustomSegmentedButton(
                 label = "indicatorOffset"
             )
 
-            // Индикатор выбора (тот самый "бегунок")
+            // Индикатор выбора (бегунок)
             Surface(
                 modifier = Modifier
                     .offset(x = indicatorOffset)
@@ -103,11 +102,8 @@ fun CustomSegmentedButton(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                                onClick = { onOptionSelected(index) }
-                            ),
+                            .clip(RoundedCornerShape(cornerRadius - 2.dp)) // Скругляем края нажатия
+                            .clickable { onOptionSelected(index) },
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
