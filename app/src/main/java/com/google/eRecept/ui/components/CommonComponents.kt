@@ -1,7 +1,7 @@
 package com.google.eRecept.ui.components
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -60,25 +60,33 @@ fun CustomSegmentedButton(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(48.dp)
-            .clip(RoundedCornerShape(12.dp))
+            .height(52.dp)
+            .clip(RoundedCornerShape(16.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
             .padding(4.dp)
     ) {
         Row(modifier = Modifier.fillMaxSize()) {
             options.forEachIndexed { index, title ->
                 val isSelected = selectedIndex == index
+                
                 val textColor by animateColorAsState(
                     targetValue = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    animationSpec = tween(300),
                     label = "textColor"
+                )
+                
+                val bgColor by animateColorAsState(
+                    targetValue = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                    animationSpec = tween(300),
+                    label = "bgColor"
                 )
 
                 Box(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(bgColor)
                         .clickable { onOptionSelected(index) },
                     contentAlignment = Alignment.Center
                 ) {
