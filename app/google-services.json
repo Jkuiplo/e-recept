@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "400252826683",
+    "project_id": "erecept-9f096",
+    "storage_bucket": "erecept-9f096.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:400252826683:android:a23387f8a4e9670635181e",
+        "android_client_info": {
+          "package_name": "com.google.eRecept"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDJa63tokoz6_5nZx7HB9rymv7A3Uqm-gA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
