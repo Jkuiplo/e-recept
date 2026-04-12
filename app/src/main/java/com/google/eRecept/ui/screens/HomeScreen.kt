@@ -96,8 +96,9 @@ fun HomeScreen(
     ) {
         Spacer(modifier = Modifier.height(24.dp))
 
+        // Изменено название с "Главная" на "Расписание"
         Text(
-            text = "Главная",
+            text = "Расписание",
             style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold, fontSize = 32.sp),
             color = MaterialTheme.colorScheme.onBackground,
         )
@@ -139,7 +140,7 @@ fun HomeScreen(
         Spacer(modifier = Modifier.height(32.dp))
 
         Text(
-            text = "Расписание",
+            text = "Ваш список",
             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onBackground,
         )
@@ -212,7 +213,7 @@ fun AppointmentCard(
     onClick: () -> Unit,
 ) {
     Card(
-        onClick = onClick, // Используем встроенный onClick для нативного рипла
+        onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
             .height(100.dp),

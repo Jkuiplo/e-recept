@@ -5,18 +5,23 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,58 +29,48 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
 import com.google.eRecept.ui.BottomNavItem
+import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 @Composable
 fun MainScreen() {
-    val navController = rememberNavController()
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
+    val items = BottomNavItem.entries
+    val pagerState = rememberPagerState(pageCount = { items.size })
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         bottomBar = {
             CustomBottomNavigation(
-                currentRoute = currentRoute,
-                onItemClick = { item ->
-                    navController.navigate(item.route) {
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
+                selectedIndex = pagerState.currentPage,
+                onItemClick = { index ->
+                    scope.launch {
+                        val currentPage = pagerState.currentPage
+
+                        // "Умный скролл": если прыгаем больше чем на 1 страницу
+                        if (abs(currentPage - index) > 1) {
+                            // Незаметно телепортируемся на соседнюю с нужной страницу
+                            val jumpTo = if (currentPage < index) index - 1 else index + 1
+                            pagerState.scrollToPage(jumpTo)
                         }
-                        launchSingleTop = true
-                        restoreState = true
+
+                        // Плавно доскролливаем последний шаг
+                        pagerState.animateScrollToPage(index)
                     }
-                }
+                },
             )
         },
     ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = BottomNavItem.Schedule.route,
+        HorizontalPager(
+            state = pagerState,
             modifier = Modifier.padding(innerPadding),
-            enterTransition = { fadeIn(animationSpec = tween(300)) },
-            exitTransition = { fadeOut(animationSpec = tween(300)) },
-            popEnterTransition = { fadeIn(animationSpec = tween(300)) },
-            popExitTransition = { fadeOut(animationSpec = tween(300)) },
-        ) {
-            composable(BottomNavItem.Schedule.route) {
-                HomeScreen()
-            }
-
-            composable(BottomNavItem.Recipes.route) {
-                RecipeScreen()
-            }
-
-            composable(BottomNavItem.Search.route) {
-                SearchScreen()
-            }
-
-            composable(BottomNavItem.Profile.route) {
-                ProfileScreen()
+            userScrollEnabled = true, // Свайпы включены
+        ) { page ->
+            when (items[page]) {
+                BottomNavItem.Schedule -> HomeScreen()
+                BottomNavItem.Recipes -> RecipeScreen()
+                BottomNavItem.Search -> SearchScreen()
+                BottomNavItem.Profile -> ProfileScreen()
             }
         }
     }
@@ -83,93 +78,107 @@ fun MainScreen() {
 
 @Composable
 fun CustomBottomNavigation(
-    currentRoute: String?,
-    onItemClick: (BottomNavItem) -> Unit
+    selectedIndex: Int,
+    onItemClick: (Int) -> Unit,
 ) {
     Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .navigationBarsPadding()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        color = Color.Transparent
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+        color = Color.Transparent,
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(64.dp)
-                .clip(RoundedCornerShape(20.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f))
-                .padding(4.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(64.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f)),
         ) {
             Row(
-                modifier = Modifier.fillMaxSize(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 8.dp),
+                horizontalArrangement = Arrangement.SpaceAround,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                BottomNavItem.entries.forEach { item ->
-                    val isSelected = currentRoute == item.route
-                    
-                    val weight by animateFloatAsState(
-                        targetValue = if (isSelected) 1.5f else 0.8f,
-                        animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow),
-                        label = "weight"
-                    )
+                BottomNavItem.entries.forEachIndexed { index, item ->
+                    val isSelected = selectedIndex == index
 
-                    val contentColor by animateColorAsState(
-                        targetValue = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        label = "contentColor"
+                    SalomonNavItem(
+                        item = item,
+                        isSelected = isSelected,
+                        onClick = { onItemClick(index) },
                     )
-                    val backgroundColor by animateColorAsState(
-                        targetValue = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
-                        label = "backgroundColor"
-                    )
-
-                    Box(
-                        modifier = Modifier
-                            .weight(weight)
-                            .fillMaxHeight()
-                            .padding(2.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(backgroundColor)
-                            .clickable {
-                                if (!isSelected) {
-                                    onItemClick(item)
-                                }
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center,
-                            modifier = Modifier.padding(horizontal = 8.dp)
-                        ) {
-                            Icon(
-                                imageVector = if (isSelected) item.selectedIcon else item.unselectedIcon,
-                                contentDescription = item.title,
-                                tint = contentColor,
-                                modifier = Modifier.size(24.dp)
-                            )
-                            
-                            AnimatedVisibility(
-                                visible = isSelected,
-                                enter = fadeIn() + expandHorizontally(),
-                                exit = fadeOut() + shrinkHorizontally()
-                            ) {
-                                Text(
-                                    text = item.title,
-                                    color = contentColor,
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 12.sp
-                                    ),
-                                    maxLines = 1,
-                                    modifier = Modifier.padding(start = 8.dp)
-                                )
-                            }
-                        }
-                    }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun SalomonNavItem(
+    item: BottomNavItem,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+) {
+    val backgroundColor by animateColorAsState(
+        targetValue = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else Color.Transparent,
+        label = "backgroundColor",
+    )
+
+    val contentColor by animateColorAsState(
+        targetValue = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+        label = "contentColor",
+    )
+
+    Row(
+        modifier =
+            Modifier
+                .height(40.dp)
+                .clip(RoundedCornerShape(50))
+                .background(backgroundColor)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onClick,
+                ).padding(horizontal = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
+    ) {
+        Icon(
+            imageVector = if (isSelected) item.selectedIcon else item.unselectedIcon,
+            contentDescription = item.title,
+            tint = contentColor,
+            modifier = Modifier.size(24.dp),
+        )
+
+        AnimatedVisibility(
+            visible = isSelected,
+            enter =
+                fadeIn() +
+                    expandHorizontally(
+                        animationSpec = spring(stiffness = Spring.StiffnessLow),
+                    ),
+            exit =
+                fadeOut() +
+                    shrinkHorizontally(
+                        animationSpec = spring(stiffness = Spring.StiffnessLow),
+                    ),
+        ) {
+            Text(
+                text = item.title,
+                color = contentColor,
+                style =
+                    MaterialTheme.typography.labelMedium.copy(`
+                        fontWeight = FontWeight.Bold,
+                    ),
+                modifier = Modifier.padding(start = 8.dp),
+                maxLines = 1,
+            )
         }
     }
 }
