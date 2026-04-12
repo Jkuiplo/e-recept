@@ -1,16 +1,8 @@
 package com.google.eRecept.ui.screens
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -19,29 +11,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Paint
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -50,9 +23,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.eRecept.ui.theme.MainAc
 
-@Preview()
+@Preview(showBackground = true)
 @Composable
 fun LoginScreen() {
     var iin by remember { mutableStateOf("") }
@@ -61,36 +33,44 @@ fun LoginScreen() {
     var rememberMe by remember { mutableStateOf(false) }
 
     Box(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .imePadding(),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .imePadding(),
         contentAlignment = Alignment.Center,
     ) {
         Column(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
-                    .verticalScroll(rememberScrollState()),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
                 text = "Вход",
-                style = MaterialTheme.typography.displayLarge.copy(fontSize = 56.sp),
-                color = MaterialTheme.colorScheme.onBackground,
+                style = MaterialTheme.typography.displayLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 48.sp
+                ),
+                color = MaterialTheme.colorScheme.primary,
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            Text(
+                text = "eRecept — ваш помощник",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             Spacer(modifier = Modifier.height(48.dp))
 
-            // ИИН
             OutlinedTextField(
                 value = iin,
-                onValueChange = { iin = it },
+                onValueChange = { if (it.length <= 12) iin = it },
                 label = { Text("ИИН") },
-                placeholder = { Text("Введите ИИН") },
-                supportingText = { Text("Например: 012 345 678 910") },
+                placeholder = { Text("Введите 12 цифр") },
+                supportingText = { Text("${iin.length}/12") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
                 trailingIcon = {
                     if (iin.isNotEmpty()) {
@@ -100,130 +80,76 @@ fun LoginScreen() {
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp),
-                // в макете цвета нет, но с ним выглядит поинтереснее
-                colors =
-                    OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                    ),
+                shape = RoundedCornerShape(12.dp),
                 singleLine = true,
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Пароль
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
                 label = { Text("Пароль") },
-                placeholder = { Text("Введите пароль") },
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
                     val image = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility
-                    val description = if (passwordVisible) "Скрыть пароль" else "Показать пароль"
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                        Icon(imageVector = image, contentDescription = description)
+                        Icon(imageVector = image, contentDescription = null)
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp),
-                colors =
-                    OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                    ),
+                shape = RoundedCornerShape(12.dp),
                 singleLine = true,
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .clickable { rememberMe = !rememberMe }
-                        .padding(vertical = 8.dp, horizontal = 4.dp),
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Checkbox(
                     checked = rememberMe,
-                    onCheckedChange = null,
-                    colors =
-                        CheckboxDefaults.colors(
-                            checkedColor = MaterialTheme.colorScheme.primary,
-                            uncheckedColor = MaterialTheme.colorScheme.onSurface,
-                        ),
+                    onCheckedChange = { rememberMe = it }
                 )
                 Text(
-                    text = "Запомнить меня на этом устройстве",
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(start = 8.dp),
+                    text = "Запомнить меня",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(start = 4.dp)
                 )
+                Spacer(modifier = Modifier.weight(1f))
+                TextButton(onClick = { /* TODO */ }) {
+                    Text("Забыли пароль?")
+                }
             }
 
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
-            Spacer(modifier = Modifier.height(48.dp))
-
-            // Войти
             Button(
-                onClick = { /* TODO: Логика авторизации */ },
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .drawBehind {
-                            drawIntoCanvas { canvas ->
-                                val paint =
-                                    Paint().apply {
-                                        asFrameworkPaint().apply {
-                                            isAntiAlias = true
-                                            color = android.graphics.Color.TRANSPARENT
-                                            setShadowLayer(
-                                                12f,
-                                                0f,
-                                                6f,
-                                                android.graphics.Color.argb(80, 0, 0, 0),
-                                            )
-                                        }
-                                    }
-                                canvas.drawRoundRect(
-                                    left = 0f,
-                                    top = 0f,
-                                    right = size.width,
-                                    bottom = size.height,
-                                    radiusX = 100.dp.toPx(),
-                                    radiusY = 100.dp.toPx(),
-                                    paint = paint,
-                                )
-                            }
-                        }.background(
-                            color = Color(0xFFCFC6BC),
-                            shape = RoundedCornerShape(100.dp),
-                        ),
-                shape = RoundedCornerShape(24.dp),
-                elevation =
-                    ButtonDefaults.buttonElevation(
-                        defaultElevation = 0.dp,
-                        pressedElevation = 0.dp,
-                    ),
-                colors =
-                    ButtonDefaults.buttonColors(
-                        containerColor = MainAc,
-                        contentColor = MaterialTheme.colorScheme.onBackground,
-                    ),
+                onClick = { /* TODO */ },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp),
             ) {
                 Text(
                     text = "Войти",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            OutlinedButton(
+                onClick = { /* TODO */ },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+            ) {
+                Text(
+                    text = "Регистрация",
+                    style = MaterialTheme.typography.titleMedium,
                 )
             }
 

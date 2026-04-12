@@ -1,8 +1,9 @@
 package com.google.eRecept.ui.screens
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -12,11 +13,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.QrCode
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
@@ -50,7 +46,7 @@ data class RecipeHistoryItem(
     val isActive: Boolean
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun RecipeScreen() {
     var showCreateSheet by remember { mutableStateOf(false) }
@@ -65,31 +61,28 @@ fun RecipeScreen() {
     val focusManager = LocalFocusManager.current
     val density = LocalDensity.current
 
-    val mockPatients =
-        listOf(
-            "Қазыбек Нұрым Байболсынұлы",
-            "Қазыбек Ерасыл Арманұлы",
-            "Қазыбек Данияр Маратұлы",
-            "Азамат Азаматов",
-            "Иванов Иван",
-        ).filter { it.contains(patientQuery, ignoreCase = true) }
+    val mockPatients = listOf(
+        "Қазыбек Нұрым Байболсынұлы",
+        "Қазыбек Ерасыл Арманұлы",
+        "Қазыбек Данияр Маратұлы",
+        "Азамат Азаматов",
+        "Иванов Иван",
+    ).filter { it.contains(patientQuery, ignoreCase = true) }
 
-    val mockMeds =
-        listOf(
-            "Омепразол (Тева)",
-            "Омепразол (Акрихин)",
-            "Омепразол (Ozon)",
-            "Пенициллин",
-            "Аспирин",
-        )
+    val mockMeds = listOf(
+        "Омепразол (Тева)",
+        "Омепразол (Акрихин)",
+        "Омепразол (Ozon)",
+        "Пенициллин",
+        "Аспирин",
+    )
     val dosages = listOf("20 мг", "35 мг", "40 мг", "50 мг", "75 мг", "100 мг", "120 мг", "200 мг")
 
-    val dummyHistory =
-        listOf(
-            RecipeHistoryItem(patientName = "Қазыбек Нұрым Байболсынұлы", date = "12 апреля 2024", medications = listOf("Аспирин", "Парацетамол"), isActive = true),
-            RecipeHistoryItem(patientName = "Иванова Анна", date = "05 марта 2024", medications = listOf("Амоксициллин"), isActive = false),
-            RecipeHistoryItem(patientName = "Смирнов Петр", date = "20 февраля 2024", medications = listOf("Ибупрофен", "Витамин С", "Сироп от кашля"), isActive = false),
-        )
+    val dummyHistory = listOf(
+        RecipeHistoryItem(patientName = "Қазыбек Нұрым Байболсынұлы", date = "12 апреля 2024", medications = listOf("Аспирин", "Парацетамол"), isActive = true),
+        RecipeHistoryItem(patientName = "Иванова Анна", date = "05 марта 2024", medications = listOf("Амоксициллин"), isActive = false),
+        RecipeHistoryItem(patientName = "Смирнов Петр", date = "20 февраля 2024", medications = listOf("Ибупрофен", "Витамин С", "Сироп от кашля"), isActive = false),
+    )
 
     val resetForm = {
         patientQuery = ""
@@ -97,56 +90,46 @@ fun RecipeScreen() {
         notes = ""
     }
 
-    Column(
-        modifier =
-            Modifier
+    Scaffold(
+        floatingActionButton = {
+            ExtendedFloatingActionButton(
+                onClick = { showCreateSheet = true },
+                icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                text = { Text("Создать") },
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
                 .fillMaxSize()
+                .padding(padding)
                 .background(MaterialTheme.colorScheme.background)
                 .padding(horizontal = 20.dp),
-    ) {
-        Spacer(modifier = Modifier.height(24.dp))
-        Text(
-            text = "Рецепты",
-            style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold, fontSize = 32.sp),
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Button(
-            onClick = { showCreateSheet = true },
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors =
-                ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                ),
         ) {
-            Icon(Icons.Default.Add, contentDescription = null)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Создать рецепт", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-        }
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(
+                text = "Рецепты",
+                style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold, fontSize = 32.sp),
+                color = MaterialTheme.colorScheme.onBackground,
+            )
 
-        Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
-        Text(
-            text = "История рецептов",
-            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onBackground,
-        )
+            Text(
+                text = "История рецептов",
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onBackground,
+            )
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(bottom = 24.dp),
-        ) {
-            items(dummyHistory) { recipe ->
-                RecipeHistoryCard(recipe = recipe, onClick = { selectedRecipe = recipe })
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(bottom = 80.dp),
+            ) {
+                items(dummyHistory) { recipe ->
+                    RecipeHistoryCard(recipe = recipe, onClick = { selectedRecipe = recipe })
+                }
             }
         }
     }
@@ -165,15 +148,14 @@ fun RecipeScreen() {
             var patientTextFieldSize by remember { mutableStateOf(Size.Zero) }
 
             Column(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp)
-                        .verticalScroll(rememberScrollState()),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .verticalScroll(rememberScrollState()),
             ) {
                 Text(
-                    text = "Создать рецепт",
-                    style = MaterialTheme.typography.headlineLarge.copy(fontSize = 32.sp, fontWeight = FontWeight.Bold),
+                    text = "Новый рецепт",
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface,
                 )
 
@@ -187,7 +169,7 @@ fun RecipeScreen() {
                             patientExpanded = true
                         },
                         label = { Text("Пациент") },
-                        placeholder = { Text("Поиск пациента") },
+                        placeholder = { Text("Поиск по ФИО") },
                         trailingIcon = {
                             if (patientQuery.isNotEmpty()) {
                                 IconButton(onClick = {
@@ -201,23 +183,16 @@ fun RecipeScreen() {
                             }
                         },
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                        keyboardActions =
-                            KeyboardActions(onNext = {
-                                patientExpanded = false
-                                focusManager.moveFocus(FocusDirection.Next)
-                            }),
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .onGloballyPositioned { coordinates ->
-                                    patientTextFieldSize = coordinates.size.toSize()
-                                },
+                        keyboardActions = KeyboardActions(onNext = {
+                            patientExpanded = false
+                            focusManager.moveFocus(FocusDirection.Next)
+                        }),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .onGloballyPositioned { coordinates ->
+                                patientTextFieldSize = coordinates.size.toSize()
+                            },
                         shape = RoundedCornerShape(12.dp),
-                        colors =
-                            OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                            ),
                         singleLine = true,
                     )
 
@@ -225,35 +200,24 @@ fun RecipeScreen() {
                         expanded = patientExpanded && patientQuery.isNotEmpty() && mockPatients.isNotEmpty(),
                         onDismissRequest = { patientExpanded = false },
                         properties = PopupProperties(focusable = false),
-                        modifier =
-                            Modifier
-                                .width(with(density) { patientTextFieldSize.width.toDp() })
-                                .heightIn(max = 240.dp)
-                                .background(MaterialTheme.colorScheme.surface),
+                        modifier = Modifier
+                            .width(with(density) { patientTextFieldSize.width.toDp() })
+                            .heightIn(max = 240.dp)
                     ) {
-                        mockPatients.forEachIndexed { index, patientName ->
+                        mockPatients.forEach { patientName ->
                             DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        text = patientName,
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                    )
-                                },
+                                text = { Text(patientName) },
                                 onClick = {
                                     patientQuery = patientName
                                     patientExpanded = false
                                     focusManager.moveFocus(FocusDirection.Next)
                                 },
                             )
-                            if (index < mockPatients.lastIndex) {
-                                HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
-                            }
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
                 medications.forEachIndexed { index, med ->
                     MedicationItem(
@@ -264,32 +228,21 @@ fun RecipeScreen() {
                         onMedicationChange = { updatedMed ->
                             medications = medications.map { if (it.id == updatedMed.id) updatedMed else it }
                         },
-                        onRemove =
-                            if (medications.size > 1) {
-                                { medications = medications.filterNot { it.id == med.id } }
-                            } else {
-                                null
-                            },
+                        onRemove = if (medications.size > 1) {
+                            { medications = medications.filterNot { it.id == med.id } }
+                        } else null,
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                 }
 
-                Button(
+                OutlinedButton(
                     onClick = { medications = medications + MedicationEntry() },
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors =
-                        ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                        ),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
                 ) {
                     Icon(Icons.Default.Add, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Добавить препарат", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                    Text("Добавить лекарство")
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -297,20 +250,10 @@ fun RecipeScreen() {
                 OutlinedTextField(
                     value = notes,
                     onValueChange = { notes = it },
-                    label = { Text("Примечания") },
-                    placeholder = { Text("Введите примечание") },
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .height(100.dp),
+                    label = { Text("Рекомендации") },
+                    placeholder = { Text("Особенности приема...") },
+                    modifier = Modifier.fillMaxWidth().height(100.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors =
-                        OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                        ),
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -320,36 +263,17 @@ fun RecipeScreen() {
                         showCreateSheet = false
                         resetForm()
                     },
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(16.dp),
-                    colors =
-                        ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
-                        ),
                 ) {
-                    Text("Создать рецепт", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                    Text("Готово", style = MaterialTheme.typography.titleMedium)
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Button(
+                TextButton(
                     onClick = { showCancelDialog = true },
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors =
-                        ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        ),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
                 ) {
-                    Text("Отмена", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                    Text("Отмена", color = MaterialTheme.colorScheme.error)
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -360,23 +284,20 @@ fun RecipeScreen() {
     if (showCancelDialog) {
         AlertDialog(
             onDismissRequest = { showCancelDialog = false },
-            title = { Text("Отменить создание?") },
-            text = { Text("Все введенные данные будут потеряны. Вы уверены?") },
-            containerColor = MaterialTheme.colorScheme.surface,
+            title = { Text("Сбросить черновик?") },
+            text = { Text("Введенные данные не сохранятся.") },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        showCancelDialog = false
-                        showCreateSheet = false
-                        resetForm()
-                    },
-                ) {
-                    Text("Да, отменить", color = MaterialTheme.colorScheme.error)
+                TextButton(onClick = {
+                    showCancelDialog = false
+                    showCreateSheet = false
+                    resetForm()
+                }) {
+                    Text("Да", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showCancelDialog = false }) {
-                    Text("Продолжить заполнение", color = MaterialTheme.colorScheme.primary)
+                    Text("Нет")
                 }
             },
         )
@@ -385,53 +306,41 @@ fun RecipeScreen() {
 
 @Composable
 fun RecipeHistoryCard(recipe: RecipeHistoryItem, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick,
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = recipe.date,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
                     text = recipe.patientName,
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = recipe.date,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Препараты: ${recipe.medications.joinToString(", ")}",
+                    text = recipe.medications.joinToString(", "),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1
                 )
             }
             
-            val statusColor = if (recipe.isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-            val statusBg = statusColor.copy(alpha = 0.1f)
-            
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(statusBg)
-                    .padding(horizontal = 8.dp, vertical = 4.dp)
+            Badge(
+                containerColor = if (recipe.isActive) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer,
+                contentColor = if (recipe.isActive) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onErrorContainer,
+                modifier = Modifier.padding(start = 8.dp)
             ) {
                 Text(
-                    text = if (recipe.isActive) "Активен" else "Просрочен",
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                    color = statusColor
+                    text = if (recipe.isActive) "Активен" else "Истек",
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                 )
             }
         }
@@ -443,32 +352,38 @@ fun RecipeDetailsDialog(recipe: RecipeHistoryItem, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Закрыть") }
+            Button(onClick = onDismiss) { Text("Понятно") }
         },
-        title = { Text("Детали рецепта") },
+        title = { Text("Рецепт") },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     Icon(
                         Icons.Default.QrCode,
                         contentDescription = null,
-                        modifier = Modifier.size(160.dp),
-                        tint = MaterialTheme.colorScheme.onSurface
+                        modifier = Modifier.size(120.dp),
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("Пациент: ${recipe.patientName}", fontWeight = FontWeight.Bold)
-                Text("Дата: ${recipe.date}")
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("Список препаратов:", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                ListItem(
+                    headlineContent = { Text(recipe.patientName) },
+                    overlineContent = { Text("Пациент") },
+                    supportingContent = { Text(recipe.date) }
+                )
+                HorizontalDivider()
                 recipe.medications.forEach { med ->
-                    Text("• $med")
+                    ListItem(
+                        headlineContent = { Text(med) },
+                        leadingContent = { Icon(Icons.Default.MedicalServices, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                    )
                 }
             }
         }
     )
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun MedicationItem(
     index: Int,
@@ -485,141 +400,72 @@ fun MedicationItem(
 
     val filteredMeds = mockMeds.filter { it.contains(medication.name, ignoreCase = true) }
 
-    Column {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text("Препарат ${index + 1}", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-            if (onRemove != null) {
-                IconButton(onClick = onRemove, modifier = Modifier.size(24.dp)) {
-                    Icon(Icons.Default.Close, contentDescription = "Удалить", tint = MaterialTheme.colorScheme.error)
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Box {
-            OutlinedTextField(
-                value = medication.name,
-                onValueChange = {
-                    onMedicationChange(medication.copy(name = it))
-                    medExpanded = true
-                },
-                label = { Text("Название препарата") },
-                placeholder = { Text("Поиск препарата") },
-                trailingIcon = {
-                    if (medication.name.isNotEmpty()) {
-                        IconButton(onClick = {
-                            onMedicationChange(medication.copy(name = ""))
-                            medExpanded = false
-                        }) {
-                            Icon(Icons.Default.Clear, contentDescription = "Очистить")
-                        }
-                    } else {
-                        Icon(Icons.Default.Search, contentDescription = "Поиск")
-                    }
-                },
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                keyboardActions =
-                    KeyboardActions(onNext = {
-                        medExpanded = false
-                        focusManager.moveFocus(FocusDirection.Next)
-                    }),
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .onGloballyPositioned { coordinates ->
-                            medTextFieldSize = coordinates.size.toSize()
-                        },
-                shape = RoundedCornerShape(12.dp),
-                colors =
-                    OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                    ),
-                singleLine = true,
-            )
-
-            DropdownMenu(
-                expanded = medExpanded && medication.name.isNotEmpty() && filteredMeds.isNotEmpty(),
-                onDismissRequest = { medExpanded = false },
-                properties = PopupProperties(focusable = false),
-                modifier =
-                    Modifier
-                        .width(with(density) { medTextFieldSize.width.toDp() })
-                        .heightIn(max = 150.dp)
-                        .background(MaterialTheme.colorScheme.surface),
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                filteredMeds.forEachIndexed { idx, medName ->
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                text = medName,
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                        },
-                        onClick = {
-                            onMedicationChange(medication.copy(name = medName))
-                            medExpanded = false
-                            focusManager.moveFocus(FocusDirection.Next)
-                        },
-                    )
-                    if (idx < filteredMeds.lastIndex) {
-                        HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
+                Text("Лекарство ${index + 1}", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                if (onRemove != null) {
+                    IconButton(onClick = onRemove, modifier = Modifier.size(24.dp)) {
+                        Icon(Icons.Default.Close, contentDescription = "Удалить")
                     }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            val chunkedDosages = dosages.chunked(4)
+            Box {
+                OutlinedTextField(
+                    value = medication.name,
+                    onValueChange = {
+                        onMedicationChange(medication.copy(name = it))
+                        medExpanded = true
+                    },
+                    label = { Text("Название") },
+                    modifier = Modifier.fillMaxWidth().onGloballyPositioned { medTextFieldSize = it.size.toSize() },
+                    shape = RoundedCornerShape(8.dp),
+                    singleLine = true,
+                )
 
-            chunkedDosages.forEach { rowDosages ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                DropdownMenu(
+                    expanded = medExpanded && medication.name.isNotEmpty() && filteredMeds.isNotEmpty(),
+                    onDismissRequest = { medExpanded = false },
+                    properties = PopupProperties(focusable = false),
+                    modifier = Modifier.width(with(density) { medTextFieldSize.width.toDp() })
                 ) {
-                    rowDosages.forEach { dosage ->
-                        val isSelected = medication.dosage == dosage
-                        Box(
-                            modifier =
-                                Modifier
-                                    .weight(1f)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
-                                    .border(
-                                        width = 1.dp,
-                                        color =
-                                            if (isSelected) {
-                                                Color.Transparent
-                                            } else {
-                                                MaterialTheme.colorScheme.outline
-                                            },
-                                        shape = RoundedCornerShape(12.dp),
-                                    ).clickable {
-                                        onMedicationChange(medication.copy(dosage = dosage))
-                                    }.padding(vertical = 12.dp),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(
-                                text = dosage,
-                                style =
-                                    MaterialTheme.typography.bodyMedium.copy(
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                    ),
-                                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                            )
-                        }
+                    filteredMeds.forEach { medName ->
+                        DropdownMenuItem(
+                            text = { Text(medName) },
+                            onClick = {
+                                onMedicationChange(medication.copy(name = medName))
+                                medExpanded = false
+                            },
+                        )
                     }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text("Дозировка", style = MaterialTheme.typography.labelSmall)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                dosages.forEach { dosage ->
+                    FilterChip(
+                        selected = medication.dosage == dosage,
+                        onClick = { onMedicationChange(medication.copy(dosage = dosage)) },
+                        label = { Text(dosage) }
+                    )
                 }
             }
         }

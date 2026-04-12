@@ -1,143 +1,146 @@
 package com.google.eRecept.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.PostAdd
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.eRecept.ui.theme.MainAc
-import com.google.eRecept.ui.theme.SecBg
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(onCreateRecipeClick: () -> Unit) {
     var searchQuery by remember { mutableStateOf("") }
 
-    Column(
-        modifier =
-            Modifier
+    Scaffold(
+        floatingActionButton = {
+            FloatingActionButton(onClick = onCreateRecipeClick) {
+                Icon(Icons.Default.PostAdd, contentDescription = "Создать рецепт")
+            }
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
                 .fillMaxSize()
+                .padding(padding)
                 .background(MaterialTheme.colorScheme.background)
                 .padding(horizontal = 20.dp)
-                .verticalScroll(rememberScrollState()),
-    ) {
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Text(
-            text = "История рецептов",
-            style = MaterialTheme.typography.headlineLarge.copy(fontSize = 32.sp),
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Поиск
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { searchQuery = it },
-            placeholder = { Text("Поиск рецепта") },
-            trailingIcon = { Icon(Icons.Default.Search, contentDescription = "Поиск") },
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
-            colors =
-                OutlinedTextFieldDefaults.colors(
-                    unfocusedContainerColor = SecBg,
-                    focusedContainerColor = SecBg,
-                    unfocusedBorderColor = Color.Transparent,
-                    focusedBorderColor = Color.Transparent,
-                ),
-            singleLine = true,
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Кнопка создать
-        Button(
-            onClick = onCreateRecipeClick,
-            modifier = Modifier.fillMaxWidth().height(56.dp),
-            shape = RoundedCornerShape(24.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = MainAc, contentColor = MaterialTheme.colorScheme.onBackground),
         ) {
-            Icon(Icons.Default.PostAdd, contentDescription = null)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Создать рецепт", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-        }
+            Spacer(modifier = Modifier.height(24.dp))
 
-        Spacer(modifier = Modifier.height(32.dp))
+            Text(
+                text = "Архив рецептов",
+                style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold, fontSize = 32.sp),
+                color = MaterialTheme.colorScheme.onBackground,
+            )
 
-        Text("Рецепты", style = MaterialTheme.typography.titleLarge)
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-        // Карточка рецепта
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = SecBg),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("Рецепт №1234", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                Text("от 05.04.2026", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+            SearchBar(
+                query = searchQuery,
+                onQueryChange = { searchQuery = it },
+                onSearch = { },
+                active = false,
+                onActiveChange = { },
+                placeholder = { Text("Поиск по номеру или ФИО") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                modifier = Modifier.fillMaxWidth()
+            ) {}
 
-                Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-                Text("Қазыбек Нұрым Байболсынұлы", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium))
-                Text("68 лет · Мужчина", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+            Text(
+                text = "Последние записи",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
 
-                Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-                Text("Омепразол 20 мг, 3 раза в день", style = MaterialTheme.typography.bodyMedium)
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(
-                        onClick = { /* Удалить */ },
-                        modifier =
-                            Modifier
-                                .weight(
-                                    1f,
-                                ).border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f), RoundedCornerShape(24.dp)),
-                        colors =
-                            ButtonDefaults.buttonColors(
-                                containerColor = Color.Transparent,
-                                contentColor = MaterialTheme.colorScheme.onBackground,
-                            ),
-                    ) {
-                        Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Удалить")
-                    }
-                    Button(
-                        onClick = { /* Редактировать */ },
-                        modifier = Modifier.weight(1.3f),
-                        colors =
-                            ButtonDefaults.buttonColors(
-                                containerColor = MainAc,
-                                contentColor = MaterialTheme.colorScheme.onBackground,
-                            ),
-                    ) {
-                        Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Редактировать")
-                    }
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(bottom = 16.dp),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                items(5) {
+                    HistoryRecipeCard()
                 }
             }
         }
-        Spacer(modifier = Modifier.height(32.dp))
+    }
+}
+
+@Composable
+fun HistoryRecipeCard() {
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "Рецепт №1234",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                )
+                Text(
+                    text = "05.04.2024",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            ListItem(
+                headlineContent = { Text("Қазыбек Нұрым Байболсынұлы") },
+                supportingContent = { Text("68 лет · Мужчина") },
+                leadingContent = { Icon(Icons.Default.Person, contentDescription = null) },
+                colors = ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent)
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+            Text(
+                text = "Омепразол 20 мг",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium
+            )
+            Text(
+                text = "3 раза в день, перед едой",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = { /* TODO */ }) {
+                    Icon(Icons.Default.Delete, contentDescription = "Удалить", tint = MaterialTheme.colorScheme.error)
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                FilledTonalButton(
+                    onClick = { /* TODO */ },
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Редактировать")
+                }
+            }
+        }
     }
 }

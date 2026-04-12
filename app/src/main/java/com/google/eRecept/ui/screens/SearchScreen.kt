@@ -1,5 +1,6 @@
 package com.google.eRecept.ui.screens
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -9,8 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -21,7 +21,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.eRecept.ui.components.CustomSegmentedButton
 import java.util.UUID
 
 data class Patient(
@@ -47,7 +46,7 @@ data class Medication(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen() {
-    var selectedTabIndex by rememberSaveable { mutableStateOf(0) }
+    var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
     val tabs = listOf("Пациенты", "Препараты")
 
     var searchQuery by rememberSaveable { mutableStateOf("") }
@@ -154,11 +153,19 @@ fun SearchScreen() {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        CustomSegmentedButton(
-            options = tabs,
-            selectedIndex = selectedTabIndex,
-            onOptionSelected = { selectedTabIndex = it }
-        )
+        PrimaryTabRow(
+            selectedTabIndex = selectedTabIndex,
+            containerColor = androidx.compose.ui.graphics.Color.Transparent,
+            divider = {}
+        ) {
+            tabs.forEachIndexed { index, title ->
+                Tab(
+                    selected = selectedTabIndex == index,
+                    onClick = { selectedTabIndex = index },
+                    text = { Text(title) }
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -167,62 +174,64 @@ fun SearchScreen() {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                modifier = Modifier.weight(1f),
+            SearchBar(
+                query = searchQuery,
+                onQueryChange = { searchQuery = it },
+                onSearch = { },
+                active = false,
+                onActiveChange = { },
                 placeholder = { Text(if (selectedTabIndex == 0) "Поиск по ФИО или ИИН" else "Поиск препарата") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
                         IconButton(onClick = { searchQuery = "" }) {
-                            Icon(Icons.Default.Clear, contentDescription = "Clear")
+                            Icon(Icons.Default.Clear, contentDescription = null)
                         }
                     }
                 },
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                ),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search)
-            )
+                modifier = Modifier.weight(1f)
+            ) {}
 
-            FilledIconButton(
+            IconButton(
                 onClick = { sortAscending = !sortAscending },
-                shape = RoundedCornerShape(12.dp),
-                colors = IconButtonDefaults.filledIconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                ),
-                modifier = Modifier.size(56.dp),
+                colors = IconButtonDefaults.iconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                )
             ) {
-                Text(
-                    text = if (sortAscending) "А-Я" else "Я-А",
-                    fontWeight = FontWeight.Bold,
+                Icon(
+                    imageVector = if (sortAscending) Icons.Default.SortByAlpha else Icons.Default.Sort,
+                    contentDescription = "Sort",
+                    tint = MaterialTheme.colorScheme.onSecondaryContainer
                 )
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        LazyColumn(
-            contentPadding = PaddingValues(bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxSize(),
-        ) {
-            if (selectedTabIndex == 0) {
-                items(displayedPatients) { patient ->
-                    PatientListItem(patient = patient, onClick = { selectedPatient = patient })
-                }
-            } else {
-                items(displayedMedications) { med ->
-                    MedicationListItem(
-                        medication = med,
-                        onClick = { selectedMedication = med },
-                        onAddToRecipe = { /* TODO */ },
-                    )
+        AnimatedContent(
+            targetState = selectedTabIndex,
+            transitionSpec = {
+                fadeIn() togetherWith fadeOut()
+            },
+            label = "SearchContent"
+        ) { tabIndex ->
+            LazyColumn(
+                contentPadding = PaddingValues(bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                if (tabIndex == 0) {
+                    items(displayedPatients) { patient ->
+                        PatientListItem(patient = patient, onClick = { selectedPatient = patient })
+                    }
+                } else {
+                    items(displayedMedications) { med ->
+                        MedicationListItem(
+                            medication = med,
+                            onClick = { selectedMedication = med },
+                            onAddToRecipe = { /* TODO */ },
+                        )
+                    }
                 }
             }
         }
@@ -249,23 +258,17 @@ fun PatientListItem(
     patient: Patient,
     onClick: () -> Unit,
 ) {
-    Card(
+    ElevatedCard(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-        ),
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = patient.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "${patient.age} лет • ИИН: ${patient.iin}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
+        ListItem(
+            headlineContent = { Text(patient.name, fontWeight = FontWeight.Bold) },
+            supportingContent = { Text("${patient.age} лет • ИИН: ${patient.iin}") },
+            trailingContent = { Icon(Icons.Default.ChevronRight, contentDescription = null) },
+            colors = ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent)
+        )
     }
 }
 
@@ -275,42 +278,28 @@ fun MedicationListItem(
     onClick: () -> Unit,
     onAddToRecipe: () -> Unit,
 ) {
-    Card(
+    ElevatedCard(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-        ),
     ) {
-        Row(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
+        ListItem(
+            headlineContent = { 
                 Text(
                     text = medication.name,
-                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                )
-                Text(text = "Дозировка: ${medication.defaultDosage}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-
-            TextButton(
-                onClick = onAddToRecipe,
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = MaterialTheme.colorScheme.primary
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text("Добавить", fontWeight = FontWeight.Bold)
-            }
-        }
+                ) 
+            },
+            supportingContent = { Text("Дозировка: ${medication.defaultDosage}") },
+            trailingContent = {
+                IconButton(onClick = onAddToRecipe) {
+                    Icon(Icons.Default.AddCircleOutline, contentDescription = "Add", tint = MaterialTheme.colorScheme.primary)
+                }
+            },
+            colors = ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent)
+        )
     }
 }
 
@@ -326,7 +315,6 @@ fun PatientProfileSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
     ) {
         Column(
             modifier = Modifier
@@ -340,21 +328,27 @@ fun PatientProfileSheet(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Text("История болезней", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-            Spacer(modifier = Modifier.height(8.dp))
+            Text("История болезней", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             patient.diseaseHistory.forEach { disease ->
-                Text("• $disease", style = MaterialTheme.typography.bodyLarge)
+                ListItem(
+                    headlineContent = { Text(disease) },
+                    leadingContent = { Icon(Icons.Default.History, contentDescription = null, modifier = Modifier.size(20.dp)) }
+                )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Text("Актуальные рецепты", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-            Spacer(modifier = Modifier.height(8.dp))
+            Text("Актуальные рецепты", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             if (patient.relevantPrescriptions.isEmpty()) {
-                Text("Актуальных рецептов нет", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Актуальных рецептов нет", modifier = Modifier.padding(8.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
                 patient.relevantPrescriptions.forEach { med ->
-                    Text("• $med", modifier = Modifier.padding(vertical = 4.dp), style = MaterialTheme.typography.bodyLarge)
+                    ListItem(
+                        headlineContent = { Text(med) },
+                        leadingContent = { Icon(Icons.Default.MedicalServices, contentDescription = null, modifier = Modifier.size(20.dp)) }
+                    )
                 }
             }
 
@@ -362,12 +356,10 @@ fun PatientProfileSheet(
 
             Button(
                 onClick = onBookAppointment,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
+                modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(16.dp),
             ) {
-                Text("Записать на прием", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                Text("Записать на прием", style = MaterialTheme.typography.titleMedium)
             }
         }
     }
@@ -381,7 +373,6 @@ fun MedicationInfoSheet(
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surface,
     ) {
         Column(
             modifier = Modifier
@@ -395,29 +386,34 @@ fun MedicationInfoSheet(
             
             Spacer(modifier = Modifier.height(24.dp))
 
-            Text("Описание", fontWeight = FontWeight.Bold)
-            Text(medication.description)
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Text("Показания к применению", fontWeight = FontWeight.Bold)
-            Text(medication.indications)
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Text("Побочные эффекты", fontWeight = FontWeight.Bold)
-            Text(medication.sideEffects)
+            OutlinedCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Описание", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                    Text(medication.description, style = MaterialTheme.typography.bodyMedium)
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    Text("Показания", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                    Text(medication.indications, style = MaterialTheme.typography.bodyMedium)
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    Text("Побочные эффекты", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.error)
+                    Text(medication.sideEffects, style = MaterialTheme.typography.bodyMedium)
+                }
+            }
 
             Spacer(modifier = Modifier.height(32.dp))
 
             Button(
                 onClick = { /* TODO */ },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
+                modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(16.dp),
             ) {
-                Text("Добавить к рецепту", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                Text("Добавить к рецепту", style = MaterialTheme.typography.titleMedium)
             }
         }
     }
