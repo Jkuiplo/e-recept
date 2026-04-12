@@ -1,13 +1,15 @@
 package com.google.eRecept.ui.screens
 
-import androidx.compose.animation.*
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -16,11 +18,12 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
 import java.util.UUID
 
 data class Patient(
@@ -43,11 +46,12 @@ data class Medication(
     val sideEffects: String,
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun SearchScreen() {
-    var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
-    val tabs = listOf("Пациенты", "Препараты")
+    val tabs = listOf("Пациенты", "Препараты", "Рецепты")
+    val pagerState = rememberPagerState(pageCount = { tabs.size })
+    val coroutineScope = rememberCoroutineScope()
 
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var sortAscending by rememberSaveable { mutableStateOf(true) }
@@ -55,93 +59,103 @@ fun SearchScreen() {
     var selectedPatient by remember { mutableStateOf<Patient?>(null) }
     var selectedMedication by remember { mutableStateOf<Medication?>(null) }
 
-    val allPatients = remember {
-        listOf(
-            Patient(
-                name = "Азаматов Азамат",
-                age = 45,
-                iin = "790101300123",
-                visitsCount = 5,
-                diseaseHistory = listOf("Гастрит", "Артериальная гипертензия"),
-                relevantPrescriptions = listOf("Омепразол", "Лизиноприл")
-            ),
-            Patient(
-                name = "Иванова Анна",
-                age = 28,
-                iin = "950202400456",
-                visitsCount = 1,
-                diseaseHistory = listOf("ОРВИ"),
-                relevantPrescriptions = listOf("Ибупрофен")
-            ),
-            Patient(
-                name = "Қазыбек Нұрым",
-                age = 68,
-                iin = "580303300789",
-                visitsCount = 12,
-                diseaseHistory = listOf("Хронический бронхит", "Ишемическая болезнь сердца"),
-                relevantPrescriptions = listOf("Амоксициллин", "Аспирин Кардио")
-            ),
-            Patient(
-                name = "Смирнов Петр",
-                age = 34,
-                iin = "890404300111",
-                visitsCount = 3,
-                diseaseHistory = listOf("Остеохондроз"),
-                relevantPrescriptions = emptyList()
-            ),
-        )
-    }
+    val allPatients =
+        remember {
+            listOf(
+                Patient(
+                    name = "Азаматов Азамат",
+                    age = 45,
+                    iin = "790101300123",
+                    visitsCount = 5,
+                    diseaseHistory = listOf("Гастрит", "Артериальная гипертензия"),
+                    relevantPrescriptions = listOf("Омепразол", "Лизиноприл"),
+                ),
+                Patient(
+                    name = "Иванова Анна",
+                    age = 28,
+                    iin = "950202400456",
+                    visitsCount = 1,
+                    diseaseHistory = listOf("ОРВИ"),
+                    relevantPrescriptions = listOf("Ибупрофен"),
+                ),
+                Patient(
+                    name = "Қазыбек Нұрым",
+                    age = 68,
+                    iin = "580303300789",
+                    visitsCount = 12,
+                    diseaseHistory = listOf("Хронический бронхит", "Ишемическая болезнь сердца"),
+                    relevantPrescriptions = listOf("Амоксициллин", "Аспирин Кардио"),
+                ),
+                Patient(
+                    name = "Смирнов Петр",
+                    age = 34,
+                    iin = "890404300111",
+                    visitsCount = 3,
+                    diseaseHistory = listOf("Остеохондроз"),
+                    relevantPrescriptions = emptyList(),
+                ),
+            )
+        }
 
-    val allMedications = remember {
-        listOf(
-            Medication(
-                name = "Амоксициллин",
-                activeSubstance = "Амоксициллин",
-                defaultDosage = "500 мг",
-                description = "Антибиотик группы полусинтетических пенициллинов широкого спектра действия.",
-                indications = "Инфекции дыхательных путей, мочеполовой системы, ЖКТ.",
-                sideEffects = "Аллергические реакции, тошнота, диарея."
-            ),
-            Medication(
-                name = "Аспирин",
-                activeSubstance = "Ацетилсалициловая кислота",
-                defaultDosage = "100 мг",
-                description = "Нестероидный противовоспалительный препарат (НПВП).",
-                indications = "Лихорадка, болевой синдром, профилактика тромбозов.",
-                sideEffects = "Боли в животе, риск кровотечений."
-            ),
-            Medication(
-                name = "Ибупрофен",
-                activeSubstance = "Ибупрофен",
-                defaultDosage = "400 мг",
-                description = "НПВП, производное пропионовой кислоты.",
-                indications = "Головная и зубная боль, невралгии, боли в суставах.",
-                sideEffects = "Изжога, метеоризм, повышение АД."
-            ),
-            Medication(
-                name = "Омепразол (Тева)",
-                activeSubstance = "Омепразол",
-                defaultDosage = "20 мг",
-                description = "Ингибитор протонной помпы, снижает секрецию желудочного сока.",
-                indications = "Язвенная болезнь, гастрит, рефлюкс-эзофагит.",
-                sideEffects = "Головная боль, запор или диарея."
-            ),
-        )
-    }
+    val allMedications =
+        remember {
+            listOf(
+                Medication(
+                    name = "Амоксициллин",
+                    activeSubstance = "Амоксициллин",
+                    defaultDosage = "500 мг",
+                    description = "Антибиотик группы полусинтетических пенициллинов широкого спектра действия.",
+                    indications = "Инфекции дыхательных путей, мочеполовой системы, ЖКТ.",
+                    sideEffects = "Аллергические реакции, тошнота, диарея.",
+                ),
+                Medication(
+                    name = "Аспирин",
+                    activeSubstance = "Ацетилсалициловая кислота",
+                    defaultDosage = "100 мг",
+                    description = "Нестероидный противовоспалительный препарат (НПВП).",
+                    indications = "Лихорадка, болевой синдром, профилактика тромбозов.",
+                    sideEffects = "Боли в животе, риск кровотечений.",
+                ),
+                Medication(
+                    name = "Ибупрофен",
+                    activeSubstance = "Ибупрофен",
+                    defaultDosage = "400 мг",
+                    description = "НПВП, производное пропионовой кислоты.",
+                    indications = "Головная и зубная боль, невралгии, боли в суставах.",
+                    sideEffects = "Изжога, метеоризм, повышение АД.",
+                ),
+                Medication(
+                    name = "Омепразол (Тева)",
+                    activeSubstance = "Омепразол",
+                    defaultDosage = "20 мг",
+                    description = "Ингибитор протонной помпы, снижает секрецию желудочного сока.",
+                    indications = "Язвенная болезнь, гастрит, рефлюкс-эзофагит.",
+                    sideEffects = "Головная боль, запор или диарея.",
+                ),
+            )
+        }
 
-    val displayedPatients = allPatients
-        .filter { it.name.contains(searchQuery, ignoreCase = true) || it.iin.contains(searchQuery) }
-        .let { if (sortAscending) it.sortedBy { p -> p.name } else it.sortedByDescending { p -> p.name } }
+    // Мемоизация сортировки и фильтрации: пересчитываем ТОЛЬКО если изменился поиск или тип сортировки
+    val displayedPatients =
+        remember(searchQuery, sortAscending) {
+            allPatients
+                .filter { it.name.contains(searchQuery, ignoreCase = true) || it.iin.contains(searchQuery) }
+                .let { if (sortAscending) it.sortedBy { p -> p.name } else it.sortedByDescending { p -> p.name } }
+        }
 
-    val displayedMedications = allMedications
-        .filter { it.name.contains(searchQuery, ignoreCase = true) }
-        .let { if (sortAscending) it.sortedBy { m -> m.name } else it.sortedByDescending { m -> m.name } }
+    val displayedMedications =
+        remember(searchQuery, sortAscending) {
+            allMedications
+                .filter { it.name.contains(searchQuery, ignoreCase = true) }
+                .let { if (sortAscending) it.sortedBy { m -> m.name } else it.sortedByDescending { m -> m.name } }
+        }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(horizontal = 20.dp),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(horizontal = 20.dp),
     ) {
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -151,36 +165,28 @@ fun SearchScreen() {
             color = MaterialTheme.colorScheme.onBackground,
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-        PrimaryTabRow(
-            selectedTabIndex = selectedTabIndex,
-            containerColor = androidx.compose.ui.graphics.Color.Transparent,
-            divider = {}
-        ) {
-            tabs.forEachIndexed { index, title ->
-                Tab(
-                    selected = selectedTabIndex == index,
-                    onClick = { selectedTabIndex = index },
-                    text = { Text(title) }
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
+        // Поле поиска поднято выше табов. Использован легкий OutlinedTextField вместо тяжелого SearchBar
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            SearchBar(
-                query = searchQuery,
-                onQueryChange = { searchQuery = it },
-                onSearch = { },
-                active = false,
-                onActiveChange = { },
-                placeholder = { Text(if (selectedTabIndex == 0) "Поиск по ФИО или ИИН" else "Поиск препарата") },
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = {
+                    Text(
+                        text =
+                            when (pagerState.currentPage) {
+                                0 -> "Поиск по ФИО или ИИН"
+                                1 -> "Поиск препарата"
+                                else -> "Поиск рецепта"
+                            },
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    )
+                },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
@@ -189,48 +195,101 @@ fun SearchScreen() {
                         }
                     }
                 },
-                modifier = Modifier.weight(1f)
-            ) {}
+                shape = CircleShape,
+                colors =
+                    OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color.Transparent,
+                        unfocusedBorderColor = Color.Transparent,
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    ),
+                singleLine = true,
+                modifier = Modifier.weight(1f),
+            )
 
             IconButton(
                 onClick = { sortAscending = !sortAscending },
-                colors = IconButtonDefaults.iconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer
-                )
+                modifier =
+                    Modifier.background(
+                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        CircleShape,
+                    ),
             ) {
                 Icon(
                     imageVector = if (sortAscending) Icons.Default.SortByAlpha else Icons.Default.Sort,
                     contentDescription = "Sort",
-                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        PrimaryTabRow(
+            selectedTabIndex = pagerState.currentPage,
+            containerColor = Color.Transparent,
+            divider = {},
+        ) {
+            tabs.forEachIndexed { index, title ->
+                Tab(
+                    selected = pagerState.currentPage == index,
+                    onClick = {
+                        coroutineScope.launch {
+                            pagerState.animateScrollToPage(index)
+                        }
+                    },
+                    text = { Text(title) },
                 )
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        AnimatedContent(
-            targetState = selectedTabIndex,
-            transitionSpec = {
-                fadeIn() togetherWith fadeOut()
-            },
-            label = "SearchContent"
-        ) { tabIndex ->
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize(),
+            verticalAlignment = Alignment.Top,
+        ) { page ->
             LazyColumn(
                 contentPadding = PaddingValues(bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.fillMaxSize(),
             ) {
-                if (tabIndex == 0) {
-                    items(displayedPatients) { patient ->
-                        PatientListItem(patient = patient, onClick = { selectedPatient = patient })
+                when (page) {
+                    0 -> {
+                        // ДОБАВЛЕН key = { it.id } для устранения лагов скролла
+                        items(displayedPatients, key = { it.id }) { patient ->
+                            PatientListItem(patient = patient, onClick = { selectedPatient = patient })
+                        }
                     }
-                } else {
-                    items(displayedMedications) { med ->
-                        MedicationListItem(
-                            medication = med,
-                            onClick = { selectedMedication = med },
-                            onAddToRecipe = { /* TODO */ },
-                        )
+
+                    1 -> {
+                        // ДОБАВЛЕН key = { it.id }
+                        items(displayedMedications, key = { it.id }) { med ->
+                            MedicationListItem(
+                                medication = med,
+                                onClick = { selectedMedication = med },
+                                onAddToRecipe = { /* TODO */ },
+                            )
+                        }
+                    }
+
+                    2 -> {
+                        item {
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .fillParentMaxSize()
+                                        .padding(top = 40.dp),
+                                contentAlignment = Alignment.TopCenter,
+                            ) {
+                                Text(
+                                    text = "Здесь будет поиск по выписанным рецептам",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -267,7 +326,7 @@ fun PatientListItem(
             headlineContent = { Text(patient.name, fontWeight = FontWeight.Bold) },
             supportingContent = { Text("${patient.age} лет • ИИН: ${patient.iin}") },
             trailingContent = { Icon(Icons.Default.ChevronRight, contentDescription = null) },
-            colors = ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent)
+            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         )
     }
 }
@@ -284,13 +343,13 @@ fun MedicationListItem(
         shape = RoundedCornerShape(16.dp),
     ) {
         ListItem(
-            headlineContent = { 
+            headlineContent = {
                 Text(
                     text = medication.name,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                ) 
+                )
             },
             supportingContent = { Text("Дозировка: ${medication.defaultDosage}") },
             trailingContent = {
@@ -298,7 +357,7 @@ fun MedicationListItem(
                     Icon(Icons.Default.AddCircleOutline, contentDescription = "Add", tint = MaterialTheme.colorScheme.primary)
                 }
             },
-            colors = ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent)
+            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         )
     }
 }
@@ -317,11 +376,12 @@ fun PatientProfileSheet(
         sheetState = sheetState,
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 32.dp)
-                .verticalScroll(rememberScrollState()),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 32.dp)
+                    .verticalScroll(rememberScrollState()),
         ) {
             Text(text = patient.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Text(text = "ИИН: ${patient.iin}", color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -333,7 +393,7 @@ fun PatientProfileSheet(
             patient.diseaseHistory.forEach { disease ->
                 ListItem(
                     headlineContent = { Text(disease) },
-                    leadingContent = { Icon(Icons.Default.History, contentDescription = null, modifier = Modifier.size(20.dp)) }
+                    leadingContent = { Icon(Icons.Default.History, contentDescription = null, modifier = Modifier.size(20.dp)) },
                 )
             }
 
@@ -347,7 +407,13 @@ fun PatientProfileSheet(
                 patient.relevantPrescriptions.forEach { med ->
                     ListItem(
                         headlineContent = { Text(med) },
-                        leadingContent = { Icon(Icons.Default.MedicalServices, contentDescription = null, modifier = Modifier.size(20.dp)) }
+                        leadingContent = {
+                            Icon(
+                                Icons.Default.MedicalServices,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        },
                     )
                 }
             }
@@ -356,7 +422,10 @@ fun PatientProfileSheet(
 
             Button(
                 onClick = onBookAppointment,
-                modifier = Modifier.fillMaxWidth().height(56.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
             ) {
                 Text("Записать на прием", style = MaterialTheme.typography.titleMedium)
@@ -375,32 +444,33 @@ fun MedicationInfoSheet(
         onDismissRequest = onDismiss,
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 32.dp)
-                .verticalScroll(rememberScrollState()),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 32.dp)
+                    .verticalScroll(rememberScrollState()),
         ) {
             Text(text = medication.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Text(text = medication.activeSubstance, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleMedium)
-            
+
             Spacer(modifier = Modifier.height(24.dp))
 
             OutlinedCard(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text("Описание", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                     Text(medication.description, style = MaterialTheme.typography.bodyMedium)
-                    
+
                     Spacer(modifier = Modifier.height(16.dp))
-                    
+
                     Text("Показания", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                     Text(medication.indications, style = MaterialTheme.typography.bodyMedium)
-                    
+
                     Spacer(modifier = Modifier.height(16.dp))
-                    
+
                     Text("Побочные эффекты", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.error)
                     Text(medication.sideEffects, style = MaterialTheme.typography.bodyMedium)
                 }
@@ -410,7 +480,10 @@ fun MedicationInfoSheet(
 
             Button(
                 onClick = { /* TODO */ },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
             ) {
                 Text("Добавить к рецепту", style = MaterialTheme.typography.titleMedium)
