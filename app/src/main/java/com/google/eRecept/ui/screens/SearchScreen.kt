@@ -61,17 +61,19 @@ fun SearchScreen(viewModel: SearchViewModel) {
     }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .pointerInput(Unit) {
-                detectTapGestures(onTap = { focusManager.clearFocus() })
-            }
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .pointerInput(Unit) {
+                    detectTapGestures(onTap = { focusManager.clearFocus() })
+                },
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(horizontal = 20.dp),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)
+                    .padding(horizontal = 20.dp),
         ) {
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -88,11 +90,12 @@ fun SearchScreen(viewModel: SearchViewModel) {
                 onValueChange = { searchQuery = it },
                 placeholder = {
                     Text(
-                        text = when(pagerState.currentPage) {
-                            0 -> "ФИО или ИИН"
-                            1 -> "Название препарата"
-                            else -> "Поиск в истории"
-                        },
+                        text =
+                            when (pagerState.currentPage) {
+                                0 -> "ФИО или ИИН"
+                                1 -> "Название препарата"
+                                else -> "Поиск в истории"
+                            },
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                     )
                 },
@@ -107,12 +110,13 @@ fun SearchScreen(viewModel: SearchViewModel) {
                     }
                 },
                 shape = CircleShape,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color.Transparent,
-                    unfocusedBorderColor = Color.Transparent,
-                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                ),
+                colors =
+                    OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color.Transparent,
+                        unfocusedBorderColor = Color.Transparent,
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    ),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -129,7 +133,13 @@ fun SearchScreen(viewModel: SearchViewModel) {
                         selected = pagerState.currentPage == index,
                         onClick = {
                             coroutineScope.launch {
-                                pagerState.animateScrollToPage(index)
+                                val diff = kotlin.math.abs(pagerState.currentPage - index)
+
+                                if (diff > 1) {
+                                    pagerState.scrollToPage(index) // без лагов 🚀
+                                } else {
+                                    pagerState.animateScrollToPage(index)
+                                }
                             }
                         },
                         text = { Text(title) },
@@ -147,7 +157,7 @@ fun SearchScreen(viewModel: SearchViewModel) {
                 PullToRefreshBox(
                     isRefreshing = isRefreshing,
                     onRefresh = { viewModel.refresh() },
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
                 ) {
                     when (page) {
                         0 -> {
@@ -195,15 +205,21 @@ fun SearchScreen(viewModel: SearchViewModel) {
                         }
 
                         2 -> {
-                            val filteredRecipes = if (searchQuery.isBlank()) allRecipes else {
-                                allRecipes.filter {
-                                    it.patient_name.contains(searchQuery, ignoreCase = true) ||
+                            val filteredRecipes =
+                                if (searchQuery.isBlank()) {
+                                    allRecipes
+                                } else {
+                                    allRecipes.filter {
+                                        it.patient_name.contains(searchQuery, ignoreCase = true) ||
                                             it.patient_iin.contains(searchQuery)
+                                    }
                                 }
-                            }
                             if (filteredRecipes.isEmpty()) {
                                 Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                                    SearchEmptyState(if (searchQuery.isNotEmpty()) "Рецепты не найдены" else "История рецептов пуста", Icons.Default.ReceiptLong)
+                                    SearchEmptyState(
+                                        if (searchQuery.isNotEmpty()) "Рецепты не найдены" else "История рецептов пуста",
+                                        Icons.Default.ReceiptLong,
+                                    )
                                 }
                             } else {
                                 LazyColumn(
@@ -233,30 +249,36 @@ fun SearchScreen(viewModel: SearchViewModel) {
 }
 
 @Composable
-fun SearchEmptyState(message: String, icon: androidx.compose.ui.graphics.vector.ImageVector) {
+fun SearchEmptyState(
+    message: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+) {
     Column(
         modifier = Modifier.fillMaxWidth().fillMaxHeight().padding(top = 100.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
             modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = message,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.bodyLarge
+            style = MaterialTheme.typography.bodyLarge,
         )
     }
 }
 
 @Composable
-fun PatientListItem(patient: Patient, onClick: () -> Unit) {
+fun PatientListItem(
+    patient: Patient,
+    onClick: () -> Unit,
+) {
     ElevatedCard(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
@@ -272,7 +294,10 @@ fun PatientListItem(patient: Patient, onClick: () -> Unit) {
 }
 
 @Composable
-fun MedicationListItem(medication: Medication, onClick: () -> Unit) {
+fun MedicationListItem(
+    medication: Medication,
+    onClick: () -> Unit,
+) {
     ElevatedCard(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
@@ -288,7 +313,10 @@ fun MedicationListItem(medication: Medication, onClick: () -> Unit) {
 }
 
 @Composable
-fun SearchRecipeHistoryCard(recipe: Recipe, onClick: () -> Unit) {
+fun SearchRecipeHistoryCard(
+    recipe: Recipe,
+    onClick: () -> Unit,
+) {
     val sdf = SimpleDateFormat("d MMMM yyyy", Locale("ru"))
     val dateStr = sdf.format(Date(recipe.date))
     val recipeNum = recipe.id.takeLast(4).uppercase()
@@ -303,19 +331,19 @@ fun SearchRecipeHistoryCard(recipe: Recipe, onClick: () -> Unit) {
             Text(
                 text = "Рецепт №$recipeNum",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.primary,
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = recipe.patient_name,
                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = dateStr,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -323,10 +351,18 @@ fun SearchRecipeHistoryCard(recipe: Recipe, onClick: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PatientProfileSheet(patient: Patient, onDismiss: () -> Unit) {
+fun PatientProfileSheet(
+    patient: Patient,
+    onDismiss: () -> Unit,
+) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 32.dp).verticalScroll(rememberScrollState()),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 32.dp)
+                    .verticalScroll(rememberScrollState()),
         ) {
             Text(text = patient.full_name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Text(text = "ИИН: ${patient.iin}", color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -345,10 +381,18 @@ fun PatientProfileSheet(patient: Patient, onDismiss: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MedicationInfoSheet(medication: Medication, onDismiss: () -> Unit) {
+fun MedicationInfoSheet(
+    medication: Medication,
+    onDismiss: () -> Unit,
+) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 32.dp).verticalScroll(rememberScrollState()),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 32.dp)
+                    .verticalScroll(rememberScrollState()),
         ) {
             Text(text = medication.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Text(text = medication.activeSubstance, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleMedium)

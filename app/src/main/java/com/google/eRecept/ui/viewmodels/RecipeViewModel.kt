@@ -18,7 +18,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class RecipeViewModel : ViewModel() {
-    // ВРЕМЕННО: ручное внедрение
     private val repository: RecipeRepository = MockRecipeRepository()
 
     private val _recipes = MutableStateFlow<List<Recipe>>(emptyList())
@@ -30,7 +29,10 @@ class RecipeViewModel : ViewModel() {
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
-    // --- СОСТОЯНИЕ ЧЕРНОВИКА (чтобы не терять данные при закрытии модалки) ---
+    // --- УПРАВЛЕНИЕ МОДАЛКОЙ И ЧЕРНОВИКОМ ---
+    private val _showCreateSheet = MutableStateFlow(false)
+    val showCreateSheet = _showCreateSheet.asStateFlow()
+
     private val _draftPatientIin = MutableStateFlow("")
     val draftPatientIin = _draftPatientIin.asStateFlow()
 
@@ -39,6 +41,18 @@ class RecipeViewModel : ViewModel() {
 
     private val _draftMedications = MutableStateFlow(listOf(MedicationItem()))
     val draftMedications = _draftMedications.asStateFlow()
+
+    // ВЫЗЫВАЙ ЭТУ ФУНКЦИЮ ПРИ ПЕРЕХОДЕ С ГЛАВНОЙ СТРАНИЦЫ
+    fun openCreateSheet(iin: String? = null) {
+        if (iin != null) {
+            _draftPatientIin.value = iin
+        }
+        _showCreateSheet.value = true
+    }
+
+    fun closeCreateSheet() {
+        _showCreateSheet.value = false
+    }
 
     fun updateDraftIin(iin: String) {
         _draftPatientIin.value = iin
@@ -107,11 +121,12 @@ class RecipeViewModel : ViewModel() {
                     patient_iin = iin,
                     patient_name = patientName,
                     date = System.currentTimeMillis(),
-                    medications = meds,
+                    medications = meds, // Теперь тут полные объекты с дозировкой, кратностью и тд
                     notes = notes,
                 )
             repository.createRecipe(recipe)
-            clearDraft() // Очищаем черновик только после успешного создания
+            clearDraft()
+            closeCreateSheet() // Закрываем модалку после создания
         }
     }
 

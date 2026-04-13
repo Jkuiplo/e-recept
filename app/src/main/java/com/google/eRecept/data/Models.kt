@@ -42,8 +42,21 @@ data class Recipe(
 
 data class MedicationItem(
     val name: String = "",
-    val dosage: String = "",
-)
+    val dosageValue: String = "",
+    val dosageUnit: String = "мг",
+    val frequency: String = "2×",
+    val durationValue: String = "",
+    val durationUnit: String = "дней",
+) {
+    // Автоматически собираем строку "Итого"
+    val summary: String
+        get() =
+            if (dosageValue.isNotBlank() && durationValue.isNotBlank()) {
+                "$dosageValue $dosageUnit × $frequency/день — $durationValue $durationUnit"
+            } else {
+                "Заполните данные"
+            }
+}
 
 data class Medication(
     val id: String = "",

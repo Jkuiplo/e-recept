@@ -50,13 +50,14 @@ fun RecipeScreen(
     homeViewModel: HomeViewModel = viewModel(),
 ) {
     val focusManager = LocalFocusManager.current
-    var showCreateSheet by remember { mutableStateOf(false) }
     var selectedRecipe by remember { mutableStateOf<Recipe?>(null) }
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val recipes by viewModel.recipes.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
+
+    val showCreateSheet by viewModel.showCreateSheet.collectAsStateWithLifecycle()
 
     // Черновик из ViewModel
     val draftPatientIin by viewModel.draftPatientIin.collectAsStateWithLifecycle()
@@ -65,6 +66,15 @@ fun RecipeScreen(
 
     val patientResult by homeViewModel.searchPatientResult.collectAsStateWithLifecycle()
     val isSearchingPatient by homeViewModel.isSearching.collectAsStateWithLifecycle()
+
+    // Триггерим поиск пациента, если ИИН прилетел из Главной страницы
+    LaunchedEffect(draftPatientIin) {
+        if (draftPatientIin.length == 12) {
+            homeViewModel.searchPatient(draftPatientIin)
+        } else if (draftPatientIin.isEmpty()) {
+            homeViewModel.clearSearchResult()
+        }
+    }
 
     Box(
         modifier =
@@ -77,7 +87,7 @@ fun RecipeScreen(
         Scaffold(
             floatingActionButton = {
                 FloatingActionButton(
-                    onClick = { showCreateSheet = true },
+                    onClick = { viewModel.openCreateSheet() },
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                 ) {
@@ -141,7 +151,7 @@ fun RecipeScreen(
 
     if (showCreateSheet) {
         ModalBottomSheet(
-            onDismissRequest = { showCreateSheet = false },
+            onDismissRequest = { viewModel.closeCreateSheet() },
             sheetState = sheetState,
             dragHandle = { BottomSheetDefaults.DragHandle() },
             modifier = Modifier.fillMaxHeight(),
@@ -157,32 +167,7 @@ fun RecipeScreen(
                 Column(
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    Row(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 8.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        IconButton(onClick = { showCreateSheet = false }) {
-                            Icon(Icons.Default.Close, contentDescription = null)
-                        }
-                        Text(
-                            text = "Новый рецепт",
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                            modifier = Modifier.weight(1f),
-                            textAlign = TextAlign.Center,
-                        )
-                        IconButton(onClick = { viewModel.clearDraft() }) {
-                            Icon(
-                                Icons.Default.DeleteOutline,
-                                contentDescription = "Очистить черновик",
-                                tint = MaterialTheme.colorScheme.error,
-                            )
-                        }
-                    }
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                    // Выкинули верхнюю шапку с крестиками
 
                     Column(
                         modifier =
@@ -192,6 +177,11 @@ fun RecipeScreen(
                                 .padding(horizontal = 20.dp)
                                 .verticalScroll(rememberScrollState()),
                     ) {
+                        Text(
+                            text = "Выписать рецепт",
+                            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
                         Spacer(modifier = Modifier.height(24.dp))
 
                         OutlinedTextField(
@@ -199,7 +189,6 @@ fun RecipeScreen(
                             onValueChange = {
                                 if (it.length <= 12 && it.all { char -> char.isDigit() }) {
                                     viewModel.updateDraftIin(it)
-                                    if (it.length == 12) homeViewModel.searchPatient(it)
                                 }
                             },
                             label = { Text("ИИН пациента") },
@@ -210,11 +199,22 @@ fun RecipeScreen(
                             trailingIcon = {
                                 if (isSearchingPatient) {
                                     CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                                } else if (draftPatientIin.isNotEmpty()) {
+                                    IconButton(onClick = { viewModel.updateDraftIin("") }) {
+                                        Icon(Icons.Default.Clear, contentDescription = "Очистить")
+                                    }
                                 }
                             },
                         )
 
-                        if (patientResult != null && draftPatientIin.length == 12) {
+                        if (draftPatientIin.length == 12 && !isSearchingPatient && patientResult == null) {
+                            Text(
+                                text = "Пациент не найден",
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.padding(top = 4.dp, start = 4.dp),
+                            )
+                        } else if (patientResult != null && draftPatientIin.length == 12) {
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = "Пациент: ${patientResult!!.full_name}",
@@ -252,10 +252,13 @@ fun RecipeScreen(
                                         null
                                     },
                             )
-                            Spacer(modifier = Modifier.height(12.dp))
+                            Spacer(modifier = Modifier.height(16.dp))
                         }
 
-                        TextButton(onClick = { viewModel.updateDraftMedications(draftMedications + MedicationItem()) }) {
+                        TextButton(
+                            onClick = { viewModel.updateDraftMedications(draftMedications + MedicationItem()) },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
                             Icon(Icons.Default.Add, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Добавить препарат")
@@ -266,7 +269,7 @@ fun RecipeScreen(
                         OutlinedTextField(
                             value = draftNotes,
                             onValueChange = { viewModel.updateDraftNotes(it) },
-                            label = { Text("Рекомендации") },
+                            label = { Text("Общие рекомендации (опционально)") },
                             modifier = Modifier.fillMaxWidth().heightIn(min = 100.dp),
                             shape = RoundedCornerShape(12.dp),
                         )
@@ -277,13 +280,16 @@ fun RecipeScreen(
                     Button(
                         onClick = {
                             viewModel.createRecipe(patientResult?.full_name ?: "Неизвестно")
-                            showCreateSheet = false
                         },
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp).height(56.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp, vertical = 16.dp)
+                                .height(56.dp),
                         shape = RoundedCornerShape(16.dp),
                         enabled = draftPatientIin.length == 12 && patientResult != null && draftMedications.any { it.name.isNotBlank() },
                     ) {
-                        Text("Выписать рецепт")
+                        Text("Выписать рецепт", style = MaterialTheme.typography.titleMedium)
                     }
                 }
             }
@@ -328,6 +334,7 @@ fun RecipeHistoryCard(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SmartMedicationRow(
     index: Int,
@@ -337,90 +344,171 @@ fun SmartMedicationRow(
     onRemove: (() -> Unit)?,
 ) {
     var nameExpanded by remember { mutableStateOf(false) }
-    var dosageExpanded by remember { mutableStateOf(false) }
     var fieldSize by remember { mutableStateOf(Size.Zero) }
     val suggestions by viewModel.medicationSuggestions.collectAsStateWithLifecycle()
-    var selectedMedicationData by remember { mutableStateOf<Medication?>(null) }
     val density = LocalDensity.current
 
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Box(modifier = Modifier.weight(0.6f)) {
-            OutlinedTextField(
-                value = medication.name,
-                onValueChange = {
-                    onMedicationChange(medication.copy(name = it, dosage = ""))
-                    viewModel.searchMedications(it)
-                    nameExpanded = true
-                },
-                label = { Text("Препарат") },
-                modifier = Modifier.fillMaxWidth().onGloballyPositioned { fieldSize = it.size.toSize() },
-                shape = RoundedCornerShape(12.dp),
-                singleLine = true,
-            )
+    val dosageUnits = listOf("мг", "мл", "таб")
+    val frequencies = listOf("1×", "2×", "3×", "4×")
+    val durationUnits = listOf("дней", "нед", "мес")
 
-            DropdownMenu(
-                expanded = nameExpanded && suggestions.isNotEmpty(),
-                onDismissRequest = { nameExpanded = false },
-                properties = PopupProperties(focusable = false),
-                modifier = Modifier.width(with(density) { fieldSize.width.toDp() }),
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            // Шапка карточки: Название и корзина
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                suggestions.forEach { suggestion ->
-                    DropdownMenuItem(
-                        text = {
-                            Column {
-                                Text(suggestion.name, fontWeight = FontWeight.Bold)
-                                Text(suggestion.activeSubstance, style = MaterialTheme.typography.bodySmall)
-                            }
-                        },
-                        onClick = {
-                            onMedicationChange(medication.copy(name = suggestion.name))
-                            selectedMedicationData = suggestion
-                            nameExpanded = false
-                        },
-                    )
+                Text("Препарат ${index + 1}", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                if (onRemove != null) {
+                    IconButton(onClick = onRemove, modifier = Modifier.size(24.dp)) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "Удалить",
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
                 }
             }
-        }
 
-        Box(modifier = Modifier.weight(0.4f)) {
-            OutlinedTextField(
-                value = medication.dosage,
-                onValueChange = {
-                    onMedicationChange(medication.copy(dosage = it))
-                    dosageExpanded = true
-                },
-                label = { Text("Доза") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                singleLine = true,
-            )
+            Spacer(modifier = Modifier.height(8.dp))
 
-            if (selectedMedicationData != null && selectedMedicationData!!.availableDosages.isNotEmpty()) {
+            // ПОЛЕ ПРЕПАРАТА
+            Box {
+                OutlinedTextField(
+                    value = medication.name,
+                    onValueChange = {
+                        onMedicationChange(medication.copy(name = it))
+                        viewModel.searchMedications(it)
+                        nameExpanded = true
+                    },
+                    label = { Text("Название") },
+                    modifier = Modifier.fillMaxWidth().onGloballyPositioned { fieldSize = it.size.toSize() },
+                    shape = RoundedCornerShape(12.dp),
+                    singleLine = true,
+                )
                 DropdownMenu(
-                    expanded = dosageExpanded,
-                    onDismissRequest = { dosageExpanded = false },
+                    expanded = nameExpanded && suggestions.isNotEmpty(),
+                    onDismissRequest = { nameExpanded = false },
                     properties = PopupProperties(focusable = false),
+                    modifier = Modifier.width(with(density) { fieldSize.width.toDp() }),
                 ) {
-                    selectedMedicationData!!.availableDosages.forEach { dosage ->
+                    suggestions.forEach { suggestion ->
                         DropdownMenuItem(
-                            text = { Text(dosage) },
+                            text = {
+                                Column {
+                                    Text(suggestion.name, fontWeight = FontWeight.Bold)
+                                    Text(suggestion.activeSubstance, style = MaterialTheme.typography.bodySmall)
+                                }
+                            },
                             onClick = {
-                                onMedicationChange(medication.copy(dosage = dosage))
-                                dosageExpanded = false
+                                onMedicationChange(medication.copy(name = suggestion.name))
+                                nameExpanded = false
                             },
                         )
                     }
                 }
             }
-        }
 
-        if (onRemove != null) {
-            IconButton(onClick = onRemove) {
-                Icon(Icons.Default.RemoveCircleOutline, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // ПОЛЕ ДОЗИРОВКИ
+            Text("Дозировка", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                OutlinedTextField(
+                    value = medication.dosageValue,
+                    onValueChange = { onMedicationChange(medication.copy(dosageValue = it)) },
+                    modifier = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    shape = RoundedCornerShape(12.dp),
+                    singleLine = true,
+                )
+                SingleChoiceSegmentedButtonRow(modifier = Modifier.weight(1.2f)) {
+                    dosageUnits.forEachIndexed { i, unit ->
+                        SegmentedButton(
+                            shape = SegmentedButtonDefaults.itemShape(index = i, count = dosageUnits.size),
+                            onClick = { onMedicationChange(medication.copy(dosageUnit = unit)) },
+                            selected = medication.dosageUnit == unit,
+                        ) { Text(unit, style = MaterialTheme.typography.labelSmall) }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // ПОЛЕ КРАТНОСТИ
+            Text("Кратность приёма", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(modifier = Modifier.height(4.dp))
+            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                frequencies.forEachIndexed { i, freq ->
+                    SegmentedButton(
+                        shape = SegmentedButtonDefaults.itemShape(index = i, count = frequencies.size),
+                        onClick = { onMedicationChange(medication.copy(frequency = freq)) },
+                        selected = medication.frequency == freq,
+                    ) { Text(freq) }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // ПОЛЕ ДЛИТЕЛЬНОСТИ
+            Text("Длительность", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                OutlinedTextField(
+                    value = medication.durationValue,
+                    onValueChange = { onMedicationChange(medication.copy(durationValue = it)) },
+                    modifier = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    shape = RoundedCornerShape(12.dp),
+                    singleLine = true,
+                )
+                SingleChoiceSegmentedButtonRow(modifier = Modifier.weight(1.2f)) {
+                    durationUnits.forEachIndexed { i, unit ->
+                        SegmentedButton(
+                            shape = SegmentedButtonDefaults.itemShape(index = i, count = durationUnits.size),
+                            onClick = { onMedicationChange(medication.copy(durationUnit = unit)) },
+                            selected = medication.durationUnit == unit,
+                        ) { Text(unit, style = MaterialTheme.typography.labelSmall) }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // ИТОГО (BOX)
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f), RoundedCornerShape(12.dp))
+                        .padding(16.dp),
+            ) {
+                Column {
+                    Text("Итого", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        medication.summary,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
             }
         }
     }
@@ -454,7 +542,15 @@ fun RecipeDetailsDialog(
                 HorizontalDivider()
                 Spacer(modifier = Modifier.height(8.dp))
                 recipe.medications.forEach { med ->
-                    Text("• ${med.name} (${med.dosage})", modifier = Modifier.padding(vertical = 4.dp))
+                    // Выводим красивый summary
+                    Text("• ${med.name}", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 4.dp))
+                    Text("  ${med.summary}", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 4.dp))
+                }
+                if (recipe.notes.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Рекомендации: ${recipe.notes}", style = MaterialTheme.typography.bodyMedium)
                 }
             }
         },

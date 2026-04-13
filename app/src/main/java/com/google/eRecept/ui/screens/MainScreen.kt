@@ -28,17 +28,19 @@ import com.google.eRecept.ui.viewmodels.SearchViewModel
 
 @Composable
 fun MainScreen(onLogout: () -> Unit) {
+    // Вьюмодели живут на уровне MainScreen, поэтому они общие для всех вкладок!
     val homeViewModel: HomeViewModel = viewModel()
     val recipeViewModel: RecipeViewModel = viewModel()
     val searchViewModel: SearchViewModel = viewModel()
 
     val tabs = listOf("Расписание", "Рецепты", "Поиск", "Профиль")
-    val icons = listOf(
-        Icons.Default.CalendarToday,
-        Icons.Default.ListAlt,
-        Icons.Default.Search,
-        Icons.Default.Person,
-    )
+    val icons =
+        listOf(
+            Icons.Default.CalendarToday,
+            Icons.Default.ListAlt,
+            Icons.Default.Search,
+            Icons.Default.Person,
+        )
 
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
 
@@ -64,22 +66,40 @@ fun MainScreen(onLogout: () -> Unit) {
         },
     ) { paddingValues ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
         ) {
             when (selectedTab) {
-                0 -> HomeScreen(
-                    viewModel = homeViewModel,
-                    onProfileClick = { selectedTab = 3 },
-                    onCreateRecipeClick = { selectedTab = 1 },
-                )
-                1 -> RecipeScreen(
-                    viewModel = recipeViewModel,
-                    homeViewModel = homeViewModel
-                )
-                2 -> SearchScreen(viewModel = searchViewModel)
-                3 -> ProfileScreen(onLogout = onLogout)
+                0 -> {
+                    HomeScreen(
+                        viewModel = homeViewModel,
+                        onProfileClick = { selectedTab = 3 },
+                        // МАГИЯ ЗДЕСЬ: Ловим ИИН из модалки расписания
+                        onCreateRecipeClick = { iin ->
+                            // 1. Говорим вьюмодели рецептов открыть свою модалку с этим ИИН
+                            recipeViewModel.openCreateSheet(iin)
+                            // 2. Переключаем интерфейс на вкладку "Рецепты"
+                            selectedTab = 1
+                        },
+                    )
+                }
+
+                1 -> {
+                    RecipeScreen(
+                        viewModel = recipeViewModel,
+                        homeViewModel = homeViewModel,
+                    )
+                }
+
+                2 -> {
+                    SearchScreen(viewModel = searchViewModel)
+                }
+
+                3 -> {
+                    ProfileScreen(onLogout = onLogout)
+                }
             }
         }
     }

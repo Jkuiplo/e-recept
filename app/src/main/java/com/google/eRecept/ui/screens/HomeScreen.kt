@@ -122,7 +122,13 @@ fun HomeScreen(
                             selected = daysPagerState.currentPage == index,
                             onClick = {
                                 coroutineScope.launch {
-                                    daysPagerState.animateScrollToPage(index)
+                                    val diff = kotlin.math.abs(daysPagerState.currentPage - index)
+
+                                    if (diff > 1) {
+                                        daysPagerState.scrollToPage(index) // без лагов 🚀
+                                    } else {
+                                        daysPagerState.animateScrollToPage(index)
+                                    }
                                 }
                             },
                             text = {
@@ -195,6 +201,7 @@ fun HomeScreen(
 
     if (showAddPatientSheet) {
         ModalBottomSheet(
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             onDismissRequest = {
                 showAddPatientSheet = false
                 viewModel.clearSearchResult() // Очищаем результат при закрытии
@@ -367,6 +374,8 @@ fun AddPatientBottomSheetContent(
                     detectTapGestures(onTap = { focusManager.clearFocus() })
                 }.padding(horizontal = 20.dp)
                 .padding(bottom = 40.dp)
+                .imePadding()
+                .navigationBarsPadding()
                 .verticalScroll(rememberScrollState()),
     ) {
         Text(
