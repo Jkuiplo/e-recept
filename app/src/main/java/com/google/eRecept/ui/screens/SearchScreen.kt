@@ -1,6 +1,7 @@
 package com.google.eRecept.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -13,11 +14,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -28,20 +32,25 @@ import com.google.eRecept.data.Patient
 import com.google.eRecept.data.Recipe
 import com.google.eRecept.ui.viewmodels.SearchViewModel
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(viewModel: SearchViewModel) {
+    val focusManager = LocalFocusManager.current
     val tabs = listOf("Пациенты", "Препараты", "История")
     val pagerState = rememberPagerState(pageCount = { tabs.size })
     val coroutineScope = rememberCoroutineScope()
 
     var searchQuery by rememberSaveable { mutableStateOf("") }
-    
+
     val patientResults by viewModel.patientResults.collectAsStateWithLifecycle()
     val medicationResults by viewModel.medicationResults.collectAsStateWithLifecycle()
     val allRecipes by viewModel.allRecipes.collectAsStateWithLifecycle()
     val isSearching by viewModel.isSearching.collectAsStateWithLifecycle()
+    val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
 
     var selectedPatient by remember { mutableStateOf<Patient?>(null) }
     var selectedMedication by remember { mutableStateOf<Medication?>(null) }
@@ -51,118 +60,162 @@ fun SearchScreen(viewModel: SearchViewModel) {
         viewModel.search(searchQuery, pagerState.currentPage)
     }
 
-    Column(
-        modifier =
-            Modifier
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .pointerInput(Unit) {
+                detectTapGestures(onTap = { focusManager.clearFocus() })
+            }
+    ) {
+        Column(
+            modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(horizontal = 20.dp),
-    ) {
-        Spacer(modifier = Modifier.height(24.dp))
+        ) {
+            Spacer(modifier = Modifier.height(24.dp))
 
-        Text(
-            text = "Поиск",
-            style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold, fontSize = 32.sp),
-            color = MaterialTheme.colorScheme.onBackground,
-        )
+            Text(
+                text = "Поиск",
+                style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold, fontSize = 32.sp),
+                color = MaterialTheme.colorScheme.onBackground,
+            )
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { searchQuery = it },
-            placeholder = {
-                Text(
-                    text = when(pagerState.currentPage) {
-                        0 -> "ФИО или ИИН пациента"
-                        1 -> "Название препарата"
-                        else -> "Поиск в истории"
-                    },
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                )
-            },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-            trailingIcon = {
-                if (isSearching) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                } else if (searchQuery.isNotEmpty()) {
-                    IconButton(onClick = { searchQuery = "" }) {
-                        Icon(Icons.Default.Clear, contentDescription = null)
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = {
+                    Text(
+                        text = when(pagerState.currentPage) {
+                            0 -> "ФИО или ИИН"
+                            1 -> "Название препарата"
+                            else -> "Поиск в истории"
+                        },
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    )
+                },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                trailingIcon = {
+                    if (isSearching) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                    } else if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(Icons.Default.Clear, contentDescription = null)
+                        }
                     }
-                }
-            },
-            shape = CircleShape,
-            colors =
-                OutlinedTextFieldDefaults.colors(
+                },
+                shape = CircleShape,
+                colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Color.Transparent,
                     unfocusedBorderColor = Color.Transparent,
                     focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                     unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                 ),
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-        )
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-        PrimaryTabRow(
-            selectedTabIndex = pagerState.currentPage,
-            containerColor = Color.Transparent,
-            divider = {},
-        ) {
-            tabs.forEachIndexed { index, title ->
-                Tab(
-                    selected = pagerState.currentPage == index,
-                    onClick = {
-                        coroutineScope.launch {
-                            pagerState.animateScrollToPage(index)
-                        }
-                    },
-                    text = { Text(title) },
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier.fillMaxSize(),
-            verticalAlignment = Alignment.Top,
-        ) { page ->
-            LazyColumn(
-                contentPadding = PaddingValues(bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxSize(),
+            PrimaryTabRow(
+                selectedTabIndex = pagerState.currentPage,
+                containerColor = Color.Transparent,
+                divider = {},
             ) {
-                when (page) {
-                    0 -> {
-                        if (patientResults.isEmpty() && searchQuery.isNotEmpty() && !isSearching) {
-                            item { EmptyState("Пациенты не найдены") }
-                        }
-                        items(patientResults, key = { it.iin }) { patient ->
-                            PatientListItem(patient = patient, onClick = { selectedPatient = patient })
-                        }
-                    }
+                tabs.forEachIndexed { index, title ->
+                    Tab(
+                        selected = pagerState.currentPage == index,
+                        onClick = {
+                            coroutineScope.launch {
+                                pagerState.animateScrollToPage(index)
+                            }
+                        },
+                        text = { Text(title) },
+                    )
+                }
+            }
 
-                    1 -> {
-                        if (medicationResults.isEmpty() && searchQuery.isNotEmpty() && !isSearching) {
-                            item { EmptyState("Препараты не найдены") }
-                        }
-                        items(medicationResults, key = { it.id }) { medication ->
-                            MedicationListItem(medication = medication, onClick = { selectedMedication = medication })
-                        }
-                    }
+            Spacer(modifier = Modifier.height(16.dp))
 
-                    2 -> {
-                        val filteredRecipes = if (searchQuery.isBlank()) allRecipes else {
-                            allRecipes.filter { 
-                                it.patient_name.contains(searchQuery, ignoreCase = true) || 
-                                it.patient_iin.contains(searchQuery) 
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize(),
+                verticalAlignment = Alignment.Top,
+            ) { page ->
+                PullToRefreshBox(
+                    isRefreshing = isRefreshing,
+                    onRefresh = { viewModel.refresh() },
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    when (page) {
+                        0 -> {
+                            if (patientResults.isEmpty() && searchQuery.isNotEmpty() && !isSearching) {
+                                Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                                    SearchEmptyState("Пациенты не найдены", Icons.Default.PersonOff)
+                                }
+                            } else if (patientResults.isEmpty() && searchQuery.isEmpty()) {
+                                Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                                    SearchEmptyState("Введите ИИН или ФИО для поиска пациента", Icons.Default.Search)
+                                }
+                            } else {
+                                LazyColumn(
+                                    contentPadding = PaddingValues(bottom = 24.dp),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                                    modifier = Modifier.fillMaxSize(),
+                                ) {
+                                    items(patientResults, key = { it.iin }) { patient ->
+                                        PatientListItem(patient = patient, onClick = { selectedPatient = patient })
+                                    }
+                                }
                             }
                         }
-                        items(filteredRecipes, key = { it.id }) { recipe ->
-                            RecipeHistoryCard(recipe = recipe, onClick = { selectedRecipe = recipe })
+
+                        1 -> {
+                            if (medicationResults.isEmpty() && searchQuery.isNotEmpty() && !isSearching) {
+                                Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                                    SearchEmptyState("Препараты не найдены", Icons.Default.MedicalServices)
+                                }
+                            } else if (medicationResults.isEmpty() && searchQuery.isEmpty()) {
+                                Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                                    SearchEmptyState("Введите название для поиска препарата", Icons.Default.Search)
+                                }
+                            } else {
+                                LazyColumn(
+                                    contentPadding = PaddingValues(bottom = 24.dp),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                                    modifier = Modifier.fillMaxSize(),
+                                ) {
+                                    items(medicationResults, key = { it.id }) { medication ->
+                                        MedicationListItem(medication = medication, onClick = { selectedMedication = medication })
+                                    }
+                                }
+                            }
+                        }
+
+                        2 -> {
+                            val filteredRecipes = if (searchQuery.isBlank()) allRecipes else {
+                                allRecipes.filter {
+                                    it.patient_name.contains(searchQuery, ignoreCase = true) ||
+                                            it.patient_iin.contains(searchQuery)
+                                }
+                            }
+                            if (filteredRecipes.isEmpty()) {
+                                Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                                    SearchEmptyState(if (searchQuery.isNotEmpty()) "Рецепты не найдены" else "История рецептов пуста", Icons.Default.ReceiptLong)
+                                }
+                            } else {
+                                LazyColumn(
+                                    contentPadding = PaddingValues(bottom = 24.dp),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                                    modifier = Modifier.fillMaxSize(),
+                                ) {
+                                    items(filteredRecipes, key = { it.id }) { recipe ->
+                                        SearchRecipeHistoryCard(recipe = recipe, onClick = { selectedRecipe = recipe })
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -180,9 +233,25 @@ fun SearchScreen(viewModel: SearchViewModel) {
 }
 
 @Composable
-fun EmptyState(message: String) {
-    Box(modifier = Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) {
-        Text(text = message, color = MaterialTheme.colorScheme.onSurfaceVariant)
+fun SearchEmptyState(message: String, icon: androidx.compose.ui.graphics.vector.ImageVector) {
+    Column(
+        modifier = Modifier.fillMaxWidth().fillMaxHeight().padding(top = 100.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(64.dp),
+            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = message,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.bodyLarge
+        )
     }
 }
 
@@ -215,6 +284,40 @@ fun MedicationListItem(medication: Medication, onClick: () -> Unit) {
             trailingContent = { Icon(Icons.Default.ChevronRight, contentDescription = null) },
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         )
+    }
+}
+
+@Composable
+fun SearchRecipeHistoryCard(recipe: Recipe, onClick: () -> Unit) {
+    val sdf = SimpleDateFormat("d MMMM yyyy", Locale("ru"))
+    val dateStr = sdf.format(Date(recipe.date))
+    val recipeNum = recipe.id.takeLast(4).uppercase()
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Рецепт №$recipeNum",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = recipe.patient_name,
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = dateStr,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }
 

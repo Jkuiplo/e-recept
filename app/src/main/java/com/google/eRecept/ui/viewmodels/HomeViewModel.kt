@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.google.eRecept.data.Appointment
 import com.google.eRecept.data.FirebaseRepository
 import com.google.eRecept.data.Patient
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,13 +22,29 @@ class HomeViewModel(private val repository: FirebaseRepository = FirebaseReposit
     private val _isSearching = MutableStateFlow(false)
     val isSearching: StateFlow<Boolean> = _isSearching.asStateFlow()
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
     init {
+        loadAppointments()
+    }
+
+    private fun loadAppointments() {
         repository.currentUserId?.let { doctorId ->
             viewModelScope.launch {
                 repository.getAppointments(doctorId).collect {
                     _appointments.value = it
                 }
             }
+        }
+    }
+
+    fun refresh() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            delay(500)
+            loadAppointments()
+            _isRefreshing.value = false
         }
     }
 
@@ -46,7 +63,6 @@ class HomeViewModel(private val repository: FirebaseRepository = FirebaseReposit
     fun addAppointment(patient: Patient, date: String, time: String, type: String) {
         val doctorId = repository.currentUserId ?: return
         viewModelScope.launch {
-            // Calculate age from birth_date (yyyy-mm-dd)
             val age = try {
                 val parts = patient.birth_date.split("-")
                 val year = parts[0].toInt()

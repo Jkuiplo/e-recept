@@ -10,6 +10,7 @@ import com.google.eRecept.data.MedicationItem
 import com.google.eRecept.data.Recipe
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,13 +23,29 @@ class RecipeViewModel(private val repository: FirebaseRepository = FirebaseRepos
     private val _medicationSuggestions = MutableStateFlow<List<Medication>>(emptyList())
     val medicationSuggestions: StateFlow<List<Medication>> = _medicationSuggestions.asStateFlow()
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
     init {
+        loadRecipes()
+    }
+
+    private fun loadRecipes() {
         repository.currentUserId?.let { doctorId ->
             viewModelScope.launch {
                 repository.getRecentRecipes(doctorId).collect {
                     _recipes.value = it
                 }
             }
+        }
+    }
+
+    fun refresh() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            delay(500)
+            loadRecipes()
+            _isRefreshing.value = false
         }
     }
 

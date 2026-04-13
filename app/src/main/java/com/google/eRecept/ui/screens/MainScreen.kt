@@ -1,9 +1,9 @@
 package com.google.eRecept.ui.screens
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.ListAlt
@@ -16,33 +16,35 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.eRecept.ui.viewmodels.HomeViewModel
 import com.google.eRecept.ui.viewmodels.RecipeViewModel
 import com.google.eRecept.ui.viewmodels.SearchViewModel
-import kotlinx.coroutines.launch
-import kotlin.math.abs
 
 @Composable
 fun MainScreen(onLogout: () -> Unit) {
-    // Поднимаем ViewModels, чтобы они жили вместе с MainScreen
     val homeViewModel: HomeViewModel = viewModel()
     val recipeViewModel: RecipeViewModel = viewModel()
     val searchViewModel: SearchViewModel = viewModel()
 
     val tabs = listOf("Расписание", "Рецепты", "Поиск", "Профиль")
-    val icons =
-        listOf(
-            Icons.Default.CalendarToday,
-            Icons.Default.ListAlt,
-            Icons.Default.Search,
-            Icons.Default.Person,
-        )
+    val icons = listOf(
+        Icons.Default.CalendarToday,
+        Icons.Default.ListAlt,
+        Icons.Default.Search,
+        Icons.Default.Person,
+    )
 
-    val pagerState = rememberPagerState(pageCount = { tabs.size })
-    val coroutineScope = rememberCoroutineScope()
+    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
+
+    BackHandler(enabled = selectedTab != 0) {
+        selectedTab = 0
+    }
 
     Scaffold(
         bottomBar = {
@@ -54,53 +56,30 @@ fun MainScreen(onLogout: () -> Unit) {
                     NavigationBarItem(
                         icon = { Icon(icons[index], contentDescription = title) },
                         label = { Text(title) },
-                        selected = pagerState.currentPage == index,
-                        onClick = {
-                            coroutineScope.launch {
-                                if (abs(pagerState.currentPage - index) > 1) {
-                                    pagerState.scrollToPage(index)
-                                } else {
-                                    pagerState.animateScrollToPage(index)
-                                }
-                            }
-                        },
+                        selected = selectedTab == index,
+                        onClick = { selectedTab = index },
                     )
                 }
             }
         },
     ) { paddingValues ->
-        HorizontalPager(
-            state = pagerState,
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-            beyondViewportPageCount = 3 // Держим все вкладки в памяти для стабильности
-        ) { page ->
-            when (page) {
-                0 -> {
-                    HomeScreen(
-                        viewModel = homeViewModel,
-                        onProfileClick = {
-                            coroutineScope.launch { pagerState.scrollToPage(3) }
-                        },
-                        onCreateRecipeClick = {
-                            coroutineScope.launch { pagerState.scrollToPage(1) }
-                        },
-                    )
-                }
-
-                1 -> {
-                    RecipeScreen(viewModel = recipeViewModel)
-                }
-
-                2 -> {
-                    SearchScreen(viewModel = searchViewModel)
-                }
-
-                3 -> {
-                    ProfileScreen(onLogout = onLogout)
-                }
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            when (selectedTab) {
+                0 -> HomeScreen(
+                    viewModel = homeViewModel,
+                    onProfileClick = { selectedTab = 3 },
+                    onCreateRecipeClick = { selectedTab = 1 },
+                )
+                1 -> RecipeScreen(
+                    viewModel = recipeViewModel,
+                    homeViewModel = homeViewModel
+                )
+                2 -> SearchScreen(viewModel = searchViewModel)
+                3 -> ProfileScreen(onLogout = onLogout)
             }
         }
     }

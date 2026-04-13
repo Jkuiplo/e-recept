@@ -6,6 +6,7 @@ import com.google.eRecept.data.FirebaseRepository
 import com.google.eRecept.data.Medication
 import com.google.eRecept.data.Patient
 import com.google.eRecept.data.Recipe
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,7 +25,17 @@ class SearchViewModel(private val repository: FirebaseRepository = FirebaseRepos
     private val _isSearching = MutableStateFlow(false)
     val isSearching: StateFlow<Boolean> = _isSearching.asStateFlow()
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
+    private var currentQuery = ""
+    private var currentTabIndex = 0
+
     init {
+        loadRecipes()
+    }
+
+    private fun loadRecipes() {
         repository.currentUserId?.let { doctorId ->
             viewModelScope.launch {
                 repository.getRecentRecipes(doctorId).collect {
@@ -34,7 +45,25 @@ class SearchViewModel(private val repository: FirebaseRepository = FirebaseRepos
         }
     }
 
+    fun refresh() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            delay(500)
+            if (currentTabIndex == 2) {
+                // На третьей вкладке просто перезагружаем всю историю
+                loadRecipes()
+            } else {
+                // На остальных вкладках повторяем поиск с текущим запросом
+                search(currentQuery, currentTabIndex)
+            }
+            _isRefreshing.value = false
+        }
+    }
+
     fun search(query: String, tabIndex: Int) {
+        currentQuery = query
+        currentTabIndex = tabIndex
+
         if (query.isBlank()) {
             _patientResults.value = emptyList()
             _medicationResults.value = emptyList()
