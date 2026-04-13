@@ -1,7 +1,5 @@
 package com.google.eRecept.ui.screens
 
-import ProfileScreen
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
@@ -19,23 +17,30 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.eRecept.ui.viewmodels.HomeViewModel
+import com.google.eRecept.ui.viewmodels.RecipeViewModel
+import com.google.eRecept.ui.viewmodels.SearchViewModel
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
 @Composable
-fun MainScreen() {
+fun MainScreen(onLogout: () -> Unit) {
+    // Поднимаем ViewModels, чтобы они жили вместе с MainScreen
+    val homeViewModel: HomeViewModel = viewModel()
+    val recipeViewModel: RecipeViewModel = viewModel()
+    val searchViewModel: SearchViewModel = viewModel()
+
     val tabs = listOf("Расписание", "Рецепты", "Поиск", "Профиль")
     val icons =
         listOf(
             Icons.Default.CalendarToday,
-            Icons.Default.ListAlt, // Иконка для рецептов (замени на нужную)
+            Icons.Default.ListAlt,
             Icons.Default.Search,
             Icons.Default.Person,
         )
 
-    // Используем rememberPagerState для свайпа между экранами
     val pagerState = rememberPagerState(pageCount = { tabs.size })
     val coroutineScope = rememberCoroutineScope()
 
@@ -52,13 +57,9 @@ fun MainScreen() {
                         selected = pagerState.currentPage == index,
                         onClick = {
                             coroutineScope.launch {
-                                // Главный фикс производительности:
-                                // Если разница между текущим и выбранным табом больше 1,
-                                // прыгаем без анимации (чтобы не рендерить промежуточные тяжелые экраны)
                                 if (abs(pagerState.currentPage - index) > 1) {
                                     pagerState.scrollToPage(index)
                                 } else {
-                                    // Если соседний таб — анимируем скролл
                                     pagerState.animateScrollToPage(index)
                                 }
                             }
@@ -74,33 +75,31 @@ fun MainScreen() {
                 Modifier
                     .fillMaxSize()
                     .padding(paddingValues),
-            // userScrollEnabled = false // раскомментируй, если захочешь отключить свайп пальцем
+            beyondViewportPageCount = 3 // Держим все вкладки в памяти для стабильности
         ) { page ->
-            // Отрисовываем нужный экран в зависимости от текущей страницы
             when (page) {
                 0 -> {
                     HomeScreen(
+                        viewModel = homeViewModel,
                         onProfileClick = {
                             coroutineScope.launch { pagerState.scrollToPage(3) }
                         },
                         onCreateRecipeClick = {
                             coroutineScope.launch { pagerState.scrollToPage(1) }
                         },
-                        // ... остальные коллбеки
                     )
                 }
 
                 1 -> {
-                    RecipeScreen()
+                    RecipeScreen(viewModel = recipeViewModel)
                 }
 
-                // Заглушка, так как кода рецептов у нас пока нет
                 2 -> {
-                    SearchScreen()
+                    SearchScreen(viewModel = searchViewModel)
                 }
 
                 3 -> {
-                    ProfileScreen()
+                    ProfileScreen(onLogout = onLogout)
                 }
             }
         }

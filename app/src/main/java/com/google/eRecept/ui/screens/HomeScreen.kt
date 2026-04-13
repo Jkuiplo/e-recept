@@ -23,6 +23,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.google.eRecept.data.Appointment
+import com.google.eRecept.ui.viewmodels.HomeViewModel
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -32,22 +35,20 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
+    viewModel: HomeViewModel,
     onProfileClick: () -> Unit = {},
     onCreateRecipeClick: () -> Unit = {},
-    onSearchPatientsClick: () -> Unit = {},
-    onSearchMedsClick: () -> Unit = {},
-    onAddPatientClick: () -> Unit = {},
 ) {
     var showAddPatientSheet by remember { mutableStateOf(false) }
     var selectedAppointment by remember { mutableStateOf<Appointment?>(null) }
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    // Безопасный сбор стейта
+    val appointments by viewModel.appointments.collectAsStateWithLifecycle()
 
     val days = listOf("Сегодня", "Завтра", "Послезавтра")
-    // Создаем PagerState для дней
     val daysPagerState = rememberPagerState(pageCount = { days.size })
     val coroutineScope = rememberCoroutineScope()
 
-    // Динамическая дата в зависимости от текущей страницы пейджера
     val calendar = Calendar.getInstance()
     calendar.add(Calendar.DAY_OF_YEAR, daysPagerState.currentPage)
     val selectedDate = calendar.time
@@ -78,11 +79,10 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Привязываем табы к состоянию пейджера
         PrimaryTabRow(
             selectedTabIndex = daysPagerState.currentPage,
             containerColor = Color.Transparent,
-            divider = {}, // Убираем нижнюю линию на всю ширину для чистоты
+            divider = {},
         ) {
             days.forEachIndexed { index, title ->
                 Tab(
@@ -129,14 +129,19 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Вложенный Pager для списков пациентов
         HorizontalPager(
             state = daysPagerState,
             modifier = Modifier.weight(1f),
             verticalAlignment = Alignment.Top
         ) { page ->
-            // Генерируем или фильтруем расписание для конкретного дня (page)
-            val scheduleForDay = getScheduleForDay(page)
+            val pageDateStr = remember(page) {
+                val sdf = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
+                val cal = Calendar.getInstance()
+                cal.add(Calendar.DAY_OF_YEAR, page)
+                sdf.format(cal.time)
+            }
+            
+            val scheduleForDay = appointments.filter { it.date == pageDateStr }
 
             if (scheduleForDay.isEmpty()) {
                 EmptyScheduleState()
@@ -160,21 +165,21 @@ fun HomeScreen(
         }
     }
 
+    // ИСПОЛЬЗУЕМ ОТДЕЛЬНЫЕ ШТОРКИ БЕЗ ОБЩЕГО sheetState ДЛЯ ПРЕДОТВРАЩЕНИЯ КРАШЕЙ
     if (showAddPatientSheet) {
         ModalBottomSheet(
-            onDismissRequest = { showAddPatientSheet = false },
-            sheetState = sheetState,
+            onDismissRequest = { showAddPatientSheet = false }
         ) {
             AddPatientBottomSheetContent(
                 onClose = { showAddPatientSheet = false },
+                viewModel = viewModel
             )
         }
     }
 
     if (selectedAppointment != null) {
         ModalBottomSheet(
-            onDismissRequest = { selectedAppointment = null },
-            sheetState = sheetState,
+            onDismissRequest = { selectedAppointment = null }
         ) {
             AppointmentDetailsBottomSheetContent(
                 appointment = selectedAppointment!!,
@@ -186,57 +191,6 @@ fun HomeScreen(
         }
     }
 }
-
-// Вынесенная логика расписания
-fun getScheduleForDay(dayIndex: Int): List<Appointment> {
-    return if (dayIndex == 0) {
-        listOf(
-            Appointment(
-                time = "09:00",
-                name = "Қазыбек Нұрым",
-                age = "68 лет",
-                gender = "М",
-                status = "Состоялась",
-                isCompleted = true,
-                allergy = "пенициллин",
-                history = "Хронический бронхит, артериальная гипертензия.",
-            ),
-            Appointment(
-                time = "11:30",
-                name = "Иванова Анна",
-                age = "34 года",
-                gender = "Ж",
-                status = "Запланирована",
-                isCompleted = false,
-                allergy = null,
-                history = "Жалоб нет, плановый осмотр.",
-            ),
-            Appointment(
-                time = "14:00",
-                name = "Смирнов Петр",
-                age = "45 лет",
-                gender = "М",
-                status = "Запланирована",
-                isCompleted = false,
-                allergy = null,
-                history = "Остеохондроз поясничного отдела.",
-            ),
-        )
-    } else {
-        emptyList()
-    }
-}
-
-data class Appointment(
-    val time: String,
-    val name: String,
-    val age: String,
-    val gender: String,
-    val status: String,
-    val isCompleted: Boolean,
-    val allergy: String?,
-    val history: String = "",
-)
 
 @Composable
 fun AppointmentCard(
@@ -267,7 +221,7 @@ fun AppointmentCard(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = appointment.name,
+                    text = appointment.patient_name,
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
@@ -277,21 +231,10 @@ fun AppointmentCard(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-
-                if (appointment.allergy != null) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "⚠ Аллергия: ${appointment.allergy}",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
-                        color = MaterialTheme.colorScheme.error,
-                        maxLines = 1,
-                    )
-                }
             }
 
-            // M3 Цвета для статусов
-            val containerColor = if (appointment.isCompleted) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.primaryContainer
-            val contentColor = if (appointment.isCompleted) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onPrimaryContainer
+            val containerColor = if (appointment.is_completed) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.primaryContainer
+            val contentColor = if (appointment.is_completed) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onPrimaryContainer
 
             Box(
                 modifier =
@@ -312,10 +255,11 @@ fun AppointmentCard(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddPatientBottomSheetContent(onClose: () -> Unit) {
+fun AddPatientBottomSheetContent(onClose: () -> Unit, viewModel: HomeViewModel) {
     var iin by remember { mutableStateOf("") }
-    var patientName by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf("") }
+    
+    val patientResult by viewModel.searchPatientResult.collectAsStateWithLifecycle()
+    val isSearching by viewModel.isSearching.collectAsStateWithLifecycle()
 
     var appointmentDate by remember { mutableStateOf("") }
     var selectedTime by remember { mutableStateOf("") }
@@ -347,18 +291,9 @@ fun AddPatientBottomSheetContent(onClose: () -> Unit) {
         }
     }
 
-    fun searchPatient(query: String) {
-        if (query.length == 12) {
-            if (query == "123456789012") {
-                patientName = "Иванов Иван Иванович"
-                errorMessage = ""
-            } else {
-                patientName = ""
-                errorMessage = "Пациент с таким ИИН не найден"
-            }
-        } else {
-            patientName = ""
-            errorMessage = ""
+    LaunchedEffect(iin) {
+        if (iin.length == 12) {
+            viewModel.searchPatient(iin)
         }
     }
 
@@ -382,30 +317,24 @@ fun AddPatientBottomSheetContent(onClose: () -> Unit) {
             onValueChange = {
                 if (it.length <= 12 && it.all { char -> char.isDigit() }) {
                     iin = it
-                    searchPatient(it)
                 }
             },
             label = { Text("ИИН пациента") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
-            isError = errorMessage.isNotEmpty(),
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             shape = RoundedCornerShape(12.dp),
+            trailingIcon = {
+                if (isSearching) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                }
+            }
         )
 
-        if (errorMessage.isNotEmpty()) {
-            Text(
-                text = errorMessage,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(top = 4.dp, start = 4.dp),
-            )
-        }
-
-        if (patientName.isNotEmpty()) {
+        if (patientResult != null) {
             Spacer(modifier = Modifier.height(16.dp))
             OutlinedTextField(
-                value = patientName,
+                value = patientResult!!.full_name,
                 onValueChange = {},
                 label = { Text("ФИО") },
                 readOnly = true,
@@ -414,13 +343,12 @@ fun AddPatientBottomSheetContent(onClose: () -> Unit) {
             )
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Поле даты теперь только для чтения, клик открывает календарь
             OutlinedTextField(
                 value = appointmentDate,
                 onValueChange = { },
                 label = { Text("Дата приема") },
                 placeholder = { Text("Выберите дату") },
-                readOnly = true, // Убрали маску, полагаемся только на DatePicker
+                readOnly = true,
                 trailingIcon = {
                     IconButton(onClick = { showDatePicker = true }) {
                         Icon(Icons.Default.CalendarToday, contentDescription = null)
@@ -430,9 +358,8 @@ fun AddPatientBottomSheetContent(onClose: () -> Unit) {
                     Modifier
                         .fillMaxWidth()
                         .clickable { showDatePicker = true },
-                // Клик по всему полю открывает календарь
                 shape = RoundedCornerShape(12.dp),
-                enabled = false, // Визуальный хак, чтобы клик отрабатывал на Box/Surface лучше, но в M3 OutlinedTextField readOnly работает отлично
+                enabled = false,
                 colors =
                     OutlinedTextFieldDefaults.colors(
                         disabledTextColor = MaterialTheme.colorScheme.onSurface,
@@ -518,13 +445,25 @@ fun AddPatientBottomSheetContent(onClose: () -> Unit) {
                 }
                 Spacer(modifier = Modifier.height(8.dp))
             }
+        } else if (iin.length == 12 && !isSearching) {
+             Text(
+                text = "Пациент не найден",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 4.dp, start = 4.dp),
+            )
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
-            onClick = onClose,
-            enabled = patientName.isNotEmpty() && appointmentDate.isNotEmpty(),
+            onClick = {
+                patientResult?.let {
+                    viewModel.addAppointment(it, appointmentDate, selectedTime, selectedType)
+                }
+                onClose()
+            },
+            enabled = patientResult != null && appointmentDate.isNotEmpty() && selectedTime.isNotEmpty(),
             modifier =
                 Modifier
                     .fillMaxWidth()
@@ -556,7 +495,7 @@ fun AppointmentDetailsBottomSheetContent(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = appointment.name,
+            text = appointment.patient_name,
             style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurface,
         )
@@ -571,7 +510,7 @@ fun AppointmentDetailsBottomSheetContent(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "История болезни:",
+            text = "Дополнительно:",
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurface,
         )
@@ -580,23 +519,6 @@ fun AppointmentDetailsBottomSheetContent(
             text = appointment.history.ifEmpty { "Нет данных" },
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = "Аллергии:",
-            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = appointment.allergy ?: "Не выявлено",
-            style =
-                MaterialTheme.typography.bodyMedium.copy(
-                    fontWeight = if (appointment.allergy != null) FontWeight.Bold else FontWeight.Normal,
-                ),
-            color = if (appointment.allergy != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
         Spacer(modifier = Modifier.height(32.dp))

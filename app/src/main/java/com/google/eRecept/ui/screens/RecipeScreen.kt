@@ -1,5 +1,6 @@
 package com.google.eRecept.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,80 +18,53 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.window.PopupProperties
-import java.util.UUID
-
-data class MedicationEntry(
-    val id: String = UUID.randomUUID().toString(),
-    var name: String = "",
-    var dosage: String = "",
-)
-
-data class RecipeHistoryItem(
-    val id: String = UUID.randomUUID().toString(),
-    val patientIin: String,
-    val date: String,
-    val medications: List<String>,
-    val isActive: Boolean,
-)
-
-// Mock-база данных: Препарат -> Доступные дозировки
-val mockMedsDb =
-    mapOf(
-        "Амоксициллин" to listOf("250 мг", "500 мг", "1000 мг"),
-        "Аспирин" to listOf("100 мг", "500 мг"),
-        "Ибупрофен" to listOf("200 мг", "400 мг", "Сироп 100 мг/5 мл"),
-        "Омепразол" to listOf("10 мг", "20 мг", "40 мг"),
-        "Парацетамол" to listOf("500 мг", "Сироп 120 мг/5 мл"),
-    )
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.eRecept.data.Medication
+import com.google.eRecept.data.MedicationItem
+import com.google.eRecept.data.Recipe
+import com.google.eRecept.ui.viewmodels.HomeViewModel
+import com.google.eRecept.ui.viewmodels.RecipeViewModel
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RecipeScreen() {
+fun RecipeScreen(
+    viewModel: RecipeViewModel = viewModel(),
+    homeViewModel: HomeViewModel = viewModel() // Используем для поиска пациента
+) {
     var showCreateSheet by remember { mutableStateOf(false) }
-    var selectedRecipe by remember { mutableStateOf<RecipeHistoryItem?>(null) }
+    var selectedRecipe by remember { mutableStateOf<Recipe?>(null) }
     val focusManager = LocalFocusManager.current
 
-    // Состояние формы (Черновик)
+    val recipes by viewModel.recipes.collectAsStateWithLifecycle()
+
+    // Form state
     var patientIin by remember { mutableStateOf("") }
-    var medications by remember { mutableStateOf(listOf(MedicationEntry())) }
+    val patientResult by homeViewModel.searchPatientResult.collectAsStateWithLifecycle()
+    val isSearchingPatient by homeViewModel.isSearching.collectAsStateWithLifecycle()
+    
+    var medications by remember { mutableStateOf(listOf(MedicationItem())) }
     var notes by remember { mutableStateOf("") }
-
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
-    val dummyHistory =
-        remember {
-            listOf(
-                RecipeHistoryItem(
-                    patientIin = "010101500123",
-                    date = "13 апреля 2024",
-                    medications = listOf("Омепразол", "Амоксициллин"),
-                    isActive = true,
-                ),
-                RecipeHistoryItem(
-                    patientIin = "950202400456",
-                    date = "05 марта 2024",
-                    medications = listOf("Амоксициллин"),
-                    isActive = false,
-                ),
-            )
-        }
 
     val resetForm = {
         patientIin = ""
-        medications = listOf(MedicationEntry())
+        medications = listOf(MedicationItem())
         notes = ""
     }
 
@@ -128,7 +102,7 @@ fun RecipeScreen() {
                 contentPadding = PaddingValues(bottom = 88.dp),
                 modifier = Modifier.fillMaxSize(),
             ) {
-                items(dummyHistory, key = { it.id }) { recipe ->
+                items(recipes, key = { it.id }) { recipe ->
                     RecipeHistoryCard(recipe = recipe, onClick = { selectedRecipe = recipe })
                 }
             }
@@ -136,15 +110,16 @@ fun RecipeScreen() {
     }
 
     if (selectedRecipe != null) {
-        RecipeDetailsDialog(recipe = selectedRecipe!!, onDismiss = { selectedRecipe = null })
+        RecipeDetailsDialog(
+            recipe = selectedRecipe!!, 
+            onDismiss = { selectedRecipe = null },
+            viewModel = viewModel
+        )
     }
 
     if (showCreateSheet) {
         ModalBottomSheet(
-            // Просто скрываем шторку, сохраняя данные в переменных (Черновик)
             onDismissRequest = { showCreateSheet = false },
-            sheetState = sheetState,
-            containerColor = MaterialTheme.colorScheme.surface,
             dragHandle = null,
         ) {
             Column(
@@ -161,18 +136,16 @@ fun RecipeScreen() {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     IconButton(onClick = { showCreateSheet = false }) {
-                        Icon(Icons.Default.Close, contentDescription = "Свернуть черновик")
+                        Icon(Icons.Default.Close, contentDescription = "Закрыть")
                     }
                     Text(
                         text = "Новый рецепт",
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                         modifier = Modifier.weight(1f),
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        textAlign = TextAlign.Center,
                     )
-
-                    // Кнопка принудительной очистки формы
                     IconButton(onClick = resetForm) {
-                        Icon(Icons.Default.DeleteOutline, contentDescription = "Очистить форму", tint = MaterialTheme.colorScheme.error)
+                        Icon(Icons.Default.DeleteOutline, contentDescription = "Очистить", tint = MaterialTheme.colorScheme.error)
                     }
                 }
 
@@ -193,57 +166,61 @@ fun RecipeScreen() {
                         onValueChange = {
                             if (it.length <= 12 && it.all { char -> char.isDigit() }) {
                                 patientIin = it
+                                if (it.length == 12) homeViewModel.searchPatient(it)
                             }
                         },
                         label = { Text("ИИН пациента") },
-                        placeholder = { Text("12 цифр") },
-                        leadingIcon = { Icon(Icons.Default.Badge, contentDescription = null) },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         singleLine = true,
-                        // Строго Numpad и кнопка "Далее"
-                        keyboardOptions =
-                            KeyboardOptions(
-                                keyboardType = KeyboardType.NumberPassword, // В M3 NumberPassword часто дает чистый Numpad
-                                imeAction = ImeAction.Next,
-                            ),
-                        keyboardActions =
-                            KeyboardActions(
-                                onNext = { focusManager.moveFocus(FocusDirection.Next) },
-                            ),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+                        trailingIcon = {
+                            if (isSearchingPatient) {
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                            }
+                        }
                     )
 
+                    if (patientResult != null) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Пациент: ${patientResult!!.full_name}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(start = 4.dp)
+                        )
+                    } else if (patientIin.length == 12 && !isSearchingPatient) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Пациент не найден",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(start = 4.dp)
+                        )
+                    }
+
                     Spacer(modifier = Modifier.height(32.dp))
-                    Text(
-                        text = "Назначения",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.primary,
-                    )
+                    Text(text = "Назначения", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.height(16.dp))
 
                     medications.forEachIndexed { index, med ->
                         SmartMedicationRow(
                             index = index,
                             medication = med,
+                            viewModel = viewModel,
                             onMedicationChange = { updatedMed ->
-                                medications = medications.map { if (it.id == updatedMed.id) updatedMed else it }
+                                medications = medications.toMutableList().also { it[index] = updatedMed }
                             },
-                            onRemove =
-                                if (medications.size > 1) {
-                                    { medications = medications.filterNot { it.id == med.id } }
-                                } else {
-                                    null
-                                },
+                            onRemove = if (medications.size > 1) {
+                                { medications = medications.filterIndexed { i, _ -> i != index } }
+                            } else null,
                             focusManager = focusManager,
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                     }
 
-                    TextButton(
-                        onClick = { medications = medications + MedicationEntry() },
-                        modifier = Modifier.padding(vertical = 8.dp),
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(20.dp))
+                    TextButton(onClick = { medications = medications + MedicationItem() }) {
+                        Icon(Icons.Default.Add, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Добавить препарат")
                     }
@@ -253,17 +230,9 @@ fun RecipeScreen() {
                     OutlinedTextField(
                         value = notes,
                         onValueChange = { notes = it },
-                        label = { Text("Рекомендации и примечания") },
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .heightIn(min = 100.dp),
+                        label = { Text("Рекомендации") },
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 100.dp),
                         shape = RoundedCornerShape(12.dp),
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                        keyboardActions =
-                            KeyboardActions(
-                                onDone = { focusManager.clearFocus() },
-                            ),
                     )
 
                     Spacer(modifier = Modifier.height(40.dp))
@@ -271,21 +240,45 @@ fun RecipeScreen() {
 
                 Button(
                     onClick = {
-                        // TODO: Логика отправки на сервер
+                        viewModel.createRecipe(patientIin, patientResult?.full_name ?: "Неизвестно", medications, notes)
                         showCreateSheet = false
-                        resetForm() // Очищаем только после успешной выписки
+                        resetForm()
                     },
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp)
-                            .height(56.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).height(56.dp),
                     shape = RoundedCornerShape(16.dp),
-                    enabled = patientIin.length == 12 && medications.first().name.isNotBlank(),
+                    enabled = patientIin.length == 12 && patientResult != null && medications.any { it.name.isNotBlank() },
                 ) {
-                    Text("Выписать рецепт", style = MaterialTheme.typography.titleMedium)
+                    Text("Выписать рецепт")
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun RecipeHistoryCard(recipe: Recipe, onClick: () -> Unit) {
+    val sdf = SimpleDateFormat("dd MMMM yyyy", Locale("ru"))
+    val dateStr = sdf.format(Date(recipe.date))
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
+    ) {
+        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Default.ReceiptLong, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = recipe.patient_name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), maxLines = 1)
+                Text(text = "$dateStr • ${recipe.medications.size} препарата", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -293,254 +286,149 @@ fun RecipeScreen() {
 @Composable
 fun SmartMedicationRow(
     index: Int,
-    medication: MedicationEntry,
-    onMedicationChange: (MedicationEntry) -> Unit,
+    medication: MedicationItem,
+    viewModel: RecipeViewModel,
+    onMedicationChange: (MedicationItem) -> Unit,
     onRemove: (() -> Unit)?,
     focusManager: androidx.compose.ui.focus.FocusManager,
 ) {
+    var nameExpanded by remember { mutableStateOf(false) }
+    var dosageExpanded by remember { mutableStateOf(false) }
+    var fieldSize by remember { mutableStateOf(Size.Zero) }
+    
+    val suggestions by viewModel.medicationSuggestions.collectAsStateWithLifecycle()
+    
+    // Храним выбранное лекарство для подсказок дозировки
+    var selectedMedicationData by remember { mutableStateOf<Medication?>(null) }
+    
     val density = LocalDensity.current
 
-    // Состояния для Dropdown меню
-    var nameExpanded by remember { mutableStateOf(false) }
-    var nameFieldSize by remember { mutableStateOf(Size.Zero) }
-
-    var dosageExpanded by remember { mutableStateOf(false) }
-    var dosageFieldSize by remember { mutableStateOf(Size.Zero) }
-
-    // Фильтрация лекарств
-    val suggestedMeds =
-        mockMedsDb.keys.filter {
-            it.contains(medication.name, ignoreCase = true) && medication.name.isNotBlank()
-        }
-
-    // Подбор дозировок на основе точного совпадения или хотя бы частично введенного названия
-    val matchingMedKey = mockMedsDb.keys.firstOrNull { it.equals(medication.name, ignoreCase = true) }
-    val suggestedDosages = mockMedsDb[matchingMedKey] ?: emptyList()
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        // Поле Препарата
-        Box(modifier = Modifier.weight(0.55f)) {
-            OutlinedTextField(
-                value = medication.name,
-                onValueChange = {
-                    onMedicationChange(medication.copy(name = it, dosage = "")) // Сбрасываем дозу при смене препарата
-                    nameExpanded = true
-                },
-                label = { Text("Препарат") },
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .onGloballyPositioned { nameFieldSize = it.size.toSize() },
-                shape = RoundedCornerShape(12.dp),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Next) }),
-            )
-
-            DropdownMenu(
-                expanded = nameExpanded && suggestedMeds.isNotEmpty(),
-                onDismissRequest = { nameExpanded = false },
-                properties = PopupProperties(focusable = false),
-                modifier = Modifier.width(with(density) { nameFieldSize.width.toDp() }),
-            ) {
-                suggestedMeds.forEach { medName ->
-                    DropdownMenuItem(
-                        text = { Text(medName) },
-                        onClick = {
-                            onMedicationChange(medication.copy(name = medName))
-                            nameExpanded = false
-                            focusManager.moveFocus(FocusDirection.Next) // Прыгаем на дозировку
-                        },
-                    )
-                }
-            }
-        }
-
-        // Поле Дозировки
-        Box(modifier = Modifier.weight(0.45f)) {
-            OutlinedTextField(
-                value = medication.dosage,
-                onValueChange = {
-                    onMedicationChange(medication.copy(dosage = it))
-                    dosageExpanded = true
-                },
-                label = { Text("Дозировка") },
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .onGloballyPositioned { dosageFieldSize = it.size.toSize() }
-                        .onFocusChanged {
-                            // Показываем подсказки дозировки, когда поле получает фокус
-                            if (it.isFocused && suggestedDosages.isNotEmpty()) {
-                                dosageExpanded = true
-                            }
-                        },
-                shape = RoundedCornerShape(12.dp),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Next) }),
-            )
-
-            DropdownMenu(
-                expanded = dosageExpanded && suggestedDosages.isNotEmpty(),
-                onDismissRequest = { dosageExpanded = false },
-                properties = PopupProperties(focusable = false),
-                modifier = Modifier.width(with(density) { dosageFieldSize.width.toDp() }),
-            ) {
-                suggestedDosages.forEach { dosage ->
-                    DropdownMenuItem(
-                        text = { Text(dosage) },
-                        onClick = {
-                            onMedicationChange(medication.copy(dosage = dosage))
-                            dosageExpanded = false
-                            focusManager.moveFocus(FocusDirection.Next)
-                        },
-                    )
-                }
-            }
-        }
-
-        if (onRemove != null) {
-            IconButton(
-                onClick = onRemove,
-                modifier = Modifier.padding(top = 8.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Default.RemoveCircleOutline,
-                    contentDescription = "Удалить",
-                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun RecipeHistoryCard(
-    recipe: RecipeHistoryItem,
-    onClick: () -> Unit,
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        onClick = onClick,
-        shape = RoundedCornerShape(16.dp),
-        colors =
-            CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-            ),
-    ) {
+    Column(modifier = Modifier.fillMaxWidth()) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Box(
-                modifier =
-                    Modifier
-                        .size(48.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    Icons.Default.ReceiptLong,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+            Box(modifier = Modifier.weight(0.6f)) {
+                OutlinedTextField(
+                    value = medication.name,
+                    onValueChange = { 
+                        onMedicationChange(medication.copy(name = it, dosage = ""))
+                        viewModel.searchMedications(it)
+                        nameExpanded = true
+                    },
+                    label = { Text("Препарат") },
+                    modifier = Modifier.fillMaxWidth().onGloballyPositioned { fieldSize = it.size.toSize() },
+                    shape = RoundedCornerShape(12.dp),
+                    singleLine = true,
                 )
-            }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "ИИН: ${recipe.patientIin}",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = "${recipe.date} • ${recipe.medications.size} препарата(ов)",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-
-            val badgeColor = if (recipe.isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
-            val badgeContainer = if (recipe.isActive) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
-
-            Box(
-                modifier =
-                    Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(badgeContainer)
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-            ) {
-                Text(
-                    text = if (recipe.isActive) "Активен" else "Истек",
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                    color = badgeColor,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun RecipeDetailsDialog(
-    recipe: RecipeHistoryItem,
-    onDismiss: () -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Закрыть") }
-        },
-        title = { Text("Детали рецепта") },
-        text = {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    Icon(
-                        Icons.Default.QrCode2,
-                        contentDescription = "QR Code",
-                        modifier = Modifier.size(140.dp),
-                        tint = MaterialTheme.colorScheme.onSurface,
-                    )
-                }
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Text("ИИН Пациента", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-                Text(recipe.patientIin, style = MaterialTheme.typography.bodyLarge)
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text("Дата выписки", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-                Text(recipe.date, style = MaterialTheme.typography.bodyLarge)
-
-                Spacer(modifier = Modifier.height(16.dp))
-                HorizontalDivider()
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text("Назначения", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-                Spacer(modifier = Modifier.height(8.dp))
-                recipe.medications.forEach { med ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(bottom = 8.dp),
-                    ) {
-                        Icon(
-                            Icons.Default.Circle,
-                            contentDescription = null,
-                            modifier = Modifier.size(6.dp),
-                            tint = MaterialTheme.colorScheme.primary,
+                
+                DropdownMenu(
+                    expanded = nameExpanded && suggestions.isNotEmpty(),
+                    onDismissRequest = { nameExpanded = false },
+                    properties = PopupProperties(focusable = false),
+                    modifier = Modifier.width(with(density) { fieldSize.width.toDp() })
+                ) {
+                    suggestions.forEach { suggestion ->
+                        DropdownMenuItem(
+                            text = { 
+                                Column {
+                                    Text(suggestion.name, fontWeight = FontWeight.Bold)
+                                    Text(suggestion.activeSubstance, style = MaterialTheme.typography.bodySmall)
+                                }
+                            },
+                            onClick = {
+                                onMedicationChange(medication.copy(name = suggestion.name))
+                                selectedMedicationData = suggestion
+                                nameExpanded = false
+                            }
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(med, style = MaterialTheme.typography.bodyLarge)
                     }
                 }
             }
-        },
+
+            Box(modifier = Modifier.weight(0.4f)) {
+                OutlinedTextField(
+                    value = medication.dosage,
+                    onValueChange = { 
+                        onMedicationChange(medication.copy(dosage = it))
+                        dosageExpanded = true
+                    },
+                    label = { Text("Доза") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    singleLine = true,
+                )
+
+                if (selectedMedicationData != null && selectedMedicationData!!.availableDosages.isNotEmpty()) {
+                    DropdownMenu(
+                        expanded = dosageExpanded,
+                        onDismissRequest = { dosageExpanded = false },
+                        properties = PopupProperties(focusable = false),
+                    ) {
+                        selectedMedicationData!!.availableDosages.forEach { dosage ->
+                            DropdownMenuItem(
+                                text = { Text(dosage) },
+                                onClick = {
+                                    onMedicationChange(medication.copy(dosage = dosage))
+                                    dosageExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+            
+            if (onRemove != null) {
+                IconButton(onClick = onRemove) {
+                    Icon(Icons.Default.RemoveCircleOutline, contentDescription = "Удалить", tint = MaterialTheme.colorScheme.error)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun RecipeDetailsDialog(recipe: Recipe, onDismiss: () -> Unit, viewModel: RecipeViewModel) {
+    val qrBitmap = remember(recipe.id) { viewModel.generateQrCode(recipe.id) }
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Закрыть") } },
+        title = { Text("Детали рецепта", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    Image(
+                        bitmap = qrBitmap.asImageBitmap(),
+                        contentDescription = "QR Code",
+                        modifier = Modifier.size(200.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "QR-код содержит ID рецепта: ${recipe.id}. Аптекарь сканирует его для получения данных из базы.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Пациент: ${recipe.patient_name}", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                Text("ИИН: ${recipe.patient_iin}", style = MaterialTheme.typography.bodyMedium)
+                Spacer(modifier = Modifier.height(16.dp))
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Назначения:", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                recipe.medications.forEach { med ->
+                    Text("• ${med.name} (${med.dosage})", modifier = Modifier.padding(vertical = 4.dp))
+                }
+                if (recipe.notes.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Примечания:", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                    Text(recipe.notes)
+                }
+            }
+        }
     )
 }

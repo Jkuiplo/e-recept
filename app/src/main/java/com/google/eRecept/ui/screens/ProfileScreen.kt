@@ -1,3 +1,5 @@
+package com.google.eRecept.ui.screens
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -16,10 +18,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.eRecept.ui.viewmodels.ProfileViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen() {
+fun ProfileScreen(
+    onLogout: () -> Unit,
+    viewModel: ProfileViewModel = viewModel()
+) {
     var showLogoutDialog by remember { mutableStateOf(false) }
 
     var selectedLanguageIndex by remember { mutableIntStateOf(0) }
@@ -28,8 +35,7 @@ fun ProfileScreen() {
     var selectedThemeIndex by remember { mutableIntStateOf(0) }
     val themes = listOf("Светлая", "Темная", "Система")
 
-    val doctorName = "Иванов Иван Иванович"
-    val doctorSpecialization = "Врач-терапевт, Кардиолог"
+    val doctorProfile by viewModel.doctorProfile.collectAsState()
 
     Column(
         modifier =
@@ -41,7 +47,6 @@ fun ProfileScreen() {
     ) {
         Spacer(modifier = Modifier.height(48.dp))
 
-        // Блок профиля
         Box(
             modifier =
                 Modifier
@@ -61,21 +66,20 @@ fun ProfileScreen() {
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = doctorName,
+            text = doctorProfile?.name ?: "Загрузка...",
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground,
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            text = doctorSpecialization,
+            text = doctorProfile?.specialization ?: "",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Блок настроек
         Column(
             modifier =
                 Modifier
@@ -98,7 +102,6 @@ fun ProfileScreen() {
                 shape = MaterialTheme.shapes.large,
             ) {
                 Column(modifier = Modifier.padding(vertical = 12.dp)) {
-                    // Настройка языка
                     Text(
                         text = "Язык приложения",
                         style = MaterialTheme.typography.labelLarge,
@@ -127,7 +130,6 @@ fun ProfileScreen() {
                         color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
                     )
 
-                    // Настройка оформления
                     Text(
                         text = "Оформление",
                         style = MaterialTheme.typography.labelLarge,
@@ -155,9 +157,8 @@ fun ProfileScreen() {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Блок безопасности (Сменить пароль)
             Card(
-                onClick = { /* TODO: Навигация на смену пароля */ },
+                onClick = { /* TODO */ },
                 modifier = Modifier.fillMaxWidth(),
                 colors =
                     CardDefaults.cardColors(
@@ -187,7 +188,6 @@ fun ProfileScreen() {
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Кнопка выхода (используем errorContainer для M3)
             Button(
                 onClick = { showLogoutDialog = true },
                 modifier =
@@ -210,7 +210,6 @@ fun ProfileScreen() {
         }
     }
 
-    // Диалог выхода
     if (showLogoutDialog) {
         AlertDialog(
             onDismissRequest = { showLogoutDialog = false },
@@ -219,7 +218,10 @@ fun ProfileScreen() {
             text = { Text("Вы уверены, что хотите выйти из системы?") },
             confirmButton = {
                 TextButton(
-                    onClick = { showLogoutDialog = false },
+                    onClick = { 
+                        showLogoutDialog = false
+                        onLogout()
+                    },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
                 ) {
                     Text("Выйти")

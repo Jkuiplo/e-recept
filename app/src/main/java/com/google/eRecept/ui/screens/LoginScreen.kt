@@ -20,17 +20,37 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.eRecept.ui.viewmodels.AuthViewModel
 
-@Preview(showBackground = true)
 @Composable
-fun LoginScreen() {
+fun LoginScreen(
+    onLoginSuccess: () -> Unit,
+    viewModel: AuthViewModel = viewModel()
+) {
+    val savedIin by viewModel.savedIin.collectAsState()
+    
     var iin by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    var rememberMe by remember { mutableStateOf(false) }
+    var rememberMe by remember { mutableStateOf(savedIin.isNotEmpty()) }
+
+    val authState by viewModel.authState.collectAsState()
+
+    LaunchedEffect(savedIin) {
+        if (savedIin.isNotEmpty()) {
+            iin = savedIin
+            rememberMe = true
+        }
+    }
+
+    LaunchedEffect(authState) {
+        if (authState is AuthViewModel.AuthState.Authenticated) {
+            onLoginSuccess()
+        }
+    }
 
     Box(
         modifier =
@@ -85,6 +105,7 @@ fun LoginScreen() {
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 singleLine = true,
+                isError = authState is AuthViewModel.AuthState.Error
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -103,7 +124,17 @@ fun LoginScreen() {
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 singleLine = true,
+                isError = authState is AuthViewModel.AuthState.Error
             )
+
+            if (authState is AuthViewModel.AuthState.Error) {
+                Text(
+                    text = (authState as AuthViewModel.AuthState.Error).message,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -129,33 +160,22 @@ fun LoginScreen() {
             Spacer(modifier = Modifier.height(32.dp))
 
             Button(
-                onClick = { /* TODO */ },
+                onClick = { viewModel.login(iin, password, rememberMe) },
                 modifier =
                     Modifier
                         .fillMaxWidth()
                         .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
+                enabled = iin.length == 12 && password.isNotEmpty() && authState !is AuthViewModel.AuthState.Loading
             ) {
-                Text(
-                    text = "Войти",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedButton(
-                onClick = { /* TODO */ },
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                shape = RoundedCornerShape(16.dp),
-            ) {
-                Text(
-                    text = "Регистрация",
-                    style = MaterialTheme.typography.titleMedium,
-                )
+                if (authState is AuthViewModel.AuthState.Loading) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
+                } else {
+                    Text(
+                        text = "Войти",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
