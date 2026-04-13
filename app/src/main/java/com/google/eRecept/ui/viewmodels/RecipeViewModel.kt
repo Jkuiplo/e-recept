@@ -4,10 +4,11 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.eRecept.data.FirebaseRepository
 import com.google.eRecept.data.Medication
 import com.google.eRecept.data.MedicationItem
 import com.google.eRecept.data.Recipe
+import com.google.eRecept.data.repository.MockRecipeRepository
+import com.google.eRecept.data.repository.RecipeRepository
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import kotlinx.coroutines.delay
@@ -16,7 +17,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class RecipeViewModel(private val repository: FirebaseRepository = FirebaseRepository()) : ViewModel() {
+class RecipeViewModel : ViewModel() {
+    // ВРЕМЕННО: ручное внедрение
+    private val repository: RecipeRepository = MockRecipeRepository()
+
     private val _recipes = MutableStateFlow<List<Recipe>>(emptyList())
     val recipes: StateFlow<List<Recipe>> = _recipes.asStateFlow()
 
@@ -25,6 +29,35 @@ class RecipeViewModel(private val repository: FirebaseRepository = FirebaseRepos
 
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
+    // --- СОСТОЯНИЕ ЧЕРНОВИКА (чтобы не терять данные при закрытии модалки) ---
+    private val _draftPatientIin = MutableStateFlow("")
+    val draftPatientIin = _draftPatientIin.asStateFlow()
+
+    private val _draftNotes = MutableStateFlow("")
+    val draftNotes = _draftNotes.asStateFlow()
+
+    private val _draftMedications = MutableStateFlow(listOf(MedicationItem()))
+    val draftMedications = _draftMedications.asStateFlow()
+
+    fun updateDraftIin(iin: String) {
+        _draftPatientIin.value = iin
+    }
+
+    fun updateDraftNotes(notes: String) {
+        _draftNotes.value = notes
+    }
+
+    fun updateDraftMedications(meds: List<MedicationItem>) {
+        _draftMedications.value = meds
+    }
+
+    fun clearDraft() {
+        _draftPatientIin.value = ""
+        _draftNotes.value = ""
+        _draftMedications.value = listOf(MedicationItem())
+    }
+    // ------------------------------------------------------------------------
 
     init {
         loadRecipes()
@@ -59,19 +92,26 @@ class RecipeViewModel(private val repository: FirebaseRepository = FirebaseRepos
         }
     }
 
-    fun createRecipe(patientIin: String, patientName: String, medications: List<MedicationItem>, notes: String) {
+    fun createRecipe(patientName: String) {
         val doctorId = repository.currentUserId ?: return
+        val iin = _draftPatientIin.value
+        val meds = _draftMedications.value.filter { it.name.isNotBlank() }
+        val notes = _draftNotes.value
+
         viewModelScope.launch {
             val doctorProfile = repository.getDoctorProfile(doctorId)
-            val recipe = Recipe(
-                doctor_id = doctorId,
-                doctor_name = doctorProfile?.name ?: "Врач",
-                patient_iin = patientIin,
-                patient_name = patientName,
-                medications = medications.filter { it.name.isNotBlank() },
-                notes = notes
-            )
+            val recipe =
+                Recipe(
+                    doctor_id = doctorId,
+                    doctor_name = doctorProfile?.name ?: "Врач",
+                    patient_iin = iin,
+                    patient_name = patientName,
+                    date = System.currentTimeMillis(),
+                    medications = meds,
+                    notes = notes,
+                )
             repository.createRecipe(recipe)
+            clearDraft() // Очищаем черновик только после успешного создания
         }
     }
 

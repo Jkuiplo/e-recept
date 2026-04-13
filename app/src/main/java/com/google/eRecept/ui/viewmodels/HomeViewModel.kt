@@ -3,16 +3,20 @@ package com.google.eRecept.ui.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.eRecept.data.Appointment
-import com.google.eRecept.data.FirebaseRepository
 import com.google.eRecept.data.Patient
+import com.google.eRecept.data.repository.HomeRepository
+import com.google.eRecept.data.repository.MockHomeRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
-class HomeViewModel(private val repository: FirebaseRepository = FirebaseRepository()) : ViewModel() {
+class HomeViewModel : ViewModel() {
+    private val repository: HomeRepository = MockHomeRepository()
+
     private val _appointments = MutableStateFlow<List<Appointment>>(emptyList())
     val appointments: StateFlow<List<Appointment>> = _appointments.asStateFlow()
 
@@ -32,9 +36,14 @@ class HomeViewModel(private val repository: FirebaseRepository = FirebaseReposit
     private fun loadAppointments() {
         repository.currentUserId?.let { doctorId ->
             viewModelScope.launch {
-                repository.getAppointments(doctorId).collect {
-                    _appointments.value = it
-                }
+                // Сразу сортируем прилетающие данные по времени
+                repository
+                    .getAppointments(doctorId)
+                    .map { list ->
+                        list.sortedBy { it.time }
+                    }.collect {
+                        _appointments.value = it
+                    }
             }
         }
     }
@@ -60,30 +69,52 @@ class HomeViewModel(private val repository: FirebaseRepository = FirebaseReposit
         }
     }
 
-    fun addAppointment(patient: Patient, date: String, time: String, type: String) {
+    fun clearSearchResult() {
+        _searchPatientResult.value = null
+    }
+
+    fun addAppointment(
+        patient: Patient,
+        date: String,
+        time: String,
+    ) {
         val doctorId = repository.currentUserId ?: return
         viewModelScope.launch {
-            val age = try {
-                val parts = patient.birth_date.split("-")
-                val year = parts[0].toInt()
-                val currentYear = Calendar.getInstance().get(Calendar.YEAR)
-                (currentYear - year).toString() + " лет"
-            } catch (e: Exception) {
-                ""
-            }
+            val age =
+                try {
+                    val parts = patient.birth_date.split("-")
+                    val year = parts[0].toInt()
+                    val currentYear = Calendar.getInstance().get(Calendar.YEAR)
+                    "${currentYear - year} лет"
+                } catch (e: Exception) {
+                    ""
+                }
 
-            val appointment = Appointment(
-                doctor_id = doctorId,
-                patient_iin = patient.iin,
-                patient_name = patient.full_name,
-                date = date,
-                time = time,
-                type = type,
-                age = age,
-                gender = patient.gender,
-                history = "Аллергии: ${patient.allergies}"
-            )
+            val appointment =
+                Appointment(
+                    doctor_id = doctorId,
+                    patient_iin = patient.iin,
+                    patient_name = patient.full_name,
+                    date = date,
+                    time = time,
+                    type = "", // Больше не используем
+                    age = age,
+                    gender = patient.gender,
+                    history = "Примечание: ${patient.allergies.ifEmpty { "Нет" }}",
+                    status = "Запланирован",
+                    is_completed = false,
+                )
             repository.createAppointment(appointment)
+        }
+    }
+
+    fun changeAppointmentStatus(
+        appointment: Appointment,
+        newStatus: String,
+    ) {
+        viewModelScope.launch {
+            val isCompleted = newStatus == "Завершен" || newStatus == "Не явился"
+            repository.updateAppointmentStatus(appointment.id, newStatus, isCompleted)
         }
     }
 }

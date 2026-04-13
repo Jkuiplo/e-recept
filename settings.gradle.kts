@@ -22,6 +22,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "e-recept"
+rootProject.name = "eRecept"
 include(":app")
- 

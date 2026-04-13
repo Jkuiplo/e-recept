@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -43,7 +44,7 @@ import java.util.Locale
 fun HomeScreen(
     viewModel: HomeViewModel,
     onProfileClick: () -> Unit = {},
-    onCreateRecipeClick: () -> Unit = {},
+    onCreateRecipeClick: (String) -> Unit = {}, // Теперь прокидывает ИИН пациента
 ) {
     val focusManager = LocalFocusManager.current
     var showAddPatientSheet by remember { mutableStateOf(false) }
@@ -63,118 +64,127 @@ fun HomeScreen(
     val formattedDate = dateFormatter.format(selectedDate)
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .pointerInput(Unit) {
-                detectTapGestures(onTap = { focusManager.clearFocus() })
-            }
-    ) {
-        Column(
-            modifier = Modifier
+        modifier =
+            Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(horizontal = 20.dp),
-        ) {
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                text = "Расписание",
-                style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold, fontSize = 32.sp),
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-
-            Text(
-                text = formattedDate,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(top = 4.dp),
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            PrimaryTabRow(
-                selectedTabIndex = daysPagerState.currentPage,
-                containerColor = Color.Transparent,
-                divider = {},
-            ) {
-                days.forEachIndexed { index, title ->
-                    Tab(
-                        selected = daysPagerState.currentPage == index,
-                        onClick = {
-                            coroutineScope.launch {
-                                daysPagerState.animateScrollToPage(index)
-                            }
-                        },
-                        text = {
-                            Text(
-                                text = title,
-                                fontWeight = if (daysPagerState.currentPage == index) FontWeight.Bold else FontWeight.Normal,
-                            )
-                        },
-                        unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Button(
-                onClick = { showAddPatientSheet = true },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(16.dp),
-            ) {
-                Text(
-                    text = "+ Записать пациента",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                )
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Text(
-                text = "Ваш список",
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            HorizontalPager(
-                state = daysPagerState,
-                modifier = Modifier.weight(1f),
-                verticalAlignment = Alignment.Top
-            ) { page ->
-                val pageDateStr = remember(page) {
-                    val sdf = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
-                    val cal = Calendar.getInstance()
-                    cal.add(Calendar.DAY_OF_YEAR, page)
-                    sdf.format(cal.time)
-                }
-
-                val scheduleForDay = appointments.filter { it.date == pageDateStr }
-
-                PullToRefreshBox(
-                    isRefreshing = isRefreshing,
-                    onRefresh = { viewModel.refresh() },
-                    modifier = Modifier.fillMaxSize()
+                .pointerInput(Unit) {
+                    detectTapGestures(onTap = { focusManager.clearFocus() })
+                },
+    ) {
+        Scaffold(
+            floatingActionButton = {
+                FloatingActionButton(
+                    onClick = { showAddPatientSheet = true },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
                 ) {
-                    if (scheduleForDay.isEmpty()) {
-                        Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                            EmptyScheduleState()
-                        }
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(bottom = 24.dp)
-                        ) {
-                            items(scheduleForDay, key = { it.time + it.patient_iin }) { appointment ->
-                                AppointmentCard(
-                                    appointment = appointment,
-                                    onClick = { selectedAppointment = appointment },
+                    Icon(Icons.Default.Add, contentDescription = "Записать пациента")
+                }
+            },
+        ) { paddingValues ->
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(horizontal = 20.dp),
+            ) {
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Text(
+                    text = "Расписание",
+                    style =
+                        MaterialTheme.typography.headlineLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 32.sp,
+                        ),
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+
+                Text(
+                    text = formattedDate,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // 👉 Табы сразу после даты
+                PrimaryTabRow(
+                    selectedTabIndex = daysPagerState.currentPage,
+                    containerColor = Color.Transparent,
+                    divider = {},
+                ) {
+                    days.forEachIndexed { index, title ->
+                        Tab(
+                            selected = daysPagerState.currentPage == index,
+                            onClick = {
+                                coroutineScope.launch {
+                                    daysPagerState.animateScrollToPage(index)
+                                }
+                            },
+                            text = {
+                                Text(
+                                    text = title,
+                                    fontWeight =
+                                        if (daysPagerState.currentPage == index) {
+                                            FontWeight.Bold
+                                        } else {
+                                            FontWeight.Normal
+                                        },
                                 )
-                                Spacer(modifier = Modifier.height(12.dp))
+                            },
+                            unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // 👉 Контент сразу под табами
+                HorizontalPager(
+                    state = daysPagerState,
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.Top,
+                ) { page ->
+                    val pageDateStr =
+                        remember(page) {
+                            val sdf = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
+                            val cal = Calendar.getInstance()
+                            cal.add(Calendar.DAY_OF_YEAR, page)
+                            sdf.format(cal.time)
+                        }
+
+                    val scheduleForDay = appointments.filter { it.date == pageDateStr }
+
+                    PullToRefreshBox(
+                        isRefreshing = isRefreshing,
+                        onRefresh = { viewModel.refresh() },
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        if (scheduleForDay.isEmpty()) {
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .fillMaxSize()
+                                        .verticalScroll(rememberScrollState()),
+                            ) {
+                                EmptyScheduleState()
+                            }
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(bottom = 88.dp),
+                            ) {
+                                items(scheduleForDay, key = { it.id }) { appointment ->
+                                    AppointmentCard(
+                                        appointment = appointment,
+                                        onClick = { selectedAppointment = appointment },
+                                    )
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                }
                             }
                         }
                     }
@@ -187,28 +197,35 @@ fun HomeScreen(
         ModalBottomSheet(
             onDismissRequest = {
                 showAddPatientSheet = false
+                viewModel.clearSearchResult() // Очищаем результат при закрытии
                 focusManager.clearFocus()
-            }
+            },
         ) {
             AddPatientBottomSheetContent(
+                initialPage = daysPagerState.currentPage, // Передаем текущую страницу для даты
                 onClose = {
                     showAddPatientSheet = false
+                    viewModel.clearSearchResult()
                     focusManager.clearFocus()
                 },
-                viewModel = viewModel
+                viewModel = viewModel,
             )
         }
     }
 
     if (selectedAppointment != null) {
+        // Мы обновляем selectedAppointment из Flow, чтобы изменения статуса сразу были видны в модалке
+        val currentAppointment = appointments.find { it.id == selectedAppointment!!.id } ?: selectedAppointment!!
+
         ModalBottomSheet(
-            onDismissRequest = { selectedAppointment = null }
+            onDismissRequest = { selectedAppointment = null },
         ) {
             AppointmentDetailsBottomSheetContent(
-                appointment = selectedAppointment!!,
+                appointment = currentAppointment,
+                viewModel = viewModel,
                 onCreateRecipeClick = {
                     selectedAppointment = null
-                    onCreateRecipeClick()
+                    onCreateRecipeClick(currentAppointment.patient_iin) // Передаем ИИН
                 },
             )
         }
@@ -224,9 +241,10 @@ fun AppointmentCard(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            ),
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -255,14 +273,26 @@ fun AppointmentCard(
                 )
             }
 
-            val containerColor = if (appointment.is_completed) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.primaryContainer
-            val contentColor = if (appointment.is_completed) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onPrimaryContainer
+            // Логика цветов для статусов
+            val containerColor =
+                when (appointment.status) {
+                    "Завершен" -> MaterialTheme.colorScheme.secondaryContainer
+                    "Не явился" -> MaterialTheme.colorScheme.errorContainer
+                    else -> MaterialTheme.colorScheme.primaryContainer
+                }
+            val contentColor =
+                when (appointment.status) {
+                    "Завершен" -> MaterialTheme.colorScheme.onSecondaryContainer
+                    "Не явился" -> MaterialTheme.colorScheme.onErrorContainer
+                    else -> MaterialTheme.colorScheme.onPrimaryContainer
+                }
 
             Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(containerColor)
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                modifier =
+                    Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(containerColor)
+                        .padding(horizontal = 8.dp, vertical = 6.dp),
             ) {
                 Text(
                     text = appointment.status,
@@ -276,19 +306,27 @@ fun AppointmentCard(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddPatientBottomSheetContent(onClose: () -> Unit, viewModel: HomeViewModel) {
+fun AddPatientBottomSheetContent(
+    initialPage: Int,
+    onClose: () -> Unit,
+    viewModel: HomeViewModel,
+) {
     val focusManager = LocalFocusManager.current
     var iin by remember { mutableStateOf("") }
 
     val patientResult by viewModel.searchPatientResult.collectAsStateWithLifecycle()
     val isSearching by viewModel.isSearching.collectAsStateWithLifecycle()
 
-    var appointmentDate by remember { mutableStateOf("") }
+    var appointmentDate by remember {
+        mutableStateOf(
+            SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()).format(
+                Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, initialPage) }.time,
+            ),
+        )
+    }
     var selectedTime by remember { mutableStateOf("") }
-    var selectedType by remember { mutableStateOf("Первичный") }
 
-    val times = listOf("09:00", "09:20", "09:40", "10:00", "10:20", "10:40", "11:00", "11:20")
-    val types = listOf("Первичный", "Повторный", "Консультация", "Осмотр")
+    val times = listOf("09:00", "09:20", "09:40", "10:00", "10:20", "10:40", "11:00", "11:20", "14:00", "14:20", "14:40", "15:00")
 
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
@@ -316,18 +354,20 @@ fun AddPatientBottomSheetContent(onClose: () -> Unit, viewModel: HomeViewModel) 
     LaunchedEffect(iin) {
         if (iin.length == 12) {
             viewModel.searchPatient(iin)
+        } else {
+            viewModel.clearSearchResult()
         }
     }
 
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .pointerInput(Unit) {
-                detectTapGestures(onTap = { focusManager.clearFocus() })
-            }
-            .padding(horizontal = 20.dp)
-            .padding(bottom = 40.dp)
-            .verticalScroll(rememberScrollState()),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .pointerInput(Unit) {
+                    detectTapGestures(onTap = { focusManager.clearFocus() })
+                }.padding(horizontal = 20.dp)
+                .padding(bottom = 40.dp)
+                .verticalScroll(rememberScrollState()),
     ) {
         Text(
             text = "Запись пациента",
@@ -352,10 +392,20 @@ fun AddPatientBottomSheetContent(onClose: () -> Unit, viewModel: HomeViewModel) 
                 if (isSearching) {
                     CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                 }
-            }
+            },
         )
 
-        if (patientResult != null) {
+        // Показываем ошибку только если реально искали и ничего не нашли
+        if (iin.length == 12 && !isSearching && patientResult == null) {
+            Text(
+                text = "Пациент не найден",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 4.dp, start = 4.dp),
+            )
+        }
+
+        if (patientResult != null && iin.length == 12) {
             Spacer(modifier = Modifier.height(16.dp))
             OutlinedTextField(
                 value = patientResult!!.full_name,
@@ -378,18 +428,20 @@ fun AddPatientBottomSheetContent(onClose: () -> Unit, viewModel: HomeViewModel) 
                         Icon(Icons.Default.CalendarToday, contentDescription = null)
                     }
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { showDatePicker = true },
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { showDatePicker = true },
                 shape = RoundedCornerShape(12.dp),
                 enabled = false,
-                colors = OutlinedTextFieldDefaults.colors(
-                    disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                    disabledBorderColor = MaterialTheme.colorScheme.outline,
-                    disabledPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                ),
+                colors =
+                    OutlinedTextFieldDefaults.colors(
+                        disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                        disabledBorderColor = MaterialTheme.colorScheme.outline,
+                        disabledPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    ),
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -405,15 +457,18 @@ fun AddPatientBottomSheetContent(onClose: () -> Unit, viewModel: HomeViewModel) 
                     rowTimes.forEach { time ->
                         val isSelected = selectedTime == time
                         Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(
-                                    if (isSelected) MaterialTheme.colorScheme.primary
-                                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                                )
-                                .clickable { selectedTime = time }
-                                .padding(vertical = 10.dp),
+                            modifier =
+                                Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(
+                                        if (isSelected) {
+                                            MaterialTheme.colorScheme.primary
+                                        } else {
+                                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                        },
+                                    ).clickable { selectedTime = time }
+                                    .padding(vertical = 10.dp),
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(
@@ -426,48 +481,6 @@ fun AddPatientBottomSheetContent(onClose: () -> Unit, viewModel: HomeViewModel) 
                 }
                 Spacer(modifier = Modifier.height(8.dp))
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text("Тип приема", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
-            Spacer(modifier = Modifier.height(8.dp))
-
-            types.chunked(2).forEach { rowTypes ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    rowTypes.forEach { type ->
-                        val isSelected = selectedType == type
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(
-                                    if (isSelected) MaterialTheme.colorScheme.primary
-                                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                                )
-                                .clickable { selectedType = type }
-                                .padding(vertical = 12.dp),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(
-                                text = type,
-                                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                            )
-                        }
-                    }
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-        } else if (iin.length == 12 && !isSearching) {
-            Text(
-                text = "Пациент не найден",
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(top = 4.dp, start = 4.dp),
-            )
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -475,14 +488,15 @@ fun AddPatientBottomSheetContent(onClose: () -> Unit, viewModel: HomeViewModel) 
         Button(
             onClick = {
                 patientResult?.let {
-                    viewModel.addAppointment(it, appointmentDate, selectedTime, selectedType)
+                    viewModel.addAppointment(it, appointmentDate, selectedTime)
                 }
                 onClose()
             },
             enabled = patientResult != null && appointmentDate.isNotEmpty() && selectedTime.isNotEmpty(),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
             shape = RoundedCornerShape(16.dp),
         ) {
             Text("Подтвердить запись")
@@ -490,16 +504,22 @@ fun AddPatientBottomSheetContent(onClose: () -> Unit, viewModel: HomeViewModel) 
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppointmentDetailsBottomSheetContent(
     appointment: Appointment,
+    viewModel: HomeViewModel,
     onCreateRecipeClick: () -> Unit,
 ) {
+    val statuses = listOf("Запланирован", "Завершен", "Не явился")
+    var selectedStatusIndex by remember(appointment.status) { mutableIntStateOf(statuses.indexOf(appointment.status).coerceAtLeast(0)) }
+
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp)
-            .padding(bottom = 40.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 40.dp),
     ) {
         Text(
             text = "Детали приема",
@@ -514,17 +534,49 @@ fun AppointmentDetailsBottomSheetContent(
             color = MaterialTheme.colorScheme.onSurface,
         )
         Text(
+            text = "ИИН: ${appointment.patient_iin}",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
             text = "${appointment.age} · Пол: ${appointment.gender}",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
         Spacer(modifier = Modifier.height(16.dp))
+
+        // Управление статусом
+        Text(
+            text = "Статус приема",
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        SingleChoiceSegmentedButtonRow(
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            statuses.forEachIndexed { index, label ->
+                SegmentedButton(
+                    shape = SegmentedButtonDefaults.itemShape(index = index, count = statuses.size),
+                    onClick = {
+                        selectedStatusIndex = index
+                        viewModel.changeAppointmentStatus(appointment, statuses[index])
+                    },
+                    selected = selectedStatusIndex == index,
+                ) {
+                    Text(label, style = MaterialTheme.typography.labelSmall)
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
         HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Дополнительно:",
+            text = "Информация:",
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurface,
         )
@@ -539,12 +591,13 @@ fun AppointmentDetailsBottomSheetContent(
 
         Button(
             onClick = onCreateRecipeClick,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
             shape = RoundedCornerShape(16.dp),
         ) {
-            Text("Создать рецепт", style = MaterialTheme.typography.titleMedium)
+            Text("Выписать рецепт", style = MaterialTheme.typography.titleMedium)
         }
     }
 }
@@ -552,10 +605,11 @@ fun AppointmentDetailsBottomSheetContent(
 @Composable
 fun EmptyScheduleState() {
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .fillMaxHeight()
-            .padding(top = 100.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .fillMaxHeight()
+                .padding(top = 100.dp),
         contentAlignment = Alignment.Center,
     ) {
         Column(

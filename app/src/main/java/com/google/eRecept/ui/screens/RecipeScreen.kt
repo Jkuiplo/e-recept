@@ -17,7 +17,6 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -48,11 +47,10 @@ import java.util.Locale
 @Composable
 fun RecipeScreen(
     viewModel: RecipeViewModel = viewModel(),
-    homeViewModel: HomeViewModel = viewModel()
+    homeViewModel: HomeViewModel = viewModel(),
 ) {
     val focusManager = LocalFocusManager.current
     var showCreateSheet by remember { mutableStateOf(false) }
-    var showExitConfirmation by remember { mutableStateOf(false) }
     var selectedRecipe by remember { mutableStateOf<Recipe?>(null) }
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -60,27 +58,21 @@ fun RecipeScreen(
     val recipes by viewModel.recipes.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
 
-    var patientIin by remember { mutableStateOf("") }
+    // Черновик из ViewModel
+    val draftPatientIin by viewModel.draftPatientIin.collectAsStateWithLifecycle()
+    val draftMedications by viewModel.draftMedications.collectAsStateWithLifecycle()
+    val draftNotes by viewModel.draftNotes.collectAsStateWithLifecycle()
+
     val patientResult by homeViewModel.searchPatientResult.collectAsStateWithLifecycle()
     val isSearchingPatient by homeViewModel.isSearching.collectAsStateWithLifecycle()
 
-    var medications by remember { mutableStateOf(listOf(MedicationItem())) }
-    var notes by remember { mutableStateOf("") }
-
-    val hasUnsavedChanges = patientIin.isNotEmpty() || medications.any { it.name.isNotEmpty() } || notes.isNotEmpty()
-
-    val resetForm = {
-        patientIin = ""
-        medications = listOf(MedicationItem())
-        notes = ""
-    }
-
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .pointerInput(Unit) {
-                detectTapGestures(onTap = { focusManager.clearFocus() })
-            }
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .pointerInput(Unit) {
+                    detectTapGestures(onTap = { focusManager.clearFocus() })
+                },
     ) {
         Scaffold(
             floatingActionButton = {
@@ -94,11 +86,12 @@ fun RecipeScreen(
             },
         ) { padding ->
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(horizontal = 20.dp),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(horizontal = 20.dp),
             ) {
                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -113,12 +106,12 @@ fun RecipeScreen(
                 PullToRefreshBox(
                     isRefreshing = isRefreshing,
                     onRefresh = { viewModel.refresh() },
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
                 ) {
                     if (recipes.isEmpty()) {
                         Box(
                             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
-                            contentAlignment = Alignment.Center
+                            contentAlignment = Alignment.Center,
                         ) {
                             EmptyRecipesState()
                         }
@@ -142,38 +135,36 @@ fun RecipeScreen(
         RecipeDetailsDialog(
             recipe = selectedRecipe!!,
             onDismiss = { selectedRecipe = null },
-            viewModel = viewModel
+            viewModel = viewModel,
         )
     }
 
     if (showCreateSheet) {
         ModalBottomSheet(
-            onDismissRequest = {
-                if (hasUnsavedChanges) showExitConfirmation = true else showCreateSheet = false
-            },
+            onDismissRequest = { showCreateSheet = false },
             sheetState = sheetState,
             dragHandle = { BottomSheetDefaults.DragHandle() },
-            modifier = Modifier.fillMaxHeight()
+            modifier = Modifier.fillMaxHeight(),
         ) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .pointerInput(Unit) {
-                        detectTapGestures(onTap = { focusManager.clearFocus() })
-                    }
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .pointerInput(Unit) {
+                            detectTapGestures(onTap = { focusManager.clearFocus() })
+                        },
             ) {
                 Column(
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
                 ) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp, vertical = 8.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        IconButton(onClick = {
-                            if (hasUnsavedChanges) showExitConfirmation = true else showCreateSheet = false
-                        }) {
+                        IconButton(onClick = { showCreateSheet = false }) {
                             Icon(Icons.Default.Close, contentDescription = null)
                         }
                         Text(
@@ -182,25 +173,32 @@ fun RecipeScreen(
                             modifier = Modifier.weight(1f),
                             textAlign = TextAlign.Center,
                         )
-                        Spacer(modifier = Modifier.width(48.dp))
+                        IconButton(onClick = { viewModel.clearDraft() }) {
+                            Icon(
+                                Icons.Default.DeleteOutline,
+                                contentDescription = "Очистить черновик",
+                                tint = MaterialTheme.colorScheme.error,
+                            )
+                        }
                     }
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
 
                     Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                            .padding(horizontal = 20.dp)
-                            .verticalScroll(rememberScrollState()),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .weight(1f)
+                                .padding(horizontal = 20.dp)
+                                .verticalScroll(rememberScrollState()),
                     ) {
                         Spacer(modifier = Modifier.height(24.dp))
 
                         OutlinedTextField(
-                            value = patientIin,
+                            value = draftPatientIin,
                             onValueChange = {
                                 if (it.length <= 12 && it.all { char -> char.isDigit() }) {
-                                    patientIin = it
+                                    viewModel.updateDraftIin(it)
                                     if (it.length == 12) homeViewModel.searchPatient(it)
                                 }
                             },
@@ -213,40 +211,51 @@ fun RecipeScreen(
                                 if (isSearchingPatient) {
                                     CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                                 }
-                            }
+                            },
                         )
 
-                        if (patientResult != null) {
+                        if (patientResult != null && draftPatientIin.length == 12) {
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = "Пациент: ${patientResult!!.full_name}",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(start = 4.dp)
+                                modifier = Modifier.padding(start = 4.dp),
                             )
                         }
 
                         Spacer(modifier = Modifier.height(32.dp))
-                        Text(text = "Назначения", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
+                        Text(
+                            text = "Назначения",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary,
+                        )
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        medications.forEachIndexed { index, med ->
+                        draftMedications.forEachIndexed { index, med ->
                             SmartMedicationRow(
                                 index = index,
                                 medication = med,
                                 viewModel = viewModel,
                                 onMedicationChange = { updatedMed ->
-                                    medications = medications.toMutableList().also { it[index] = updatedMed }
+                                    val newList = draftMedications.toMutableList()
+                                    newList[index] = updatedMed
+                                    viewModel.updateDraftMedications(newList)
                                 },
-                                onRemove = if (medications.size > 1) {
-                                    { medications = medications.filterIndexed { i, _ -> i != index } }
-                                } else null,
-                                focusManager = focusManager,
+                                onRemove =
+                                    if (draftMedications.size > 1) {
+                                        {
+                                            val newList = draftMedications.filterIndexed { i, _ -> i != index }
+                                            viewModel.updateDraftMedications(newList)
+                                        }
+                                    } else {
+                                        null
+                                    },
                             )
                             Spacer(modifier = Modifier.height(12.dp))
                         }
 
-                        TextButton(onClick = { medications = medications + MedicationItem() }) {
+                        TextButton(onClick = { viewModel.updateDraftMedications(draftMedications + MedicationItem()) }) {
                             Icon(Icons.Default.Add, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Добавить препарат")
@@ -255,8 +264,8 @@ fun RecipeScreen(
                         Spacer(modifier = Modifier.height(24.dp))
 
                         OutlinedTextField(
-                            value = notes,
-                            onValueChange = { notes = it },
+                            value = draftNotes,
+                            onValueChange = { viewModel.updateDraftNotes(it) },
                             label = { Text("Рекомендации") },
                             modifier = Modifier.fillMaxWidth().heightIn(min = 100.dp),
                             shape = RoundedCornerShape(12.dp),
@@ -267,13 +276,12 @@ fun RecipeScreen(
 
                     Button(
                         onClick = {
-                            viewModel.createRecipe(patientIin, patientResult?.full_name ?: "Неизвестно", medications, notes)
+                            viewModel.createRecipe(patientResult?.full_name ?: "Неизвестно")
                             showCreateSheet = false
-                            resetForm()
                         },
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp).height(56.dp),
                         shape = RoundedCornerShape(16.dp),
-                        enabled = patientIin.length == 12 && patientResult != null && medications.any { it.name.isNotBlank() },
+                        enabled = draftPatientIin.length == 12 && patientResult != null && draftMedications.any { it.name.isNotBlank() },
                     ) {
                         Text("Выписать рецепт")
                     }
@@ -281,32 +289,13 @@ fun RecipeScreen(
             }
         }
     }
-
-    if (showExitConfirmation) {
-        AlertDialog(
-            onDismissRequest = { showExitConfirmation = false },
-            title = { Text("У вас есть данные") },
-            text = { Text("Рецепт не будет создан, и введенные данные удалятся. Вы уверены, что хотите выйти?") },
-            confirmButton = {
-                TextButton(onClick = {
-                    showExitConfirmation = false
-                    showCreateSheet = false
-                    resetForm()
-                }) {
-                    Text("Удалить рецепт", color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showExitConfirmation = false }) {
-                    Text("Продолжить создание")
-                }
-            }
-        )
-    }
 }
 
 @Composable
-fun RecipeHistoryCard(recipe: Recipe, onClick: () -> Unit) {
+fun RecipeHistoryCard(
+    recipe: Recipe,
+    onClick: () -> Unit,
+) {
     val sdf = SimpleDateFormat("d MMMM yyyy", Locale("ru"))
     val dateStr = sdf.format(Date(recipe.date))
     val recipeNum = recipe.id.takeLast(4).uppercase()
@@ -321,19 +310,19 @@ fun RecipeHistoryCard(recipe: Recipe, onClick: () -> Unit) {
             Text(
                 text = "Рецепт №$recipeNum",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.primary,
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = recipe.patient_name,
                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = dateStr,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -346,7 +335,6 @@ fun SmartMedicationRow(
     viewModel: RecipeViewModel,
     onMedicationChange: (MedicationItem) -> Unit,
     onRemove: (() -> Unit)?,
-    focusManager: androidx.compose.ui.focus.FocusManager,
 ) {
     var nameExpanded by remember { mutableStateOf(false) }
     var dosageExpanded by remember { mutableStateOf(false) }
@@ -378,7 +366,7 @@ fun SmartMedicationRow(
                 expanded = nameExpanded && suggestions.isNotEmpty(),
                 onDismissRequest = { nameExpanded = false },
                 properties = PopupProperties(focusable = false),
-                modifier = Modifier.width(with(density) { fieldSize.width.toDp() })
+                modifier = Modifier.width(with(density) { fieldSize.width.toDp() }),
             ) {
                 suggestions.forEach { suggestion ->
                     DropdownMenuItem(
@@ -392,7 +380,7 @@ fun SmartMedicationRow(
                             onMedicationChange(medication.copy(name = suggestion.name))
                             selectedMedicationData = suggestion
                             nameExpanded = false
-                        }
+                        },
                     )
                 }
             }
@@ -423,7 +411,7 @@ fun SmartMedicationRow(
                             onClick = {
                                 onMedicationChange(medication.copy(dosage = dosage))
                                 dosageExpanded = false
-                            }
+                            },
                         )
                     }
                 }
@@ -439,7 +427,11 @@ fun SmartMedicationRow(
 }
 
 @Composable
-fun RecipeDetailsDialog(recipe: Recipe, onDismiss: () -> Unit, viewModel: RecipeViewModel) {
+fun RecipeDetailsDialog(
+    recipe: Recipe,
+    onDismiss: () -> Unit,
+    viewModel: RecipeViewModel,
+) {
     val qrBitmap = remember(recipe.id) { viewModel.generateQrCode(recipe.id) }
 
     AlertDialog(
@@ -452,7 +444,7 @@ fun RecipeDetailsDialog(recipe: Recipe, onDismiss: () -> Unit, viewModel: Recipe
                     Image(
                         bitmap = qrBitmap.asImageBitmap(),
                         contentDescription = null,
-                        modifier = Modifier.size(200.dp)
+                        modifier = Modifier.size(200.dp),
                     )
                 }
                 Spacer(modifier = Modifier.height(16.dp))
@@ -465,7 +457,7 @@ fun RecipeDetailsDialog(recipe: Recipe, onDismiss: () -> Unit, viewModel: Recipe
                     Text("• ${med.name} (${med.dosage})", modifier = Modifier.padding(vertical = 4.dp))
                 }
             }
-        }
+        },
     )
 }
 
@@ -474,7 +466,7 @@ fun EmptyRecipesState() {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
-        modifier = Modifier.padding(top = 100.dp)
+        modifier = Modifier.padding(top = 100.dp),
     ) {
         Icon(
             imageVector = Icons.Default.ReceiptLong,

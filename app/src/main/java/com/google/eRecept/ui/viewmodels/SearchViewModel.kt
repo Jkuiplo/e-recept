@@ -2,17 +2,21 @@ package com.google.eRecept.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.eRecept.data.FirebaseRepository
 import com.google.eRecept.data.Medication
 import com.google.eRecept.data.Patient
 import com.google.eRecept.data.Recipe
+import com.google.eRecept.data.repository.MockSearchRepository
+import com.google.eRecept.data.repository.SearchRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class SearchViewModel(private val repository: FirebaseRepository = FirebaseRepository()) : ViewModel() {
+class SearchViewModel : ViewModel() {
+    // ВРЕМЕННО: ручное внедрение мока
+    private val repository: SearchRepository = MockSearchRepository()
+
     private val _patientResults = MutableStateFlow<List<Patient>>(emptyList())
     val patientResults: StateFlow<List<Patient>> = _patientResults.asStateFlow()
 
@@ -60,7 +64,10 @@ class SearchViewModel(private val repository: FirebaseRepository = FirebaseRepos
         }
     }
 
-    fun search(query: String, tabIndex: Int) {
+    fun search(
+        query: String,
+        tabIndex: Int,
+    ) {
         currentQuery = query
         currentTabIndex = tabIndex
 
