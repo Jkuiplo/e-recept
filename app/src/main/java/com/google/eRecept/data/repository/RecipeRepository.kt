@@ -39,9 +39,12 @@ class MockRecipeRepository : RecipeRepository {
     override fun getRecentRecipes(doctorId: String): Flow<List<Recipe>> = _recipes.asStateFlow()
 
     override suspend fun searchMedications(query: String): List<Medication> {
-        delay(300) // Имитация поиска на сервере
-        // Ищем препараты, которые начинаются на введенную букву (без учета регистра)
-        return mockMedications.filter { it.name.startsWith(query, ignoreCase = true) }
+        delay(400) // Имитация загрузки для скелетона
+        if (query.isBlank()) return mockMedications // Возвращаем всё!
+
+        return mockMedications.filter {
+            it.name.contains(query, ignoreCase = true) || it.activeSubstance.contains(query, ignoreCase = true)
+        }
     }
 
     override suspend fun getDoctorProfile(doctorId: String): Doctor? = Doctor("mock_doctor_id", "Д-р Хаус", "Терапевт")

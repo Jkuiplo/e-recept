@@ -1,5 +1,7 @@
 package com.google.eRecept.ui.viewmodels
 
+import android.graphics.Bitmap
+import android.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.eRecept.data.Medication
@@ -7,6 +9,8 @@ import com.google.eRecept.data.Patient
 import com.google.eRecept.data.Recipe
 import com.google.eRecept.data.repository.MockSearchRepository
 import com.google.eRecept.data.repository.SearchRepository
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.qrcode.QRCodeWriter
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,7 +18,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class SearchViewModel : ViewModel() {
-    // ВРЕМЕННО: ручное внедрение мока
     private val repository: SearchRepository = MockSearchRepository()
 
     private val _patientResults = MutableStateFlow<List<Patient>>(emptyList())
@@ -37,6 +40,7 @@ class SearchViewModel : ViewModel() {
 
     init {
         loadRecipes()
+        loadInitialMedications() // Сразу грузим препараты
     }
 
     private fun loadRecipes() {
@@ -49,15 +53,21 @@ class SearchViewModel : ViewModel() {
         }
     }
 
+    private fun loadInitialMedications() {
+        viewModelScope.launch {
+            _isSearching.value = true
+            _medicationResults.value = repository.searchMedications("")
+            _isSearching.value = false
+        }
+    }
+
     fun refresh() {
         viewModelScope.launch {
             _isRefreshing.value = true
             delay(500)
             if (currentTabIndex == 2) {
-                // На третьей вкладке просто перезагружаем всю историю
                 loadRecipes()
             } else {
-                // На остальных вкладках повторяем поиск с текущим запросом
                 search(currentQuery, currentTabIndex)
             }
             _isRefreshing.value = false
@@ -71,12 +81,18 @@ class SearchViewModel : ViewModel() {
         currentQuery = query
         currentTabIndex = tabIndex
 
-        if (query.isBlank()) {
-            _patientResults.value = emptyList()
-            _medicationResults.value = emptyList()
-            return
-        }
         viewModelScope.launch {
+            if (query.isBlank()) {
+                if (tabIndex == 0) _patientResults.value = emptyList()
+                if (tabIndex == 1) {
+                    // Если стерли запрос в препаратах — возвращаем полный список
+                    _isSearching.value = true
+                    _medicationResults.value = repository.searchMedications("")
+                    _isSearching.value = false
+                }
+                return@launch
+            }
+
             _isSearching.value = true
             when (tabIndex) {
                 0 -> _patientResults.value = repository.searchPatients(query)
@@ -84,5 +100,20 @@ class SearchViewModel : ViewModel() {
             }
             _isSearching.value = false
         }
+    }
+
+    // Для модалки деталей рецепта
+    fun generateQrCode(text: String): Bitmap {
+        val writer = QRCodeWriter()
+        val bitMatrix = writer.encode(text, BarcodeFormat.QR_CODE, 512, 512)
+        val width = bitMatrix.width
+        val height = bitMatrix.height
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
+        for (x in 0 until width) {
+            for (y in 0 until height) {
+                bitmap.setPixel(x, y, if (bitMatrix.get(x, y)) Color.BLACK else Color.WHITE)
+            }
+        }
+        return bitmap
     }
 }

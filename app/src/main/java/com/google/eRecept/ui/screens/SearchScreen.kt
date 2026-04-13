@@ -1,6 +1,10 @@
 package com.google.eRecept.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,7 +23,10 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
@@ -134,9 +141,8 @@ fun SearchScreen(viewModel: SearchViewModel) {
                         onClick = {
                             coroutineScope.launch {
                                 val diff = kotlin.math.abs(pagerState.currentPage - index)
-
                                 if (diff > 1) {
-                                    pagerState.scrollToPage(index) // без лагов 🚀
+                                    pagerState.scrollToPage(index)
                                 } else {
                                     pagerState.animateScrollToPage(index)
                                 }
@@ -183,13 +189,12 @@ fun SearchScreen(viewModel: SearchViewModel) {
                         }
 
                         1 -> {
-                            if (medicationResults.isEmpty() && searchQuery.isNotEmpty() && !isSearching) {
+                            // Если ищем и список пока пуст (или грузится полный список) — показываем скелетон
+                            if (isSearching && medicationResults.isEmpty()) {
+                                MedicationSkeletonList()
+                            } else if (medicationResults.isEmpty() && searchQuery.isNotEmpty() && !isSearching) {
                                 Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                                     SearchEmptyState("Препараты не найдены", Icons.Default.MedicalServices)
-                                }
-                            } else if (medicationResults.isEmpty() && searchQuery.isEmpty()) {
-                                Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                                    SearchEmptyState("Введите название для поиска препарата", Icons.Default.Search)
                                 }
                             } else {
                                 LazyColumn(
@@ -214,7 +219,7 @@ fun SearchScreen(viewModel: SearchViewModel) {
                                             it.patient_iin.contains(searchQuery)
                                     }
                                 }
-                            if (filteredRecipes.isEmpty()) {
+                            if (filteredRecipes.isEmpty() && !isSearching) {
                                 Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                                     SearchEmptyState(
                                         if (searchQuery.isNotEmpty()) "Рецепты не найдены" else "История рецептов пуста",
@@ -240,11 +245,52 @@ fun SearchScreen(viewModel: SearchViewModel) {
     }
 
     if (selectedPatient != null) {
-        PatientProfileSheet(patient = selectedPatient!!, onDismiss = { selectedPatient = null })
+        val patientRecipes = allRecipes.filter { it.patient_iin == selectedPatient!!.iin }
+        PatientProfileSheet(
+            patient = selectedPatient!!,
+            recipes = patientRecipes,
+            onRecipeClick = { recipe ->
+                selectedPatient = null // Закрываем профиль
+                selectedRecipe = recipe // Открываем рецепт
+            },
+            onDismiss = { selectedPatient = null },
+        )
     }
 
     if (selectedMedication != null) {
         MedicationInfoSheet(medication = selectedMedication!!, onDismiss = { selectedMedication = null })
+    }
+
+    if (selectedRecipe != null) {
+        SearchRecipeDetailsDialog(recipe = selectedRecipe!!, onDismiss = { selectedRecipe = null }, viewModel = viewModel)
+    }
+}
+
+@Composable
+fun MedicationSkeletonList() {
+    val infiniteTransition = rememberInfiniteTransition(label = "skeleton")
+    val alpha by infiniteTransition.animateFloat(
+        initialValue = 0.3f,
+        targetValue = 0.7f,
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(800, easing = LinearEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+        label = "alpha",
+    )
+
+    Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        repeat(6) {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(72.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = alpha)),
+            )
+        }
     }
 }
 
@@ -353,8 +399,12 @@ fun SearchRecipeHistoryCard(
 @Composable
 fun PatientProfileSheet(
     patient: Patient,
+    recipes: List<Recipe>,
+    onRecipeClick: (Recipe) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    var recipesExpanded by remember { mutableStateOf(false) }
+
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
             modifier =
@@ -367,10 +417,63 @@ fun PatientProfileSheet(
             Text(text = patient.full_name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Text(text = "ИИН: ${patient.iin}", color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(text = "Пол: ${patient.gender} • Рождение: ${patient.birth_date}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+
             Spacer(modifier = Modifier.height(24.dp))
-            Text("Аллергии", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+
+            // Теперь тут Примечание вместо Аллергии
+            Text("Примечание", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-            Text(text = patient.allergies.ifEmpty { "Не указано" }, style = MaterialTheme.typography.bodyLarge)
+            Text(text = patient.allergies.ifEmpty { "Нет примечаний" }, style = MaterialTheme.typography.bodyLarge)
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Вскрывающийся список рецептов
+            Card(
+                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { recipesExpanded = !recipesExpanded },
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.ReceiptLong, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            "Выписанные рецепты (${recipes.size})",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Icon(
+                            imageVector = if (recipesExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                            contentDescription = null,
+                        )
+                    }
+
+                    AnimatedVisibility(visible = recipesExpanded) {
+                        Column(modifier = Modifier.padding(top = 16.dp)) {
+                            if (recipes.isEmpty()) {
+                                Text("История пуста", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            } else {
+                                recipes.forEach { recipe ->
+                                    val dateStr = SimpleDateFormat("dd.MM.yyyy", Locale("ru")).format(Date(recipe.date))
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().clickable { onRecipeClick(recipe) }.padding(vertical = 8.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Text(dateStr, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                                        Text(
+                                            "№${recipe.id.takeLast(4).uppercase()}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.primary,
+                                        )
+                                    }
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(32.dp))
             Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth().height(56.dp), shape = RoundedCornerShape(16.dp)) {
                 Text("Закрыть")
@@ -408,4 +511,54 @@ fun MedicationInfoSheet(
             }
         }
     }
+}
+
+@Composable
+fun SearchRecipeDetailsDialog(
+    recipe: Recipe,
+    onDismiss: () -> Unit,
+    viewModel: SearchViewModel,
+) {
+    val qrBitmap = remember(recipe.id) { viewModel.generateQrCode(recipe.id) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Закрыть") } },
+        title = { Text("Детали рецепта", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    Image(
+                        bitmap = qrBitmap.asImageBitmap(),
+                        contentDescription = null,
+                        modifier = Modifier.size(200.dp),
+                    )
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Пациент: ${recipe.patient_name}", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                Text("ИИН: ${recipe.patient_iin}", style = MaterialTheme.typography.bodyMedium)
+                Spacer(modifier = Modifier.height(16.dp))
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(8.dp))
+
+                if (recipe.medications.isEmpty()) {
+                    Text("• Нет указанных препаратов", modifier = Modifier.padding(vertical = 4.dp))
+                } else {
+                    recipe.medications.forEach { med ->
+                        Text("• ${med.name}", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 4.dp))
+                        // Проверяем, есть ли поле summary, если нет - выводим дозу
+                        val desc = if (med.dosageValue.isNotBlank()) "${med.dosageValue} ${med.dosageUnit} × ${med.frequency}/день — ${med.durationValue} ${med.durationUnit}" else med.dosageUnit
+                        Text("  $desc", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 4.dp))
+                    }
+                }
+
+                if (recipe.notes.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Рекомендации: ${recipe.notes}", style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+        },
+    )
 }
