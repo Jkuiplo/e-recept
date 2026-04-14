@@ -365,6 +365,8 @@ fun SearchRecipeHistoryCard(
 ) {
     val sdf = SimpleDateFormat("d MMMM yyyy", Locale("ru"))
     val dateStr = sdf.format(Date(recipe.date))
+    // Добавляем форматирование даты истечения
+    val expireStr = sdf.format(Date(recipe.expire_date))
     val recipeNum = recipe.id.takeLast(4).uppercase()
 
     Card(
@@ -373,24 +375,62 @@ fun SearchRecipeHistoryCard(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "Рецепт №$recipeNum",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary,
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = recipe.patient_name,
-                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = dateStr,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Рецепт №$recipeNum",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = recipe.patient_name,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = dateStr,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // Используем вычисляемое свойство isActive из модели
+            val isActive = recipe.isActive
+            val badgeContainerColor = if (isActive) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer
+            val badgeContentColor = if (isActive) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onErrorContainer
+
+            // Оборачиваем бейдж и срок в Column с выравниванием по правому краю
+            Column(horizontalAlignment = Alignment.End) {
+                Box(
+                    modifier =
+                        Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(badgeContainerColor)
+                            .padding(horizontal = 8.dp, vertical = 6.dp),
+                ) {
+                    Text(
+                        text = if (isActive) "Активен" else "Истек",
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = badgeContentColor,
+                    )
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "до $expireStr",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = badgeContentColor.copy(alpha = 0.8f),
+                )
+            }
         }
     }
 }
@@ -497,14 +537,66 @@ fun MedicationInfoSheet(
                     .padding(bottom = 32.dp)
                     .verticalScroll(rememberScrollState()),
         ) {
+            // Шапка: Название и МНН
             Text(text = medication.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Text(text = medication.activeSubstance, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleMedium)
+
+            // Категория как бейдж
+            if (medication.category.isNotBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Box(
+                    modifier =
+                        Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(MaterialTheme.colorScheme.secondaryContainer)
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                ) {
+                    Text(
+                        text = medication.category,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
-            Text("Описание", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-            Text(medication.description.ifEmpty { "Нет описания" })
+
+            // Формы выпуска и дозировки
+            Text("Формы выпуска и дозировки", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "${medication.forms.joinToString(", ")}\nДоступно: ${medication.availableDosages.joinToString(", ")}",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+
             Spacer(modifier = Modifier.height(16.dp))
-            Text("Дозировки", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-            Text(medication.availableDosages.joinToString(", ").ifEmpty { "Не указаны" })
+
+            // Описание
+            Text("Фармакологическое действие", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(medication.description.ifEmpty { "Нет описания" }, style = MaterialTheme.typography.bodyMedium)
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Показания
+            Text("Показания", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(medication.indications.ifEmpty { "Не указаны" }, style = MaterialTheme.typography.bodyMedium)
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Противопоказания (красным)
+            Text("Противопоказания", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.error)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(medication.contraindications.ifEmpty { "Не указаны" }, style = MaterialTheme.typography.bodyMedium)
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Побочные действия (оранжевым/варнингом, если есть)
+            Text("Побочные действия", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.tertiary)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(medication.sideEffects.ifEmpty { "Не указаны" }, style = MaterialTheme.typography.bodyMedium)
+
             Spacer(modifier = Modifier.height(32.dp))
             Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth().height(56.dp), shape = RoundedCornerShape(16.dp)) {
                 Text("Закрыть")

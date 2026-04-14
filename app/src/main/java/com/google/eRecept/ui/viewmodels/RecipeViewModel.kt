@@ -39,6 +39,9 @@ class RecipeViewModel : ViewModel() {
     private val _draftNotes = MutableStateFlow("")
     val draftNotes = _draftNotes.asStateFlow()
 
+    private val _draftExpireDays = MutableStateFlow(10)
+    val draftExpireDays = _draftExpireDays.asStateFlow()
+
     private val _draftMedications = MutableStateFlow(listOf(MedicationItem()))
     val draftMedications = _draftMedications.asStateFlow()
 
@@ -58,6 +61,10 @@ class RecipeViewModel : ViewModel() {
         _draftPatientIin.value = iin
     }
 
+    fun updateDraftExpireDays(days: Int) {
+        _draftExpireDays.value = days
+    }
+
     fun updateDraftNotes(notes: String) {
         _draftNotes.value = notes
     }
@@ -70,6 +77,7 @@ class RecipeViewModel : ViewModel() {
         _draftPatientIin.value = ""
         _draftNotes.value = ""
         _draftMedications.value = listOf(MedicationItem())
+        _draftExpireDays.value = 10
     }
     // ------------------------------------------------------------------------
 
@@ -111,22 +119,27 @@ class RecipeViewModel : ViewModel() {
         val iin = _draftPatientIin.value
         val meds = _draftMedications.value.filter { it.name.isNotBlank() }
         val notes = _draftNotes.value
+        val expireDays = _draftExpireDays.value
 
         viewModelScope.launch {
             val doctorProfile = repository.getDoctorProfile(doctorId)
+            val currentTime = System.currentTimeMillis()
+            val expireTime = currentTime + (expireDays * 24L * 60L * 60L * 1000L)
+
             val recipe =
                 Recipe(
                     doctor_id = doctorId,
                     doctor_name = doctorProfile?.name ?: "Врач",
                     patient_iin = iin,
                     patient_name = patientName,
-                    date = System.currentTimeMillis(),
-                    medications = meds, // Теперь тут полные объекты с дозировкой, кратностью и тд
+                    date = currentTime,
+                    expire_date = expireTime, // Сохраняем дату истечения
+                    medications = meds,
                     notes = notes,
                 )
             repository.createRecipe(recipe)
             clearDraft()
-            closeCreateSheet() // Закрываем модалку после создания
+            closeCreateSheet()
         }
     }
 

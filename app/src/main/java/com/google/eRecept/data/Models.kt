@@ -36,9 +36,14 @@ data class Recipe(
     val patient_iin: String = "",
     val patient_name: String = "",
     val date: Long = System.currentTimeMillis(),
+    val expire_date: Long = System.currentTimeMillis() + (10L * 24 * 60 * 60 * 1000), // По умолчанию 10 дней
     val medications: List<MedicationItem> = emptyList(),
     val notes: String = "",
-)
+) {
+    // Динамически вычисляем статус
+    val isActive: Boolean
+        get() = System.currentTimeMillis() <= expire_date
+}
 
 data class MedicationItem(
     val name: String = "",
@@ -47,23 +52,26 @@ data class MedicationItem(
     val frequency: String = "2×",
     val durationValue: String = "",
     val durationUnit: String = "дней",
+    val note: String = "", // Новое поле для рекомендаций
 ) {
-    // Автоматически собираем строку "Итого"
     val summary: String
         get() =
             if (dosageValue.isNotBlank() && durationValue.isNotBlank()) {
                 "$dosageValue $dosageUnit × $frequency/день — $durationValue $durationUnit"
             } else {
-                "Заполните данные"
+                "Заполните дозировку и длительность"
             }
 }
 
 data class Medication(
     val id: String = "",
-    val name: String = "", // Коммерческое название
-    val activeSubstance: String = "", // МНН
-    val category: String = "", // Категория
-    val description: String = "",
+    val name: String = "",
+    val activeSubstance: String = "",
+    val category: String = "",
+    val description: String = "", // Краткое описание
+    val indications: String = "", // Показания к применению (НОВОЕ)
+    val contraindications: String = "", // Противопоказания (НОВОЕ)
+    val sideEffects: String = "", // Побочные действия (НОВОЕ)
     val availableDosages: List<String> = emptyList(),
     val forms: List<String> = emptyList(),
 )
