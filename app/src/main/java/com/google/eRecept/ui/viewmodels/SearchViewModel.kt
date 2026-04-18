@@ -9,7 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.google.eRecept.data.Medication
 import com.google.eRecept.data.Patient
 import com.google.eRecept.data.Recipe
-import com.google.eRecept.data.repository.SearchRepository
+import com.google.eRecept.data.mockRepository.SearchRepository
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import dagger.hilt.android.lifecycle.HiltViewModel

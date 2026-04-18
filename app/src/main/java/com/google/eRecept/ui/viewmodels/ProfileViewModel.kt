@@ -3,7 +3,7 @@ package com.google.eRecept.ui.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.eRecept.data.Doctor
-import com.google.eRecept.data.repository.ProfileRepository
+import com.google.eRecept.data.mockRepository.ProfileRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

@@ -1,39 +1,32 @@
-package com.google.eRecept.data.repository
+package com.google.eRecept.data.mockRepository
 
+import com.google.eRecept.data.Doctor
 import com.google.eRecept.data.Medication
-import com.google.eRecept.data.Patient
 import com.google.eRecept.data.Recipe
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-// Контракт
-interface SearchRepository {
+interface RecipeRepository {
     val currentUserId: String?
 
-    suspend fun searchPatients(query: String): List<Patient>
+    fun getRecentRecipes(doctorId: String): Flow<List<Recipe>>
 
     suspend fun searchMedications(query: String): List<Medication>
 
-    fun getRecentRecipes(doctorId: String): Flow<List<Recipe>>
+    suspend fun getDoctorProfile(doctorId: String): Doctor?
+
+    suspend fun createRecipe(recipe: Recipe)
 }
 
-// Заглушка
-class MockSearchRepository : SearchRepository {
+class MockRecipeRepository : RecipeRepository {
     override val currentUserId: String = "mock_doctor_id"
 
-    // Мок-база пациентов
-    private val mockPatients =
-        listOf(
-            // ALERGIES это не аллергии а примечание будет
-            Patient("123456789012", "Иванов Иван Иванович", "Мужской", "1996-05-15", "Жалобы на боли в спине"),
-            Patient("098765432109", "Смирнова Анна", "Женский", "2001-08-20", "Нет"),
-            Patient("112233445566", "Ахметов Серик", "Мужской", "1985-11-02", "рак яичек"),
-        )
+    // Реактивный список, который будет обновляться при добавлении
+    private val _recipes = MutableStateFlow<List<Recipe>>(emptyList())
 
-// В файле SearchRepository.kt (внутри класса MockSearchRepository)
-
+    // Обновленная локальная "база" препаратов с полным описанием
     private val mockMedications =
         listOf(
             Medication(
@@ -76,7 +69,7 @@ class MockSearchRepository : SearchRepository {
                 id = "4",
                 name = "Нурофен Экспресс",
                 activeSubstance = "Ибупрофен",
-                category = "НПВС (Нестероидное противовоспалительное)",
+                category = "НПВС",
                 description = "Оказывает быстрое обезболивающее, жаропонижающее и противовоспалительное действие.",
                 indications = "Головная боль, мигрень, зубная боль, невралгия, лихорадка при ОРВИ и гриппе.",
                 contraindications = "Эрозивно-язвенные заболевания ЖКТ в фазе обострения, сердечная недостаточность, III триместр беременности.",
@@ -98,46 +91,25 @@ class MockSearchRepository : SearchRepository {
             ),
         )
 
-    // Фейковая история рецептов
-    private val _recipes =
-        MutableStateFlow<List<Recipe>>(
-            listOf(
-                Recipe(
-                    id = "REC-987654321",
-                    doctor_id = currentUserId,
-                    doctor_name = "Д-р Хаус",
-                    patient_iin = "123456789012",
-                    patient_name = "Иванов Иван Иванович",
-                    date = System.currentTimeMillis() - 86400000, // Вчера
-                    medications = emptyList(),
-                    notes = "Соблюдать постельный режим",
-                ),
-                Recipe(
-                    id = "REC-123456789",
-                    doctor_id = currentUserId,
-                    doctor_name = "Д-р Хаус",
-                    patient_iin = "098765432109",
-                    patient_name = "Смирнова Анна",
-                    date = System.currentTimeMillis(), // Сегодня
-                    medications = emptyList(),
-                    notes = "Пить больше воды",
-                ),
-            ),
-        )
-
-    override suspend fun searchPatients(query: String): List<Patient> {
-        delay(400) // Лоадер покрутится 0.4 сек
-        return mockPatients.filter {
-            it.iin.contains(query) || it.full_name.contains(query, ignoreCase = true)
-        }
-    }
+    override fun getRecentRecipes(doctorId: String): Flow<List<Recipe>> = _recipes.asStateFlow()
 
     override suspend fun searchMedications(query: String): List<Medication> {
-        delay(400) // Лоадер покрутится 0.4 сек
+        delay(400) // Имитация загрузки для скелетона
+        if (query.isBlank()) return mockMedications // Возвращаем всё!
+
         return mockMedications.filter {
             it.name.contains(query, ignoreCase = true) || it.activeSubstance.contains(query, ignoreCase = true)
         }
     }
 
-    override fun getRecentRecipes(doctorId: String): Flow<List<Recipe>> = _recipes.asStateFlow()
+    override suspend fun getDoctorProfile(doctorId: String): Doctor? =
+        Doctor("mock_doctor_id", "Иванов Иван Иванович", "Врач-терапевт, Кардиолог")
+
+    override suspend fun createRecipe(recipe: Recipe) {
+        delay(500)
+        val currentList = _recipes.value.toMutableList()
+        // Добавляем новый рецепт в начало списка и генерируем ему фейковый ID
+        currentList.add(0, recipe.copy(id = "REC-${System.currentTimeMillis()}"))
+        _recipes.value = currentList
+    }
 }

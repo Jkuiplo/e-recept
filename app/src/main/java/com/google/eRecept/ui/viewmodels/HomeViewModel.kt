@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.eRecept.data.Appointment
 import com.google.eRecept.data.Patient
-import com.google.eRecept.data.repository.HomeRepository
+import com.google.eRecept.data.mockRepository.HomeRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow

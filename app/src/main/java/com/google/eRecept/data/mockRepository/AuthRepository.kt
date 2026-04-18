@@ -1,15 +1,15 @@
-package com.google.eRecept.data.repository
+package com.google.eRecept.data.mockRepository
 
+import com.google.eRecept.data.network.dto.LoginResponse
 import kotlinx.coroutines.delay
 
-// 1. Контракт
 interface AuthRepository {
+    // ВАЖНО: Теперь возвращаем LoginResponse
     suspend fun login(
         email: String,
         password: String,
-    ): Result<Unit>
+    ): Result<LoginResponse>
 
-    // Новые методы из спеки бэкенда
     suspend fun forgotPassword(email: String): Result<String>
 
     suspend fun resetPassword(
@@ -22,21 +22,28 @@ interface AuthRepository {
     fun isUserLoggedIn(): Boolean
 }
 
-// 2. Мок
 class MockAuthRepository : AuthRepository {
     private var isLoggedIn = false
 
     override suspend fun login(
         email: String,
         password: String,
-    ): Result<Unit> {
+    ): Result<LoginResponse> {
         delay(1500)
-        // Тестовые данные из документации бэка (п. 2.1)
         return if (email == "dr.ivanov@clinic.kz" && password == "securepassword123") {
             isLoggedIn = true
-            Result.success(Unit)
+            // Отдаем фейковый успешный ответ
+            Result.success(
+                LoginResponse(
+                    accessToken = "mock_jwt_token_123",
+                    tokenType = "bearer",
+                    doctorId = "mock_doctor_id",
+                    fullName = "Иванов Иван Иванович",
+                    specialization = "Терапевт",
+                ),
+            )
         } else {
-            Result.failure(Exception("Неверная почта или пароль. Для теста используй dr.ivanov@clinic.kz / securepassword123"))
+            Result.failure(Exception("Неверная почта или пароль."))
         }
     }
 

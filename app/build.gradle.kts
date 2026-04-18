@@ -47,6 +47,10 @@ dependencies {
     kapt(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
 
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.gson)
+    implementation(libs.okhttp.logging)
+
     implementation("com.google.zxing:core:3.5.3")
 
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")

@@ -5,7 +5,7 @@ import android.content.Context
 import androidx.core.content.edit
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.eRecept.data.repository.AuthRepository
+import com.google.eRecept.data.mockRepository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -40,7 +40,8 @@ class AuthViewModel
         }
 
         private fun checkCurrentUser() {
-            if (repository.isUserLoggedIn()) {
+            val token = prefs.getString("access_token", null)
+            if (!token.isNullOrBlank() || repository.isUserLoggedIn()) {
                 _authState.value = AuthState.Authenticated
             }
         }
@@ -64,11 +65,17 @@ class AuthViewModel
             viewModelScope.launch {
                 val result = repository.login(email, password)
                 result.fold(
-                    onSuccess = {
-                        if (rememberMe) {
-                            prefs.edit { putString("saved_email", email) }
-                        } else {
-                            prefs.edit { remove("saved_email") }
+                    onSuccess = { loginResponse ->
+                        // МАГИЯ ЗДЕСЬ: Сохраняем токен и ID доктора!
+                        prefs.edit {
+                            putString("access_token", loginResponse.accessToken)
+                            putString("doctor_id", loginResponse.doctorId) // Это нам понадобится для расписания!
+
+                            if (rememberMe) {
+                                putString("saved_email", email)
+                            } else {
+                                remove("saved_email")
+                            }
                         }
                         _authState.value = AuthState.Authenticated
                     },
@@ -78,8 +85,6 @@ class AuthViewModel
                 )
             }
         }
-
-// В AuthViewModel.kt добавим:
 
         private val _resendTimer = MutableStateFlow(0)
         val resendTimer: StateFlow<Int> = _resendTimer
@@ -135,6 +140,11 @@ class AuthViewModel
 
         fun logout() {
             repository.logout()
+            // При выходе удаляем токен!
+            prefs.edit {
+                remove("access_token")
+                remove("doctor_id")
+            }
             _authState.value = AuthState.Unauthenticated
         }
 

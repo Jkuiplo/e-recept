@@ -1,4 +1,4 @@
-package com.google.eRecept.data.repository
+package com.google.eRecept.data.mockRepository
 
 import com.google.eRecept.data.Doctor
 import kotlinx.coroutines.delay
