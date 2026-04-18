@@ -14,11 +14,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.google.eRecept.ui.screens.LoginScreen
 import com.google.eRecept.ui.screens.MainScreen
+import com.google.eRecept.ui.screens.authorization.LoginScreen
 import com.google.eRecept.ui.theme.EreceptTheme
 import com.google.eRecept.ui.viewmodels.AuthViewModel
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,17 +36,18 @@ class MainActivity : ComponentActivity() {
                 val startDestination = "main"
 
                 Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .pointerInput(Unit) {
-                            detectTapGestures(onTap = {
-                                focusManager.clearFocus()
-                            })
-                        }
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .pointerInput(Unit) {
+                                detectTapGestures(onTap = {
+                                    focusManager.clearFocus()
+                                })
+                            },
                 ) {
                     NavHost(
                         navController = navController,
-                        startDestination = startDestination
+                        startDestination = startDestination,
                     ) {
                         composable("login") {
                             LoginScreen(onLoginSuccess = {

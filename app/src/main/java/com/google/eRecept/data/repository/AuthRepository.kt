@@ -2,35 +2,62 @@ package com.google.eRecept.data.repository
 
 import kotlinx.coroutines.delay
 
-// 1. Наше "Меню" (Контракт)
+// 1. Контракт
 interface AuthRepository {
     suspend fun login(
-        iin: String,
+        email: String,
         password: String,
     ): Result<Unit>
+
+    // Новые методы из спеки бэкенда
+    suspend fun forgotPassword(email: String): Result<String>
+
+    suspend fun resetPassword(
+        token: String,
+        newPassword: String,
+    ): Result<String>
 
     fun logout()
 
     fun isUserLoggedIn(): Boolean
 }
 
-// 2. Наш "Повар-стажер" (Заглушка без бэкенда)
+// 2. Мок
 class MockAuthRepository : AuthRepository {
     private var isLoggedIn = false
 
     override suspend fun login(
-        iin: String,
+        email: String,
         password: String,
     ): Result<Unit> {
-        // Имитируем задержку сети (1.5 секунды), чтобы крутился индикатор загрузки
         delay(1500)
-
-        // Тестовые данные для входа. Потом мы это удалим.
-        return if (iin == "123456789012" && password == "123456") {
+        // Тестовые данные из документации бэка (п. 2.1)
+        return if (email == "dr.ivanov@clinic.kz" && password == "securepassword123") {
             isLoggedIn = true
-            Result.success(Unit) // Успешно
+            Result.success(Unit)
         } else {
-            Result.failure(Exception("Неверный ИИН или пароль. Для теста используй ИИН 123456789012 и пароль 123456"))
+            Result.failure(Exception("Неверная почта или пароль. Для теста используй dr.ivanov@clinic.kz / securepassword123"))
+        }
+    }
+
+    override suspend fun forgotPassword(email: String): Result<String> {
+        delay(1000)
+        return if (email.isNotBlank()) {
+            Result.success("Если email зарегистрирован, письмо со ссылкой будет отправлено")
+        } else {
+            Result.failure(Exception("Введите email"))
+        }
+    }
+
+    override suspend fun resetPassword(
+        token: String,
+        newPassword: String,
+    ): Result<String> {
+        delay(1000)
+        return if (token.isNotBlank() && newPassword.length >= 6) {
+            Result.success("Пароль успешно изменён. Войдите с новым паролем.")
+        } else {
+            Result.failure(Exception("Недействительный токен или короткий пароль"))
         }
     }
 

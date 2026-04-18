@@ -21,6 +21,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.eRecept.ui.viewmodels.HomeViewModel
 import com.google.eRecept.ui.viewmodels.RecipeViewModel
@@ -28,10 +29,9 @@ import com.google.eRecept.ui.viewmodels.SearchViewModel
 
 @Composable
 fun MainScreen(onLogout: () -> Unit) {
-    // Вьюмодели живут на уровне MainScreen, поэтому они общие для всех вкладок!
-    val homeViewModel: HomeViewModel = viewModel()
-    val recipeViewModel: RecipeViewModel = viewModel()
-    val searchViewModel: SearchViewModel = viewModel()
+    val homeViewModel: HomeViewModel = hiltViewModel()
+    val recipeViewModel: RecipeViewModel = hiltViewModel()
+    val searchViewModel: SearchViewModel = hiltViewModel()
 
     val tabs = listOf("Расписание", "Рецепты", "Поиск", "Профиль")
     val icons =
@@ -76,11 +76,8 @@ fun MainScreen(onLogout: () -> Unit) {
                     HomeScreen(
                         viewModel = homeViewModel,
                         onProfileClick = { selectedTab = 3 },
-                        // МАГИЯ ЗДЕСЬ: Ловим ИИН из модалки расписания
                         onCreateRecipeClick = { iin ->
-                            // 1. Говорим вьюмодели рецептов открыть свою модалку с этим ИИН
                             recipeViewModel.openCreateSheet(iin)
-                            // 2. Переключаем интерфейс на вкладку "Рецепты"
                             selectedTab = 1
                         },
                     )

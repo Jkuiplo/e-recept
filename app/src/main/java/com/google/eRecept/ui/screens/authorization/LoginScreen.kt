@@ -1,6 +1,6 @@
-package com.google.eRecept.ui.screens
+package com.google.eRecept.ui.screens.authorization
 
-import androidx.compose.animation.*
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -15,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -22,26 +23,28 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.eRecept.ui.viewmodels.AuthViewModel
 
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
-    viewModel: AuthViewModel = viewModel()
+    onNavigateToForgot: () -> Unit,
+    viewModel: AuthViewModel = hiltViewModel(),
 ) {
-    val savedIin by viewModel.savedIin.collectAsState()
-    
-    var iin by remember { mutableStateOf("") }
+    val context = LocalContext.current
+    val savedEmail by viewModel.savedEmail.collectAsState()
+
+    var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    var rememberMe by remember { mutableStateOf(savedIin.isNotEmpty()) }
+    var rememberMe by remember { mutableStateOf(false) }
 
     val authState by viewModel.authState.collectAsState()
 
-    LaunchedEffect(savedIin) {
-        if (savedIin.isNotEmpty()) {
-            iin = savedIin
+    LaunchedEffect(savedEmail) {
+        if (savedEmail.isNotEmpty()) {
+            email = savedEmail
             rememberMe = true
         }
     }
@@ -49,6 +52,12 @@ fun LoginScreen(
     LaunchedEffect(authState) {
         if (authState is AuthViewModel.AuthState.Authenticated) {
             onLoginSuccess()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.uiMessage.collect { message ->
+            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
         }
     }
 
@@ -89,15 +98,14 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(48.dp))
 
             OutlinedTextField(
-                value = iin,
-                onValueChange = { if (it.length <= 12) iin = it },
-                label = { Text("ИИН") },
-                placeholder = { Text("Введите 12 цифр") },
-                supportingText = { Text("${iin.length}/12") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+                value = email,
+                onValueChange = { email = it },
+                label = { Text("Email") },
+                placeholder = { Text("dr.ivanov@clinic.kz") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
                 trailingIcon = {
-                    if (iin.isNotEmpty()) {
-                        IconButton(onClick = { iin = "" }) {
+                    if (email.isNotEmpty()) {
+                        IconButton(onClick = { email = "" }) {
                             Icon(Icons.Default.Clear, contentDescription = "Очистить")
                         }
                     }
@@ -105,7 +113,7 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 singleLine = true,
-                isError = authState is AuthViewModel.AuthState.Error
+                isError = authState is AuthViewModel.AuthState.Error,
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -115,6 +123,7 @@ fun LoginScreen(
                 onValueChange = { password = it },
                 label = { Text("Пароль") },
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
                 trailingIcon = {
                     val image = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
@@ -124,7 +133,7 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 singleLine = true,
-                isError = authState is AuthViewModel.AuthState.Error
+                isError = authState is AuthViewModel.AuthState.Error,
             )
 
             if (authState is AuthViewModel.AuthState.Error) {
@@ -132,7 +141,7 @@ fun LoginScreen(
                     text = (authState as AuthViewModel.AuthState.Error).message,
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(top = 8.dp)
+                    modifier = Modifier.padding(top = 8.dp),
                 )
             }
 
@@ -152,7 +161,7 @@ fun LoginScreen(
                     modifier = Modifier.padding(start = 4.dp),
                 )
                 Spacer(modifier = Modifier.weight(1f))
-                TextButton(onClick = { /* TODO */ }) {
+                TextButton(onClick = onNavigateToForgot) {
                     Text("Забыли пароль?")
                 }
             }
@@ -160,13 +169,13 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             Button(
-                onClick = { viewModel.login(iin, password, rememberMe) },
+                onClick = { viewModel.login(email, password, rememberMe) },
                 modifier =
                     Modifier
                         .fillMaxWidth()
                         .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
-                enabled = iin.length == 12 && password.isNotEmpty() && authState !is AuthViewModel.AuthState.Loading
+                enabled = email.isNotBlank() && password.isNotEmpty() && authState !is AuthViewModel.AuthState.Loading,
             ) {
                 if (authState is AuthViewModel.AuthState.Loading) {
                     CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
