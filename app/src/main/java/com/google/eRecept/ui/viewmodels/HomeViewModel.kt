@@ -40,7 +40,6 @@ class HomeViewModel
         private fun loadAppointments() {
             repository.currentUserId?.let { doctorId ->
                 viewModelScope.launch {
-                    // Сразу сортируем прилетающие данные по времени
                     repository
                         .getAppointments(doctorId)
                         .map { list ->
@@ -101,7 +100,7 @@ class HomeViewModel
                         patient_name = patient.full_name,
                         date = date,
                         time = time,
-                        type = "", // Больше не используем
+                        type = "",
                         age = age,
                         gender = patient.gender,
                         history = "Примечание: ${patient.allergies.ifEmpty { "Нет" }}",

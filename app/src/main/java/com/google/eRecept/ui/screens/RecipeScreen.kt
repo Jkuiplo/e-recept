@@ -282,7 +282,6 @@ fun RecipeScreen(
 
                         Spacer(modifier = Modifier.height(24.dp))
 
-                        // ОБЩЕЕ ИТОГО
                         Box(
                             modifier =
                                 Modifier
@@ -496,7 +495,6 @@ fun SmartMedicationRow(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // ПОЛЕ ДОЗИРОВКИ С КНОПКАМИ + / -
             Text("Дозировка", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(modifier = Modifier.height(4.dp))
             Row(
@@ -504,7 +502,6 @@ fun SmartMedicationRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // Блок с минусом, полем ввода и плюсом
                 Row(
                     modifier = Modifier.weight(1f),
                     verticalAlignment = Alignment.CenterVertically,
@@ -599,7 +596,6 @@ fun SmartMedicationRow(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // ПРИМЕЧАНИЕ (Рекомендация) К КОНКРЕТНОМУ ПРЕПАРАТУ
             OutlinedTextField(
                 value = medication.note,
                 onValueChange = { onMedicationChange(medication.copy(note = it)) },
@@ -638,7 +634,6 @@ fun RecipeDetailsDialog(
                 }
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Статус и срок
                 val badgeColor = if (recipe.isActive) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer
                 val textColor = if (recipe.isActive) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onErrorContainer
                 Row(verticalAlignment = Alignment.CenterVertically) {

@@ -1,5 +1,6 @@
 package com.google.eRecept
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -37,6 +39,12 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 val authViewModel: AuthViewModel = viewModel()
 
+                val context = LocalContext.current
+                val prefs = context.getSharedPreferences("erecept_prefs", Context.MODE_PRIVATE)
+                val hasToken = !prefs.getString("access_token", null).isNullOrBlank()
+
+                val startDestination = if (hasToken) "main" else "login"
+
                 Box(
                     modifier =
                         Modifier
@@ -49,7 +57,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     NavHost(
                         navController = navController,
-                        startDestination = "login", // Начинаем с логина
+                        startDestination = startDestination,
                     ) {
                         composable("login") {
                             LoginScreen(
@@ -68,13 +76,12 @@ class MainActivity : ComponentActivity() {
                             ForgotPasswordScreen(
                                 onNavigateBack = { navController.popBackStack() },
                                 onNavigateToReset = {
-                                    // После отправки email просто возвращаем на логин
                                     navController.popBackStack("login", inclusive = false)
                                 },
                             )
                         }
 
-                        // МАГИЯ DEEP LINKING ЗДЕСЬ
+                        // Deep linking тут
                         composable(
                             route = "reset_password?token={token}",
                             arguments = listOf(navArgument("token") { type = NavType.StringType }),
@@ -87,7 +94,7 @@ class MainActivity : ComponentActivity() {
                                 onNavigateBack = { navController.popBackStack("login", inclusive = false) },
                                 onResetSuccess = {
                                     navController.navigate("login") {
-                                        popUpTo(0) // Очищаем весь стек, кидаем на логин
+                                        popUpTo(0)
                                     }
                                 },
                             )

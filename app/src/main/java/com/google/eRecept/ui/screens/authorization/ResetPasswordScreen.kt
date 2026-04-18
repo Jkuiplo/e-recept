@@ -24,7 +24,7 @@ import com.google.eRecept.ui.viewmodels.AuthViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ResetPasswordScreen(
-    token: String, // Получаем из навигации/диплинка
+    token: String,
     onNavigateBack: () -> Unit,
     onResetSuccess: () -> Unit,
     viewModel: AuthViewModel = hiltViewModel(),

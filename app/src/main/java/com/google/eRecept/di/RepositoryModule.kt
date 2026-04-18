@@ -1,11 +1,15 @@
 package com.google.eRecept.di
 
+import android.content.Context
 import com.google.eRecept.data.mockRepository.*
 import com.google.eRecept.data.network.api.AuthApi
+import com.google.eRecept.data.network.api.HomeApi
 import com.google.eRecept.data.repository.NetworkAuthRepository
+import com.google.eRecept.data.repository.NetworkHomeRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
@@ -23,7 +27,12 @@ object RepositoryModule {
 
     @Provides
     @Singleton
-    fun provideHomeRepository(): HomeRepository = MockHomeRepository()
+    fun provideHomeRepository(
+        api: HomeApi,
+        @ApplicationContext context: Context,
+    ): HomeRepository = NetworkHomeRepository(api, context)
+
+//    fun provideHomeRepository(): HomeRepository = MockHomeRepository()
 
     @Provides
     @Singleton

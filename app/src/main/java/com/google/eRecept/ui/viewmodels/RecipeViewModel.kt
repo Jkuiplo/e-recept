@@ -35,7 +35,7 @@ class RecipeViewModel
         private val _isRefreshing = MutableStateFlow(false)
         val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
-        // --- УПРАВЛЕНИЕ МОДАЛКОЙ И ЧЕРНОВИКОМ ---
+        // - УПРАВЛЕНИЕ МОДАЛКОЙ И ЧЕРНОВИКОМ -
         private val _showCreateSheet = MutableStateFlow(false)
         val showCreateSheet = _showCreateSheet.asStateFlow()
 
@@ -51,7 +51,6 @@ class RecipeViewModel
         private val _draftMedications = MutableStateFlow(listOf(MedicationItem()))
         val draftMedications = _draftMedications.asStateFlow()
 
-        // ВЫЗЫВАЙ ЭТУ ФУНКЦИЮ ПРИ ПЕРЕХОДЕ С ГЛАВНОЙ СТРАНИЦЫ
         fun openCreateSheet(iin: String? = null) {
             if (iin != null) {
                 _draftPatientIin.value = iin
@@ -85,7 +84,6 @@ class RecipeViewModel
             _draftMedications.value = listOf(MedicationItem())
             _draftExpireDays.value = 10
         }
-        // ------------------------------------------------------------------------
 
         init {
             loadRecipes()
@@ -139,7 +137,7 @@ class RecipeViewModel
                         patient_iin = iin,
                         patient_name = patientName,
                         date = currentTime,
-                        expire_date = expireTime, // Сохраняем дату истечения
+                        expire_date = expireTime,
                         medications = meds,
                         notes = notes,
                     )

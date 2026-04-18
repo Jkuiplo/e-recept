@@ -23,10 +23,8 @@ interface RecipeRepository {
 class MockRecipeRepository : RecipeRepository {
     override val currentUserId: String = "mock_doctor_id"
 
-    // Реактивный список, который будет обновляться при добавлении
     private val _recipes = MutableStateFlow<List<Recipe>>(emptyList())
 
-    // Обновленная локальная "база" препаратов с полным описанием
     private val mockMedications =
         listOf(
             Medication(
@@ -94,8 +92,8 @@ class MockRecipeRepository : RecipeRepository {
     override fun getRecentRecipes(doctorId: String): Flow<List<Recipe>> = _recipes.asStateFlow()
 
     override suspend fun searchMedications(query: String): List<Medication> {
-        delay(400) // Имитация загрузки для скелетона
-        if (query.isBlank()) return mockMedications // Возвращаем всё!
+        delay(400)
+        if (query.isBlank()) return mockMedications
 
         return mockMedications.filter {
             it.name.contains(query, ignoreCase = true) || it.activeSubstance.contains(query, ignoreCase = true)

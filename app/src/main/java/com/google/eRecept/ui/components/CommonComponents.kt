@@ -11,7 +11,7 @@ class DateTransformation : VisualTransformation {
         var out = ""
         for (i in trimmed.indices) {
             out += trimmed[i]
-            if (i == 1 || i == 3) out += "." // Ставим точки после дня и месяца
+            if (i == 1 || i == 3) out += "."
         }
 
         val offsetTranslator =

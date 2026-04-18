@@ -40,7 +40,6 @@ data class Recipe(
     val medications: List<MedicationItem> = emptyList(),
     val notes: String = "",
 ) {
-    // Динамически вычисляем статус
     val isActive: Boolean
         get() = System.currentTimeMillis() <= expire_date
 }
@@ -52,7 +51,7 @@ data class MedicationItem(
     val frequency: String = "2×",
     val durationValue: String = "",
     val durationUnit: String = "дней",
-    val note: String = "", // Новое поле для рекомендаций
+    val note: String = "",
 ) {
     val summary: String
         get() =
@@ -68,10 +67,10 @@ data class Medication(
     val name: String = "",
     val activeSubstance: String = "",
     val category: String = "",
-    val description: String = "", // Краткое описание
-    val indications: String = "", // Показания к применению (НОВОЕ)
-    val contraindications: String = "", // Противопоказания (НОВОЕ)
-    val sideEffects: String = "", // Побочные действия (НОВОЕ)
+    val description: String = "",
+    val indications: String = "",
+    val contraindications: String = "",
+    val sideEffects: String = "", // Убрать надо бы
     val availableDosages: List<String> = emptyList(),
     val forms: List<String> = emptyList(),
 )

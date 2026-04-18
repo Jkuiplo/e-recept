@@ -28,7 +28,6 @@ fun MainScreen(onLogout: () -> Unit) {
     val recipeViewModel: RecipeViewModel = hiltViewModel()
     val searchViewModel: SearchViewModel = hiltViewModel()
 
-    // Берем все элементы прямо из Enum
     val navItems = BottomNavItem.entries.toTypedArray()
 
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }

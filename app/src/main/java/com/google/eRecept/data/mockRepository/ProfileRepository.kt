@@ -3,19 +3,17 @@ package com.google.eRecept.data.mockRepository
 import com.google.eRecept.data.Doctor
 import kotlinx.coroutines.delay
 
-// Контракт
 interface ProfileRepository {
     val currentUserId: String?
 
     suspend fun getDoctorProfile(doctorId: String): Doctor?
 }
 
-// Заглушка
 class MockProfileRepository : ProfileRepository {
     override val currentUserId: String = "mock_doctor_id"
 
     override suspend fun getDoctorProfile(doctorId: String): Doctor? {
-        delay(300) // Легкая имитация загрузки из сети
+        delay(300)
         return Doctor(
             id = currentUserId,
             name = "Д-р Хаус",

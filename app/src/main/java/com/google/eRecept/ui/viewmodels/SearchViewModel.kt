@@ -46,7 +46,7 @@ class SearchViewModel
 
         init {
             loadRecipes()
-            loadInitialMedications() // Сразу грузим препараты
+            loadInitialMedications()
         }
 
         private fun loadRecipes() {
@@ -91,7 +91,6 @@ class SearchViewModel
                 if (query.isBlank()) {
                     if (tabIndex == 0) _patientResults.value = emptyList()
                     if (tabIndex == 1) {
-                        // Если стерли запрос в препаратах — возвращаем полный список
                         _isSearching.value = true
                         _medicationResults.value = repository.searchMedications("")
                         _isSearching.value = false
@@ -108,7 +107,6 @@ class SearchViewModel
             }
         }
 
-        // Для модалки деталей рецепта
         fun generateQrCode(text: String): Bitmap {
             val writer = QRCodeWriter()
             val bitMatrix = writer.encode(text, BarcodeFormat.QR_CODE, 512, 512)

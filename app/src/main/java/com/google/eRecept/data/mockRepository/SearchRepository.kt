@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-// Контракт
 interface SearchRepository {
     val currentUserId: String?
 
@@ -19,11 +18,9 @@ interface SearchRepository {
     fun getRecentRecipes(doctorId: String): Flow<List<Recipe>>
 }
 
-// Заглушка
 class MockSearchRepository : SearchRepository {
     override val currentUserId: String = "mock_doctor_id"
 
-    // Мок-база пациентов
     private val mockPatients =
         listOf(
             // ALERGIES это не аллергии а примечание будет
@@ -31,8 +28,6 @@ class MockSearchRepository : SearchRepository {
             Patient("098765432109", "Смирнова Анна", "Женский", "2001-08-20", "Нет"),
             Patient("112233445566", "Ахметов Серик", "Мужской", "1985-11-02", "рак яичек"),
         )
-
-// В файле SearchRepository.kt (внутри класса MockSearchRepository)
 
     private val mockMedications =
         listOf(
@@ -98,7 +93,6 @@ class MockSearchRepository : SearchRepository {
             ),
         )
 
-    // Фейковая история рецептов
     private val _recipes =
         MutableStateFlow<List<Recipe>>(
             listOf(

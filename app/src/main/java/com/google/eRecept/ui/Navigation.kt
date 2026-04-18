@@ -20,25 +20,25 @@ enum class BottomNavItem(
     Schedule(
         route = "schedule",
         title = "Расписание",
-        selectedIcon = Icons.Filled.CalendarToday, // Иконка календаря для рабочего дня
+        selectedIcon = Icons.Filled.CalendarToday,
         unselectedIcon = Icons.Outlined.CalendarToday,
     ),
     Recipes(
         route = "recipes",
         title = "Рецепты",
-        selectedIcon = Icons.AutoMirrored.Filled.Assignment, // Иконка документа (рецепта)
+        selectedIcon = Icons.AutoMirrored.Filled.Assignment,
         unselectedIcon = Icons.AutoMirrored.Outlined.Assignment,
     ),
     Search(
         route = "search",
         title = "Поиск",
-        selectedIcon = Icons.Filled.Search, // Иконка лупы
+        selectedIcon = Icons.Filled.Search,
         unselectedIcon = Icons.Outlined.Search,
     ),
     Profile(
         route = "profile",
         title = "Профиль",
-        selectedIcon = Icons.Filled.AccountCircle, // Иконка силуэта
+        selectedIcon = Icons.Filled.AccountCircle,
         unselectedIcon = Icons.Outlined.AccountCircle,
     ),
 }

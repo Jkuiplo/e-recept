@@ -4,7 +4,6 @@ import com.google.eRecept.data.network.dto.LoginResponse
 import kotlinx.coroutines.delay
 
 interface AuthRepository {
-    // ВАЖНО: Теперь возвращаем LoginResponse
     suspend fun login(
         email: String,
         password: String,
@@ -32,7 +31,6 @@ class MockAuthRepository : AuthRepository {
         delay(1500)
         return if (email == "dr.ivanov@clinic.kz" && password == "securepassword123") {
             isLoggedIn = true
-            // Отдаем фейковый успешный ответ
             Result.success(
                 LoginResponse(
                     accessToken = "mock_jwt_token_123",

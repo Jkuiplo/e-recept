@@ -13,9 +13,6 @@ class NetworkAuthRepository
     constructor(
         private val api: AuthApi,
     ) : AuthRepository {
-        // Для сети мы пока временно считаем юзера залогиненным, если у нас есть токен в префах.
-        // Это будет реализовано позже во ViewModel, поэтому пока возвращаем false,
-        // чтобы заставить юзера залогиниться.
         override fun isUserLoggedIn(): Boolean = false
 
         override suspend fun login(

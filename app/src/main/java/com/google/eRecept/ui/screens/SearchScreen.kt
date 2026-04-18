@@ -189,7 +189,6 @@ fun SearchScreen(viewModel: SearchViewModel) {
                         }
 
                         1 -> {
-                            // Если ищем и список пока пуст (или грузится полный список) — показываем скелетон
                             if (isSearching && medicationResults.isEmpty()) {
                                 MedicationSkeletonList()
                             } else if (medicationResults.isEmpty() && searchQuery.isNotEmpty() && !isSearching) {
@@ -250,8 +249,8 @@ fun SearchScreen(viewModel: SearchViewModel) {
             patient = selectedPatient!!,
             recipes = patientRecipes,
             onRecipeClick = { recipe ->
-                selectedPatient = null // Закрываем профиль
-                selectedRecipe = recipe // Открываем рецепт
+                selectedPatient = null
+                selectedRecipe = recipe
             },
             onDismiss = { selectedPatient = null },
         )
@@ -365,7 +364,6 @@ fun SearchRecipeHistoryCard(
 ) {
     val sdf = SimpleDateFormat("d MMMM yyyy", Locale("ru"))
     val dateStr = sdf.format(Date(recipe.date))
-    // Добавляем форматирование даты истечения
     val expireStr = sdf.format(Date(recipe.expire_date))
     val recipeNum = recipe.id.takeLast(4).uppercase()
 
@@ -404,12 +402,10 @@ fun SearchRecipeHistoryCard(
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // Используем вычисляемое свойство isActive из модели
             val isActive = recipe.isActive
             val badgeContainerColor = if (isActive) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer
             val badgeContentColor = if (isActive) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onErrorContainer
 
-            // Оборачиваем бейдж и срок в Column с выравниванием по правому краю
             Column(horizontalAlignment = Alignment.End) {
                 Box(
                     modifier =
@@ -460,14 +456,12 @@ fun PatientProfileSheet(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Теперь тут Примечание вместо Аллергии
             Text("Примечание", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             Text(text = patient.allergies.ifEmpty { "Нет примечаний" }, style = MaterialTheme.typography.bodyLarge)
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Вскрывающийся список рецептов
             Card(
                 modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { recipesExpanded = !recipesExpanded },
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
@@ -537,11 +531,9 @@ fun MedicationInfoSheet(
                     .padding(bottom = 32.dp)
                     .verticalScroll(rememberScrollState()),
         ) {
-            // Шапка: Название и МНН
             Text(text = medication.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Text(text = medication.activeSubstance, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleMedium)
 
-            // Категория как бейдж
             if (medication.category.isNotBlank()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Box(
@@ -561,7 +553,6 @@ fun MedicationInfoSheet(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Формы выпуска и дозировки
             Text("Формы выпуска и дозировки", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
             Spacer(modifier = Modifier.height(4.dp))
             Text(
@@ -571,28 +562,24 @@ fun MedicationInfoSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Описание
             Text("Фармакологическое действие", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
             Spacer(modifier = Modifier.height(4.dp))
             Text(medication.description.ifEmpty { "Нет описания" }, style = MaterialTheme.typography.bodyMedium)
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Показания
             Text("Показания", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
             Spacer(modifier = Modifier.height(4.dp))
             Text(medication.indications.ifEmpty { "Не указаны" }, style = MaterialTheme.typography.bodyMedium)
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Противопоказания (красным)
             Text("Противопоказания", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.error)
             Spacer(modifier = Modifier.height(4.dp))
             Text(medication.contraindications.ifEmpty { "Не указаны" }, style = MaterialTheme.typography.bodyMedium)
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Побочные действия (оранжевым/варнингом, если есть)
             Text("Побочные действия", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.tertiary)
             Spacer(modifier = Modifier.height(4.dp))
             Text(medication.sideEffects.ifEmpty { "Не указаны" }, style = MaterialTheme.typography.bodyMedium)
@@ -638,7 +625,6 @@ fun SearchRecipeDetailsDialog(
                 } else {
                     recipe.medications.forEach { med ->
                         Text("• ${med.name}", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 4.dp))
-                        // Проверяем, есть ли поле summary, если нет - выводим дозу
                         val desc = if (med.dosageValue.isNotBlank()) "${med.dosageValue} ${med.dosageUnit} × ${med.frequency}/день — ${med.durationValue} ${med.durationUnit}" else med.dosageUnit
                         Text("  $desc", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 4.dp))
                     }

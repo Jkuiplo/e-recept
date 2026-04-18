@@ -13,7 +13,7 @@ import java.util.Locale
 interface HomeRepository {
     val currentUserId: String?
 
-    fun getAppointments(doctorId: String): Flow<List<Appointment>>
+    suspend fun getAppointments(doctorId: String): Flow<List<Appointment>>
 
     suspend fun getPatientByIin(iin: String): Patient?
 
@@ -46,7 +46,7 @@ class MockHomeRepository : HomeRepository {
                     patient_iin = "123456789012",
                     patient_name = "Иванов Иван Иванович",
                     date = today,
-                    time = "14:20", // Поставил позже, чтобы проверить сортировку
+                    time = "14:20",
                     history = "Примечание: Жалобы на боли в спине",
                     status = "Запланирован",
                     is_completed = false,
@@ -69,7 +69,7 @@ class MockHomeRepository : HomeRepository {
             )
     }
 
-    override fun getAppointments(doctorId: String): Flow<List<Appointment>> = _appointments.asStateFlow()
+    override suspend fun getAppointments(doctorId: String): Flow<List<Appointment>> = _appointments.asStateFlow()
 
     override suspend fun getPatientByIin(iin: String): Patient? {
         delay(400)

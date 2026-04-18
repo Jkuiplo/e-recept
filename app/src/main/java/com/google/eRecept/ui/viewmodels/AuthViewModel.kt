@@ -31,7 +31,6 @@ class AuthViewModel
         private val _savedEmail = MutableStateFlow(prefs.getString("saved_email", "") ?: "")
         val savedEmail: StateFlow<String> = _savedEmail
 
-        // Для показа Toast/Snackbar (одноразовые события)
         private val _uiMessage = MutableSharedFlow<String>()
         val uiMessage: SharedFlow<String> = _uiMessage.asSharedFlow()
 
@@ -66,10 +65,9 @@ class AuthViewModel
                 val result = repository.login(email, password)
                 result.fold(
                     onSuccess = { loginResponse ->
-                        // МАГИЯ ЗДЕСЬ: Сохраняем токен и ID доктора!
                         prefs.edit {
                             putString("access_token", loginResponse.accessToken)
-                            putString("doctor_id", loginResponse.doctorId) // Это нам понадобится для расписания!
+                            putString("doctor_id", loginResponse.doctorId)
 
                             if (rememberMe) {
                                 putString("saved_email", email)
@@ -99,7 +97,6 @@ class AuthViewModel
             }
         }
 
-        // Изменим метод forgotPassword, чтобы он просто уведомлял об успехе
         fun forgotPassword(
             email: String,
             onEmailSent: () -> Unit,
@@ -110,7 +107,7 @@ class AuthViewModel
                 result.fold(
                     onSuccess = { message ->
                         _uiMessage.emit(message)
-                        _authState.value = AuthState.Idle // Сбрасываем лоадер
+                        _authState.value = AuthState.Idle
                         onEmailSent()
                         startResendTimer()
                     },
@@ -140,7 +137,7 @@ class AuthViewModel
 
         fun logout() {
             repository.logout()
-            // При выходе удаляем токен!
+            // При выходе удаляем токен
             prefs.edit {
                 remove("access_token")
                 remove("doctor_id")
