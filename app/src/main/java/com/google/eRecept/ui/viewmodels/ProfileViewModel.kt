@@ -1,30 +1,35 @@
 package com.google.eRecept.ui.viewmodels
 
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import android.app.Application
+import android.content.Context
+import androidx.lifecycle.AndroidViewModel
 import com.google.eRecept.data.Doctor
-import com.google.eRecept.data.mockRepository.ProfileRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class ProfileViewModel
     @Inject
     constructor(
-        private val repository: ProfileRepository,
-    ) : ViewModel() {
+        application: Application,
+    ) : AndroidViewModel(application) {
+        private val prefs = application.getSharedPreferences("erecept_prefs", Context.MODE_PRIVATE)
+
         private val _doctorProfile = MutableStateFlow<Doctor?>(null)
         val doctorProfile: StateFlow<Doctor?> = _doctorProfile.asStateFlow()
 
         init {
-            repository.currentUserId?.let { doctorId ->
-                viewModelScope.launch {
-                    _doctorProfile.value = repository.getDoctorProfile(doctorId)
-                }
-            }
+            loadProfile()
+        }
+
+        private fun loadProfile() {
+            val id = prefs.getString("doctor_id", "") ?: ""
+            val name = prefs.getString("doctor_name", "Врач") ?: "Врач"
+            val specialization = prefs.getString("doctor_specialization", "Специалист") ?: "Специалист"
+
+            _doctorProfile.value = Doctor(id = id, name = name, specialization = specialization)
         }
     }

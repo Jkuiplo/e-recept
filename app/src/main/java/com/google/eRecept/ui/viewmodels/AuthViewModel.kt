@@ -68,6 +68,8 @@ class AuthViewModel
                         prefs.edit {
                             putString("access_token", loginResponse.accessToken)
                             putString("doctor_id", loginResponse.doctorId)
+                            putString("doctor_name", loginResponse.fullName)
+                            putString("doctor_specialization", loginResponse.specialization)
 
                             if (rememberMe) {
                                 putString("saved_email", email)

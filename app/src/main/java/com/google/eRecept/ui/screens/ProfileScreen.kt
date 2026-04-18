@@ -25,9 +25,11 @@ import com.google.eRecept.ui.viewmodels.ProfileViewModel
 @Composable
 fun ProfileScreen(
     onLogout: () -> Unit,
-    viewModel: ProfileViewModel = hiltViewModel()
+    viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     var showLogoutDialog by remember { mutableStateOf(false) }
+
+    val profile by viewModel.doctorProfile.collectAsState()
 
     var selectedLanguageIndex by remember { mutableIntStateOf(0) }
     val languages = listOf("Русский", "Қазақша", "English")
@@ -47,19 +49,23 @@ fun ProfileScreen(
     ) {
         Spacer(modifier = Modifier.height(48.dp))
 
+        val doctorName = profile?.name ?: "Врач"
+        val initial = if (doctorName.isNotBlank()) doctorName.first().uppercase() else "В"
         Box(
             modifier =
                 Modifier
                     .size(100.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
+                    .background(MaterialTheme.colorScheme.primary),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(
-                imageVector = Icons.Default.Person,
-                contentDescription = null,
-                modifier = Modifier.size(56.dp),
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+            Text(
+                text = initial,
+                style =
+                    MaterialTheme.typography.displayMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                    ),
             )
         }
 
@@ -218,7 +224,7 @@ fun ProfileScreen(
             text = { Text("Вы уверены, что хотите выйти из системы?") },
             confirmButton = {
                 TextButton(
-                    onClick = { 
+                    onClick = {
                         showLogoutDialog = false
                         onLogout()
                     },

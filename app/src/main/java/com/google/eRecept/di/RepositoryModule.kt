@@ -45,10 +45,6 @@ object RepositoryModule {
 
     @Provides
     @Singleton
-    fun provideProfileRepository(): ProfileRepository = MockProfileRepository()
-
-    @Provides
-    @Singleton
     fun provideRecipeRepository(
         api: RecipeApi,
         @ApplicationContext context: Context,
