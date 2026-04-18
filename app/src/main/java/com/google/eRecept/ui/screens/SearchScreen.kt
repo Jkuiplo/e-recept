@@ -58,6 +58,7 @@ fun SearchScreen(viewModel: SearchViewModel) {
     val patientResults by viewModel.patientResults.collectAsStateWithLifecycle()
     val medicationResults by viewModel.medicationResults.collectAsStateWithLifecycle()
     val allRecipes by viewModel.allRecipes.collectAsStateWithLifecycle()
+    val filteredRecipes by viewModel.filteredRecipes.collectAsStateWithLifecycle()
     val isSearching by viewModel.isSearching.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
 
@@ -211,15 +212,7 @@ fun SearchScreen(viewModel: SearchViewModel) {
                         }
 
                         2 -> {
-                            val filteredRecipes =
-                                if (searchQuery.isBlank()) {
-                                    allRecipes
-                                } else {
-                                    allRecipes.filter {
-                                        it.patient_name.contains(searchQuery, ignoreCase = true) ||
-                                            it.patient_iin.contains(searchQuery)
-                                    }
-                                }
+                            // Убрали всю ручную фильтрацию! ViewModel всё сделала за нас.
                             if (filteredRecipes.isEmpty() && !isSearching) {
                                 Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                                     SearchEmptyState(
@@ -247,6 +240,7 @@ fun SearchScreen(viewModel: SearchViewModel) {
 
     if (selectedPatient != null) {
         val patientRecipes = allRecipes.filter { it.patient_iin == selectedPatient!!.iin }
+
         PatientProfileSheet(
             patient = selectedPatient!!,
             recipes = patientRecipes,

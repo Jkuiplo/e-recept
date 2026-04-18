@@ -1,9 +1,5 @@
 package com.google.eRecept.ui.viewmodels
 
-import android.graphics.Bitmap
-import android.graphics.Color
-import androidx.core.graphics.createBitmap
-import androidx.core.graphics.set
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.eRecept.data.Medication
@@ -42,6 +38,9 @@ class SearchViewModel
         private var currentQuery = ""
         private var currentTabIndex = 0
 
+        private val _filteredRecipes = MutableStateFlow<List<Recipe>>(emptyList())
+        val filteredRecipes: StateFlow<List<Recipe>> = _filteredRecipes.asStateFlow()
+
         init {
             loadRecipes()
             loadInitialMedications()
@@ -50,8 +49,9 @@ class SearchViewModel
         private fun loadRecipes() {
             repository.currentUserId?.let { doctorId ->
                 viewModelScope.launch {
-                    repository.getRecentRecipes(doctorId).collect {
-                        _allRecipes.value = it
+                    repository.getRecentRecipes(doctorId).collect { list ->
+                        _allRecipes.value = list
+                        applyRecipeFilter(currentQuery)
                     }
                 }
             }
@@ -87,21 +87,25 @@ class SearchViewModel
 
             viewModelScope.launch {
                 if (query.isBlank()) {
-                    if (tabIndex == 0) _patientResults.value = emptyList()
-                    if (tabIndex == 1) {
-                        _isSearching.value = true
-                        _medicationResults.value = repository.searchMedications("")
-                        _isSearching.value = false
-                    }
+                    if (tabIndex == 2) _filteredRecipes.value = _allRecipes.value
                     return@launch
                 }
 
-                _isSearching.value = true
                 when (tabIndex) {
                     0 -> _patientResults.value = repository.searchPatients(query)
                     1 -> _medicationResults.value = repository.searchMedications(query)
+                    2 -> applyRecipeFilter(query)
                 }
-                _isSearching.value = false
             }
+        }
+
+        private fun applyRecipeFilter(query: String) {
+            val lowerQuery = query.lowercase()
+            _filteredRecipes.value =
+                _allRecipes.value.filter { recipe ->
+                    recipe.id.lowercase().contains(lowerQuery) ||
+                        recipe.patient_name.lowercase().contains(lowerQuery) ||
+                        recipe.patient_iin.contains(query)
+                }
         }
     }

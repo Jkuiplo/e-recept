@@ -15,7 +15,7 @@ interface SearchRepository {
 
     suspend fun searchMedications(query: String): List<Medication>
 
-    fun getRecentRecipes(doctorId: String): Flow<List<Recipe>>
+    suspend fun getRecentRecipes(doctorId: String): Flow<List<Recipe>>
 }
 
 class MockSearchRepository : SearchRepository {
@@ -133,5 +133,5 @@ class MockSearchRepository : SearchRepository {
         }
     }
 
-    override fun getRecentRecipes(doctorId: String): Flow<List<Recipe>> = _recipes.asStateFlow()
+    override suspend fun getRecentRecipes(doctorId: String): Flow<List<Recipe>> = _recipes.asStateFlow()
 }
