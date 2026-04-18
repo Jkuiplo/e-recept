@@ -7,6 +7,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.eRecept.data.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -78,18 +79,39 @@ class AuthViewModel
             }
         }
 
+// В AuthViewModel.kt добавим:
+
+        private val _resendTimer = MutableStateFlow(0)
+        val resendTimer: StateFlow<Int> = _resendTimer
+
+        fun startResendTimer() {
+            viewModelScope.launch {
+                _resendTimer.value = 60
+                while (_resendTimer.value > 0) {
+                    delay(1000)
+                    _resendTimer.value -= 1
+                }
+            }
+        }
+
+        // Изменим метод forgotPassword, чтобы он просто уведомлял об успехе
         fun forgotPassword(
             email: String,
-            onSuccess: () -> Unit,
+            onEmailSent: () -> Unit,
         ) {
+            _authState.value = AuthState.Loading
             viewModelScope.launch {
                 val result = repository.forgotPassword(email)
                 result.fold(
                     onSuccess = { message ->
                         _uiMessage.emit(message)
-                        onSuccess()
+                        _authState.value = AuthState.Idle // Сбрасываем лоадер
+                        onEmailSent()
+                        startResendTimer()
                     },
-                    onFailure = { error -> _uiMessage.emit(error.message ?: "Ошибка") },
+                    onFailure = { error ->
+                        _authState.value = AuthState.Error(error.message ?: "Ошибка")
+                    },
                 )
             }
         }

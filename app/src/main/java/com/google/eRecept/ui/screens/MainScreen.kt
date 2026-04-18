@@ -4,11 +4,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.ListAlt
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -22,7 +17,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.eRecept.ui.BottomNavItem
 import com.google.eRecept.ui.viewmodels.HomeViewModel
 import com.google.eRecept.ui.viewmodels.RecipeViewModel
 import com.google.eRecept.ui.viewmodels.SearchViewModel
@@ -33,14 +28,8 @@ fun MainScreen(onLogout: () -> Unit) {
     val recipeViewModel: RecipeViewModel = hiltViewModel()
     val searchViewModel: SearchViewModel = hiltViewModel()
 
-    val tabs = listOf("Расписание", "Рецепты", "Поиск", "Профиль")
-    val icons =
-        listOf(
-            Icons.Default.CalendarToday,
-            Icons.Default.ListAlt,
-            Icons.Default.Search,
-            Icons.Default.Person,
-        )
+    // Берем все элементы прямо из Enum
+    val navItems = BottomNavItem.entries.toTypedArray()
 
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
 
@@ -54,11 +43,17 @@ fun MainScreen(onLogout: () -> Unit) {
                 containerColor = MaterialTheme.colorScheme.surface,
                 contentColor = MaterialTheme.colorScheme.onSurface,
             ) {
-                tabs.forEachIndexed { index, title ->
+                navItems.forEachIndexed { index, item ->
+                    val isSelected = selectedTab == index
                     NavigationBarItem(
-                        icon = { Icon(icons[index], contentDescription = title) },
-                        label = { Text(title) },
-                        selected = selectedTab == index,
+                        icon = {
+                            Icon(
+                                imageVector = if (isSelected) item.selectedIcon else item.unselectedIcon,
+                                contentDescription = item.title,
+                            )
+                        },
+                        label = { Text(item.title) },
+                        selected = isSelected,
                         onClick = { selectedTab = index },
                     )
                 }
@@ -84,10 +79,7 @@ fun MainScreen(onLogout: () -> Unit) {
                 }
 
                 1 -> {
-                    RecipeScreen(
-                        viewModel = recipeViewModel,
-                        homeViewModel = homeViewModel,
-                    )
+                    RecipeScreen(viewModel = recipeViewModel, homeViewModel = homeViewModel)
                 }
 
                 2 -> {

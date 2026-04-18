@@ -11,11 +11,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import androidx.navigation.navDeepLink
 import com.google.eRecept.ui.screens.MainScreen
+import com.google.eRecept.ui.screens.authorization.ForgotPasswordScreen
 import com.google.eRecept.ui.screens.authorization.LoginScreen
+import com.google.eRecept.ui.screens.authorization.ResetPasswordScreen
 import com.google.eRecept.ui.theme.EreceptTheme
 import com.google.eRecept.ui.viewmodels.AuthViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -24,7 +29,6 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         enableEdgeToEdge()
 
         setContent {
@@ -32,8 +36,6 @@ class MainActivity : ComponentActivity() {
                 val focusManager = LocalFocusManager.current
                 val navController = rememberNavController()
                 val authViewModel: AuthViewModel = viewModel()
-
-                val startDestination = "main"
 
                 Box(
                     modifier =
@@ -47,15 +49,50 @@ class MainActivity : ComponentActivity() {
                 ) {
                     NavHost(
                         navController = navController,
-                        startDestination = startDestination,
+                        startDestination = "login", // Начинаем с логина
                     ) {
                         composable("login") {
-                            LoginScreen(onLoginSuccess = {
-                                navController.navigate("main") {
-                                    popUpTo("login") { inclusive = true }
-                                }
-                            })
+                            LoginScreen(
+                                onLoginSuccess = {
+                                    navController.navigate("main") {
+                                        popUpTo("login") { inclusive = true }
+                                    }
+                                },
+                                onNavigateToForgot = {
+                                    navController.navigate("forgot_password")
+                                },
+                            )
                         }
+
+                        composable("forgot_password") {
+                            ForgotPasswordScreen(
+                                onNavigateBack = { navController.popBackStack() },
+                                onNavigateToReset = {
+                                    // После отправки email просто возвращаем на логин
+                                    navController.popBackStack("login", inclusive = false)
+                                },
+                            )
+                        }
+
+                        // МАГИЯ DEEP LINKING ЗДЕСЬ
+                        composable(
+                            route = "reset_password?token={token}",
+                            arguments = listOf(navArgument("token") { type = NavType.StringType }),
+                            deepLinks = listOf(navDeepLink { uriPattern = "https://erecept.kz/reset-password?token={token}" }),
+                        ) { backStackEntry ->
+                            val token = backStackEntry.arguments?.getString("token") ?: ""
+
+                            ResetPasswordScreen(
+                                token = token,
+                                onNavigateBack = { navController.popBackStack("login", inclusive = false) },
+                                onResetSuccess = {
+                                    navController.navigate("login") {
+                                        popUpTo(0) // Очищаем весь стек, кидаем на логин
+                                    }
+                                },
+                            )
+                        }
+
                         composable("main") {
                             MainScreen(onLogout = {
                                 authViewModel.logout()
