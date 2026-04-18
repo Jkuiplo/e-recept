@@ -4,8 +4,10 @@ import android.content.Context
 import com.google.eRecept.data.mockRepository.*
 import com.google.eRecept.data.network.api.AuthApi
 import com.google.eRecept.data.network.api.HomeApi
+import com.google.eRecept.data.network.api.RecipeApi
 import com.google.eRecept.data.repository.NetworkAuthRepository
 import com.google.eRecept.data.repository.NetworkHomeRepository
+import com.google.eRecept.data.repository.NetworkRecipeRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -40,7 +42,11 @@ object RepositoryModule {
 
     @Provides
     @Singleton
-    fun provideRecipeRepository(): RecipeRepository = MockRecipeRepository()
+    fun provideRecipeRepository(
+        api: RecipeApi,
+        @ApplicationContext context: Context,
+    ): RecipeRepository = NetworkRecipeRepository(api, context)
+//    fun provideRecipeRepository(): RecipeRepository = MockRecipeRepository()
 
     @Provides
     @Singleton

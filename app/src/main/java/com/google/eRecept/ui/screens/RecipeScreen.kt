@@ -22,6 +22,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
@@ -35,6 +36,7 @@ import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.google.eRecept.data.MedicationItem
 import com.google.eRecept.data.Recipe
 import com.google.eRecept.ui.viewmodels.HomeViewModel
@@ -614,10 +616,11 @@ fun RecipeDetailsDialog(
     onDismiss: () -> Unit,
     viewModel: RecipeViewModel,
 ) {
-    val qrBitmap = remember(recipe.id) { viewModel.generateQrCode(recipe.id) }
     val sdf = SimpleDateFormat("dd.MM.yyyy", Locale("ru"))
     val dateStr = sdf.format(Date(recipe.date))
     val expireStr = sdf.format(Date(recipe.expire_date))
+
+    val qrUrl = "https://e-recepta-mbfodsfs.vercel.app/recipes/${recipe.id}/qr"
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -626,10 +629,11 @@ fun RecipeDetailsDialog(
         text = {
             Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    Image(
-                        bitmap = qrBitmap.asImageBitmap(),
-                        contentDescription = null,
+                    AsyncImage(
+                        model = qrUrl,
+                        contentDescription = "QR Code",
                         modifier = Modifier.size(200.dp),
+                        contentScale = ContentScale.Fit,
                     )
                 }
                 Spacer(modifier = Modifier.height(16.dp))

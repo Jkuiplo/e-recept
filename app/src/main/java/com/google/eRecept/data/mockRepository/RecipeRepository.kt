@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.asStateFlow
 interface RecipeRepository {
     val currentUserId: String?
 
-    fun getRecentRecipes(doctorId: String): Flow<List<Recipe>>
+    suspend fun getRecentRecipes(doctorId: String): Flow<List<Recipe>>
 
     suspend fun searchMedications(query: String): List<Medication>
 
@@ -89,7 +89,7 @@ class MockRecipeRepository : RecipeRepository {
             ),
         )
 
-    override fun getRecentRecipes(doctorId: String): Flow<List<Recipe>> = _recipes.asStateFlow()
+    override suspend fun getRecentRecipes(doctorId: String): Flow<List<Recipe>> = _recipes.asStateFlow()
 
     override suspend fun searchMedications(query: String): List<Medication> {
         delay(400)

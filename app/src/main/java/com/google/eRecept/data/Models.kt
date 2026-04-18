@@ -36,9 +36,10 @@ data class Recipe(
     val patient_iin: String = "",
     val patient_name: String = "",
     val date: Long = System.currentTimeMillis(),
-    val expire_date: Long = System.currentTimeMillis() + (10L * 24 * 60 * 60 * 1000), // По умолчанию 10 дней
+    val expire_date: Long = System.currentTimeMillis() + (10L * 24 * 60 * 60 * 1000),
     val medications: List<MedicationItem> = emptyList(),
     val notes: String = "",
+    val qr_data: String = "",
 ) {
     val isActive: Boolean
         get() = System.currentTimeMillis() <= expire_date

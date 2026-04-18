@@ -28,12 +28,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.AsyncImage
 import com.google.eRecept.data.Medication
 import com.google.eRecept.data.Patient
 import com.google.eRecept.data.Recipe
@@ -598,8 +600,7 @@ fun SearchRecipeDetailsDialog(
     onDismiss: () -> Unit,
     viewModel: SearchViewModel,
 ) {
-    val qrBitmap = remember(recipe.id) { viewModel.generateQrCode(recipe.id) }
-
+    val qrUrl = "https://e-recepta-mbfodsfs.vercel.app/recipes/${recipe.id}/qr"
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = { TextButton(onClick = onDismiss) { Text("Закрыть") } },
@@ -607,10 +608,11 @@ fun SearchRecipeDetailsDialog(
         text = {
             Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    Image(
-                        bitmap = qrBitmap.asImageBitmap(),
-                        contentDescription = null,
+                    AsyncImage(
+                        model = qrUrl,
+                        contentDescription = "QR Code",
                         modifier = Modifier.size(200.dp),
+                        contentScale = ContentScale.Fit,
                     )
                 }
                 Spacer(modifier = Modifier.height(16.dp))

@@ -51,7 +51,7 @@ dependencies {
     implementation(libs.retrofit.converter.gson)
     implementation(libs.okhttp.logging)
 
-    implementation("com.google.zxing:core:3.5.3")
+    implementation("io.coil-kt:coil-compose:2.6.0")
 
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
     implementation(libs.androidx.navigation.compose)

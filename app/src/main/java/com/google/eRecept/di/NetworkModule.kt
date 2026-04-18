@@ -2,6 +2,7 @@ package com.google.eRecept.di
 
 import com.google.eRecept.data.network.api.AuthApi
 import com.google.eRecept.data.network.api.HomeApi
+import com.google.eRecept.data.network.api.RecipeApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -48,4 +49,8 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideHomeApi(retrofit: Retrofit): HomeApi = retrofit.create(HomeApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideRecipeApi(retrofit: Retrofit): RecipeApi = retrofit.create(RecipeApi::class.java)
 }
