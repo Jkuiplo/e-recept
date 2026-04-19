@@ -2,6 +2,7 @@ package com.google.eRecept.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
@@ -307,14 +308,14 @@ fun AppointmentCard(
 
             val containerColor =
                 when (appointment.status) {
-                    "Завершен" -> MaterialTheme.colorScheme.secondaryContainer
-                    "Не явился" -> MaterialTheme.colorScheme.errorContainer
+                    "Состоялась" -> MaterialTheme.colorScheme.secondaryContainer
+                    "Не явился", "Отменена" -> MaterialTheme.colorScheme.errorContainer
                     else -> MaterialTheme.colorScheme.primaryContainer
                 }
             val contentColor =
                 when (appointment.status) {
-                    "Завершен" -> MaterialTheme.colorScheme.onSecondaryContainer
-                    "Не явился" -> MaterialTheme.colorScheme.onErrorContainer
+                    "Состоялась" -> MaterialTheme.colorScheme.onSecondaryContainer
+                    "Не явился", "Отменена" -> MaterialTheme.colorScheme.onErrorContainer
                     else -> MaterialTheme.colorScheme.onPrimaryContainer
                 }
 
@@ -576,7 +577,7 @@ fun AppointmentDetailsBottomSheetContent(
     onSave: (String) -> Unit,
     onCreateRecipeClick: () -> Unit,
 ) {
-    val statuses = listOf("Запланирован", "Завершен", "Не явился")
+    val statuses = listOf("Запланирована", "Состоялась", "Не явился", "Отменена")
     var selectedStatus by remember(appointment.status) { mutableStateOf(appointment.status) }
 
     Column(
@@ -622,16 +623,47 @@ fun AppointmentDetailsBottomSheetContent(
             color = MaterialTheme.colorScheme.primary,
         )
         Spacer(modifier = Modifier.height(8.dp))
-        SingleChoiceSegmentedButtonRow(
+
+        // Новый вертикальный список выбора статусов
+        Column(
             modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            statuses.forEachIndexed { index, label ->
-                SegmentedButton(
-                    shape = SegmentedButtonDefaults.itemShape(index = index, count = statuses.size),
-                    onClick = { selectedStatus = statuses[index] },
-                    selected = selectedStatus == statuses[index],
+            statuses.forEach { status ->
+                val isSelected = selectedStatus == status
+                Row(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .border(
+                                width = 1.dp,
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                                shape = RoundedCornerShape(12.dp),
+                            ).background(
+                                if (isSelected) {
+                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                                } else {
+                                    Color.Transparent
+                                },
+                            ).clickable { selectedStatus = status }
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(label, style = MaterialTheme.typography.labelSmall)
+                    RadioButton(
+                        selected = isSelected,
+                        onClick = null,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = status,
+                        style =
+                            MaterialTheme.typography.bodyLarge.copy(
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            ),
+                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                    )
                 }
             }
         }

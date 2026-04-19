@@ -29,8 +29,8 @@ interface HomeApi {
         @Body request: CreateAppointmentRequest,
     ): Response<AppointmentDto>
 
-    // ЧИНА ДОБАВЬ ручки нету
-    @PATCH("appointments/{id}")
+    // В файле HomeApi.kt
+    @PATCH("appointments/{id}/status")
     suspend fun updateAppointmentStatus(
         @Path("id") id: String,
         @Body request: UpdateStatusRequest,

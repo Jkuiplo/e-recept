@@ -233,13 +233,16 @@ fun RecipeScreen(
                                     newList[index] = updatedMed
                                     viewModel.updateDraftMedications(newList)
                                 },
-                                onRemove = if (draftMedications.size > 1) {
-                                    {
-                                        val newList = draftMedications.toMutableList()
-                                        newList.removeAt(index)
-                                        viewModel.updateDraftMedications(newList)
-                                    }
-                                } else null,
+                                onRemove =
+                                    if (draftMedications.size > 1) {
+                                        {
+                                            val newList = draftMedications.toMutableList()
+                                            newList.removeAt(index)
+                                            viewModel.updateDraftMedications(newList)
+                                        }
+                                    } else {
+                                        null
+                                    },
                             )
                             Spacer(modifier = Modifier.height(16.dp))
                         }
@@ -726,7 +729,7 @@ fun CustomSegmentedControl(
     Row(
         modifier =
             modifier
-                .height(IntrinsicSize.Min) // Важно для корректной работы VerticalDivider
+                .height(IntrinsicSize.Min)
                 .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp))
                 .clip(RoundedCornerShape(12.dp)),
     ) {

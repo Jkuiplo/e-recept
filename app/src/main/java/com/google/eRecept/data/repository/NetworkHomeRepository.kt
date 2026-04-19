@@ -70,7 +70,8 @@ class NetworkHomeRepository
                                             history = dto.history ?: "",
                                             age = calculateAge(dto.patientBirthDate),
                                             gender = dto.patientGender,
-                                            is_completed = dto.status == "Завершен" || dto.status == "Не явился",
+                                            is_completed =
+                                                dto.status == "Состоялась" || dto.status == "Не явился" || dto.status == "Отменена",
                                         )
                                     } ?: emptyList()
                                 } else {
@@ -116,7 +117,7 @@ class NetworkHomeRepository
                     appointmentDate = formatToApiDate(appointment.date),
                     appointmentTime = appointment.time,
                     type = "Первичный",
-                    status = "Запланирован",
+                    status = "Запланирована",
                     history = appointment.history,
                 )
 
