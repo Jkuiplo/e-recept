@@ -2,7 +2,6 @@ package com.google.eRecept.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -23,10 +22,8 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
@@ -51,11 +48,12 @@ import java.util.Locale
 @Composable
 fun SearchScreen(viewModel: SearchViewModel) {
     val focusManager = LocalFocusManager.current
-    val tabs = listOf(
-        stringResource(R.string.tab_patients),
-        stringResource(R.string.tab_medications),
-        stringResource(R.string.tab_history)
-    )
+    val tabs =
+        listOf(
+            stringResource(R.string.tab_patients),
+            stringResource(R.string.tab_medications),
+            stringResource(R.string.tab_history),
+        )
     val pagerState = rememberPagerState(pageCount = { tabs.size })
     val coroutineScope = rememberCoroutineScope()
 
@@ -63,7 +61,7 @@ fun SearchScreen(viewModel: SearchViewModel) {
 
     val patientResults by viewModel.patientResults.collectAsStateWithLifecycle()
     val medicationResults by viewModel.medicationResults.collectAsStateWithLifecycle()
-    val allRecipes by viewModel.allRecipes.collectAsStateWithLifecycle()
+    val allRecipes: List<Recipe> by viewModel.allRecipes.collectAsStateWithLifecycle()
     val filteredRecipes by viewModel.filteredRecipes.collectAsStateWithLifecycle()
     val isSearching by viewModel.isSearching.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
@@ -142,7 +140,7 @@ fun SearchScreen(viewModel: SearchViewModel) {
             PrimaryTabRow(
                 selectedTabIndex = pagerState.currentPage,
                 containerColor = Color.Transparent,
-                divider = {},
+                // divider = {} // Убрали, так как в новых версиях M3 это вызывает ошибку
             ) {
                 tabs.forEachIndexed { index, title ->
                     Tab(
@@ -176,13 +174,16 @@ fun SearchScreen(viewModel: SearchViewModel) {
                 ) {
                     when (page) {
                         0 -> { // Пациенты
-                            if (patientResults.isEmpty() && searchQuery.isNotEmpty() && !isSearching) {
+                            if (isSearching && patientResults.isEmpty()) {
+                                SkeletonList()
+                            } else if (patientResults.isEmpty()) {
                                 Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                                    SearchEmptyState(stringResource(R.string.patients_not_found), Icons.Default.PersonOff)
-                                }
-                            } else if (patientResults.isEmpty() && searchQuery.isEmpty()) {
-                                Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                                    SearchEmptyState(stringResource(R.string.enter_patient_search), Icons.Default.Search)
+                                    if (searchQuery.isNotEmpty()) {
+                                        SearchEmptyState(stringResource(R.string.patients_not_found), Icons.Default.PersonOff)
+                                    } else {
+                                        // Если запрос пуст, но пациентов все равно 0 (врач еще никого не принимал)
+                                        SearchEmptyState("Список пациентов пуст", Icons.Default.GroupOff)
+                                    }
                                 }
                             } else {
                                 LazyColumn(
@@ -199,16 +200,14 @@ fun SearchScreen(viewModel: SearchViewModel) {
 
                         1 -> { // Препараты
                             if (isSearching && medicationResults.isEmpty()) {
-                                MedicationSkeletonList()
-                            } else if (medicationResults.isEmpty() && searchQuery.isNotEmpty() && !isSearching) {
+                                SkeletonList()
+                            } else if (medicationResults.isEmpty()) {
                                 Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                                    // Когда искали, но ничего нет
-                                    SearchEmptyState(stringResource(R.string.medication_not_found), Icons.Default.MedicalServices)
-                                }
-                            } else if (medicationResults.isEmpty() && searchQuery.isEmpty()) {
-                                Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                                    // НОВОЕ: Когда строка поиска пустая
-                                    SearchEmptyState(stringResource(R.string.enter_medication_search), Icons.Default.Search)
+                                    if (searchQuery.isNotEmpty()) {
+                                        SearchEmptyState(stringResource(R.string.medication_not_found), Icons.Default.MedicalServices)
+                                    } else {
+                                        SearchEmptyState("Список препаратов пуст", Icons.Default.MedicalInformation)
+                                    }
                                 }
                             } else {
                                 LazyColumn(
@@ -223,10 +222,11 @@ fun SearchScreen(viewModel: SearchViewModel) {
                             }
                         }
 
-                        2 -> { // История
-                            if (filteredRecipes.isEmpty() && !isSearching) {
+                        2 -> { // История рецептов
+                            if (isSearching && filteredRecipes.isEmpty()) {
+                                SkeletonList()
+                            } else if (filteredRecipes.isEmpty()) {
                                 Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                                    // Разделяем логику для пустого поиска и пустой истории
                                     if (searchQuery.isNotEmpty()) {
                                         SearchEmptyState(stringResource(R.string.recipes_not_found), Icons.Default.SearchOff)
                                     } else {
@@ -275,7 +275,7 @@ fun SearchScreen(viewModel: SearchViewModel) {
 }
 
 @Composable
-fun MedicationSkeletonList() {
+fun SkeletonList() {
     val infiniteTransition = rememberInfiniteTransition(label = "skeleton")
     val alpha by infiniteTransition.animateFloat(
         initialValue = 0.3f,
@@ -308,7 +308,11 @@ fun SearchEmptyState(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
 ) {
     Column(
-        modifier = Modifier.fillMaxWidth().fillMaxHeight().padding(top = 100.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .fillMaxHeight()
+                .padding(top = 100.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -461,7 +465,10 @@ fun PatientProfileSheet(
         ) {
             Text(text = patient.full_name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Text(text = stringResource(R.string.iin, patient.iin), color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(text = stringResource(R.string.gender_and_birth, patient.gender, patient.birth_date), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                text = stringResource(R.string.gender_and_birth, patient.gender, patient.birth_date),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -472,7 +479,11 @@ fun PatientProfileSheet(
             Spacer(modifier = Modifier.height(24.dp))
 
             Card(
-                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { recipesExpanded = !recipesExpanded },
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable { recipesExpanded = !recipesExpanded },
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -498,7 +509,11 @@ fun PatientProfileSheet(
                                 recipes.forEach { recipe ->
                                     val dateStr = SimpleDateFormat("dd.MM.yyyy", Locale("ru")).format(Date(recipe.date))
                                     Row(
-                                        modifier = Modifier.fillMaxWidth().clickable { onRecipeClick(recipe) }.padding(vertical = 8.dp),
+                                        modifier =
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .clickable { onRecipeClick(recipe) }
+                                                .padding(vertical = 8.dp),
                                         horizontalArrangement = Arrangement.SpaceBetween,
                                         verticalAlignment = Alignment.CenterVertically,
                                     ) {
@@ -562,34 +577,62 @@ fun MedicationInfoSheet(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Text(stringResource(R.string.forms_and_dosages), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+            Text(
+                stringResource(R.string.forms_and_dosages),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = stringResource(R.string.available_dosages_format, medication.forms.joinToString(", "), medication.availableDosages.joinToString(", ")),
+                text =
+                    stringResource(
+                        R.string.available_dosages_format,
+                        medication.forms.joinToString(", "),
+                        medication.availableDosages.joinToString(", "),
+                    ),
                 style = MaterialTheme.typography.bodyMedium,
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text(stringResource(R.string.pharmacological_action), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+            Text(
+                stringResource(R.string.pharmacological_action),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
             Spacer(modifier = Modifier.height(4.dp))
             Text(medication.description.ifEmpty { stringResource(R.string.no_description) }, style = MaterialTheme.typography.bodyMedium)
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text(stringResource(R.string.indications), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+            Text(
+                stringResource(R.string.indications),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
             Spacer(modifier = Modifier.height(4.dp))
             Text(medication.indications.ifEmpty { stringResource(R.string.not_specified) }, style = MaterialTheme.typography.bodyMedium)
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text(stringResource(R.string.contraindications), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.error)
+            Text(
+                stringResource(R.string.contraindications),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.error,
+            )
             Spacer(modifier = Modifier.height(4.dp))
-            Text(medication.contraindications.ifEmpty { stringResource(R.string.not_specified) }, style = MaterialTheme.typography.bodyMedium)
+            Text(
+                medication.contraindications.ifEmpty { stringResource(R.string.not_specified) },
+                style = MaterialTheme.typography.bodyMedium,
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text(stringResource(R.string.side_effects), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.tertiary)
+            Text(
+                stringResource(R.string.side_effects),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.tertiary,
+            )
             Spacer(modifier = Modifier.height(4.dp))
             Text(medication.sideEffects.ifEmpty { stringResource(R.string.not_specified) }, style = MaterialTheme.typography.bodyMedium)
 
@@ -623,7 +666,11 @@ fun SearchRecipeDetailsDialog(
                     )
                 }
                 Spacer(modifier = Modifier.height(16.dp))
-                Text(stringResource(R.string.patient_name_format, recipe.patient_name), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                Text(
+                    stringResource(R.string.patient_name_format, recipe.patient_name),
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold,
+                )
                 Text(stringResource(R.string.iin, recipe.patient_iin), style = MaterialTheme.typography.bodyMedium)
                 Spacer(modifier = Modifier.height(16.dp))
                 HorizontalDivider()

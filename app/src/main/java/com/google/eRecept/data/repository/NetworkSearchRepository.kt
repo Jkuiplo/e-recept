@@ -53,24 +53,51 @@ class NetworkSearchRepository
             }
         }
 
+        // НОВАЯ ФУНКЦИЯ: Получаем пациентов из приемов врача (убираем дубликаты по ИИН)
+        override suspend fun getDoctorPatients(doctorId: String): List<Patient> =
+            try {
+                // ВАЖНО: Убедись, что в SearchApi.kt добавлена ручка getDoctorAppointments
+                val response = api.getDoctorAppointments(doctorId)
+                if (response.isSuccessful) {
+                    response
+                        .body()
+                        ?.map { dto ->
+                            Patient(
+                                iin = dto.patientIin,
+                                full_name = dto.patientFullName,
+                                birth_date = dto.patientBirthDate,
+                                gender = dto.patientGender,
+                                allergies = dto.patientNote ?: "",
+                            )
+                        }?.distinctBy { it.iin } ?: emptyList()
+                } else {
+                    emptyList()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                emptyList()
+            }
+
         override suspend fun searchMedications(query: String): List<Medication> =
             try {
                 val response = api.searchMedications(query)
                 if (response.isSuccessful) {
-                    response.body()?.map { dto ->
-                        Medication(
-                            id = dto.id ?: "",
-                            name = dto.name,
-                            activeSubstance = dto.activeSubstance,
-                            category = dto.category ?: "",
-                            description = dto.description ?: "",
-                            indications = dto.indications ?: "",
-                            contraindications = dto.contraindications ?: "",
-                            sideEffects = dto.sideEffects ?: "",
-                            availableDosages = dto.availableDosages ?: emptyList(),
-                            forms = dto.forms ?: emptyList(),
-                        )
-                    } ?: emptyList()
+                    response
+                        .body()
+                        ?.map { dto ->
+                            Medication(
+                                id = dto.id ?: "",
+                                name = dto.name,
+                                activeSubstance = dto.activeSubstance,
+                                category = dto.category ?: "",
+                                description = dto.description ?: "",
+                                indications = dto.indications ?: "",
+                                contraindications = dto.contraindications ?: "",
+                                sideEffects = dto.sideEffects ?: "",
+                                availableDosages = dto.availableDosages ?: emptyList(),
+                                forms = dto.forms ?: emptyList(),
+                            )
+                        }?.sortedBy { it.name } ?: emptyList() // <-- Сортировка по алфавиту добавлена тут
                 } else {
                     emptyList()
                 }
@@ -115,8 +142,7 @@ class NetworkSearchRepository
                                             )
                                         },
                                 )
-                            }?.sortedByDescending { it.date }
-                            ?: emptyList()
+                            }?.sortedByDescending { it.date } ?: emptyList()
 
                     _recipes.value = mappedRecipes
                 }
