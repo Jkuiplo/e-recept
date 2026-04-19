@@ -39,6 +39,7 @@ import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
 import com.google.eRecept.data.MedicationItem
 import com.google.eRecept.data.Recipe
 import com.google.eRecept.ui.viewmodels.HomeViewModel
@@ -335,7 +336,11 @@ fun RecipeScreen(
                                 .padding(horizontal = 20.dp, vertical = 16.dp)
                                 .height(56.dp),
                         shape = RoundedCornerShape(16.dp),
-                        enabled = draftPatientIin.length == 12 && patientResult != null && draftMedications.any { it.name.isNotBlank() },
+                        enabled =
+                            draftPatientIin.length == 12 &&
+                                patientResult != null &&
+                                draftMedications.isNotEmpty() &&
+                                draftMedications.all { it.id.isNotBlank() },
                     ) {
                         Text("Выписать рецепт", style = MaterialTheme.typography.titleMedium)
                     }
@@ -433,6 +438,13 @@ fun SmartMedicationRow(
     val frequencies = listOf("1×", "2×", "3×", "4×")
     val durationUnits = listOf("дн.", "нед", "мес")
 
+    // Локальная функция для обработки ввода цифр (защита от <= 0)
+    fun safeNumberInput(input: String): String {
+        val filtered = input.filter { it.isDigit() || it == '.' }
+        if (filtered == "0" || filtered.startsWith("-")) return "1"
+        return filtered
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -457,17 +469,27 @@ fun SmartMedicationRow(
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
+            // 1. НАЗВАНИЕ
             Box {
+                val isMedicationNotSelected = medication.name.isNotBlank() && medication.id.isBlank()
+
                 OutlinedTextField(
                     value = medication.name,
                     onValueChange = {
-                        onMedicationChange(medication.copy(name = it))
+                        // ВАЖНО: Если пользователь меняет текст руками, сбрасываем ID
+                        onMedicationChange(medication.copy(name = it, id = ""))
                         viewModel.searchMedications(it)
                         nameExpanded = true
                     },
                     label = { Text("Название") },
+                    isError = isMedicationNotSelected,
+                    supportingText = {
+                        if (isMedicationNotSelected) {
+                            Text("Обязательно выберите препарат из списка")
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth().onGloballyPositioned { fieldSize = it.size.toSize() },
                     shape = RoundedCornerShape(12.dp),
                     singleLine = true,
@@ -487,7 +509,13 @@ fun SmartMedicationRow(
                                 }
                             },
                             onClick = {
-                                onMedicationChange(medication.copy(name = suggestion.name))
+                                // Сохраняем ID при клике
+                                onMedicationChange(
+                                    medication.copy(
+                                        id = suggestion.id,
+                                        name = suggestion.name,
+                                    ),
+                                )
                                 nameExpanded = false
                             },
                         )
@@ -495,64 +523,53 @@ fun SmartMedicationRow(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
+            // 2. ДОЗИРОВКА (Компактный дизайн)
             Text("Дозировка", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(modifier = Modifier.height(4.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Row(
+                OutlinedTextField(
+                    value = medication.dosageValue,
+                    onValueChange = { onMedicationChange(medication.copy(dosageValue = safeNumberInput(it))) },
                     modifier = Modifier.weight(1f),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    IconButton(
-                        onClick = {
-                            val current = medication.dosageValue.toDoubleOrNull() ?: 0.0
-                            if (current >= 1.0) {
-                                val newVal = (current - 1).toString().removeSuffix(".0")
-                                onMedicationChange(medication.copy(dosageValue = newVal))
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    shape = RoundedCornerShape(12.dp),
+                    singleLine = true,
+                    textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center, fontWeight = FontWeight.Bold),
+                    leadingIcon = {
+                        IconButton(onClick = {
+                            val current = medication.dosageValue.toDoubleOrNull() ?: 1.0
+                            if (current >
+                                1.0
+                            ) {
+                                onMedicationChange(medication.copy(dosageValue = (current - 1).toString().removeSuffix(".0")))
                             }
-                        },
-                        modifier = Modifier.size(32.dp).background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp)),
-                    ) {
-                        Icon(Icons.Default.Remove, contentDescription = "Уменьшить", modifier = Modifier.size(20.dp))
-                    }
-
-                    OutlinedTextField(
-                        value = medication.dosageValue,
-                        onValueChange = { onMedicationChange(medication.copy(dosageValue = it)) },
-                        modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        shape = RoundedCornerShape(12.dp),
-                        singleLine = true,
-                        textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center),
-                    )
-
-                    IconButton(
-                        onClick = {
+                        }) { Icon(Icons.Default.Remove, "Меньше", tint = MaterialTheme.colorScheme.primary) }
+                    },
+                    trailingIcon = {
+                        IconButton(onClick = {
                             val current = medication.dosageValue.toDoubleOrNull() ?: 0.0
-                            val newVal = (current + 1).toString().removeSuffix(".0")
-                            onMedicationChange(medication.copy(dosageValue = newVal))
-                        },
-                        modifier = Modifier.size(32.dp).background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp)),
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = "Увеличить", modifier = Modifier.size(20.dp))
-                    }
-                }
+                            onMedicationChange(medication.copy(dosageValue = (current + 1).toString().removeSuffix(".0")))
+                        }) { Icon(Icons.Default.Add, "Больше", tint = MaterialTheme.colorScheme.primary) }
+                    },
+                )
 
                 CustomSegmentedControl(
                     options = dosageUnits,
                     selectedOption = medication.dosageUnit,
                     onOptionSelected = { onMedicationChange(medication.copy(dosageUnit = it)) },
-                    modifier = Modifier.weight(1.1f),
+                    modifier = Modifier.weight(1f),
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
+            // 3. КРАТНОСТЬ
             Text("Кратность приёма", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(modifier = Modifier.height(4.dp))
             CustomSegmentedControl(
@@ -562,33 +579,52 @@ fun SmartMedicationRow(
                 modifier = Modifier.fillMaxWidth(),
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
+            // 4. ДЛИТЕЛЬНОСТЬ (Компактный дизайн)
             Text("Длительность", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(modifier = Modifier.height(4.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 OutlinedTextField(
                     value = medication.durationValue,
-                    onValueChange = { onMedicationChange(medication.copy(durationValue = it)) },
+                    onValueChange = { onMedicationChange(medication.copy(durationValue = safeNumberInput(it))) },
                     modifier = Modifier.weight(1f),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     shape = RoundedCornerShape(12.dp),
                     singleLine = true,
+                    textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center, fontWeight = FontWeight.Bold),
+                    leadingIcon = {
+                        IconButton(onClick = {
+                            val current = medication.durationValue.toDoubleOrNull() ?: 1.0
+                            if (current >
+                                1.0
+                            ) {
+                                onMedicationChange(medication.copy(durationValue = (current - 1).toString().removeSuffix(".0")))
+                            }
+                        }) { Icon(Icons.Default.Remove, "Меньше", tint = MaterialTheme.colorScheme.primary) }
+                    },
+                    trailingIcon = {
+                        IconButton(onClick = {
+                            val current = medication.durationValue.toDoubleOrNull() ?: 0.0
+                            onMedicationChange(medication.copy(durationValue = (current + 1).toString().removeSuffix(".0")))
+                        }) { Icon(Icons.Default.Add, "Больше", tint = MaterialTheme.colorScheme.primary) }
+                    },
                 )
                 CustomSegmentedControl(
                     options = durationUnits,
                     selectedOption = medication.durationUnit,
                     onOptionSelected = { onMedicationChange(medication.copy(durationUnit = it)) },
-                    modifier = Modifier.weight(1.2f),
+                    modifier = Modifier.weight(1f),
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
+            // 5. УКАЗАНИЯ
             OutlinedTextField(
                 value = medication.note,
                 onValueChange = { onMedicationChange(medication.copy(note = it)) },
@@ -611,7 +647,7 @@ fun RecipeDetailsDialog(
     val dateStr = sdf.format(Date(recipe.date))
     val expireStr = sdf.format(Date(recipe.expire_date))
 
-    val qrUrl = "https://e-recepta-mbfodsfs.vercel.app/recipes/${recipe.id}/qr"
+    val qrUrl = "https://e-recepta.vercel.app/recipes/${recipe.id}/qr"
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -620,11 +656,22 @@ fun RecipeDetailsDialog(
         text = {
             Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    AsyncImage(
+                    SubcomposeAsyncImage(
                         model = qrUrl,
                         contentDescription = "QR Code",
                         modifier = Modifier.size(200.dp),
                         contentScale = ContentScale.Fit,
+                        loading = {
+                            CircularProgressIndicator(modifier = Modifier.padding(64.dp))
+                        },
+                        error = {
+                            Icon(
+                                imageVector = Icons.Default.ErrorOutline,
+                                contentDescription = "Ошибка загрузки",
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(64.dp),
+                            )
+                        },
                     )
                 }
                 Spacer(modifier = Modifier.height(16.dp))

@@ -46,6 +46,7 @@ data class Recipe(
 }
 
 data class MedicationItem(
+    val id: String = "",
     val name: String = "",
     val dosageValue: String = "",
     val dosageUnit: String = "мг",

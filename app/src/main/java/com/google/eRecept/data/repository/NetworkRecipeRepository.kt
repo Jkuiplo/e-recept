@@ -119,6 +119,7 @@ class NetworkRecipeRepository
                     items =
                         recipe.medications.map {
                             RecipeItemDto(
+                                medicationId = it.id,
                                 medicationName = it.name,
                                 dosageValue = it.dosageValue,
                                 dosageUnit = it.dosageUnit,

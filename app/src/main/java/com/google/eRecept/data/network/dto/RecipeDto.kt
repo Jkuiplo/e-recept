@@ -16,6 +16,7 @@ data class MedicationDto(
 )
 
 data class RecipeItemDto(
+    @SerializedName("medication_id") val medicationId: String? = null,
     @SerializedName("medication_name") val medicationName: String,
     @SerializedName("dosage_value") val dosageValue: String,
     @SerializedName("dosage_unit") val dosageUnit: String,
