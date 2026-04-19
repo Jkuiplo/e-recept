@@ -1,12 +1,11 @@
 package com.google.eRecept.ui.screens
 
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -18,25 +17,38 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.core.os.LocaleListCompat
+import com.google.eRecept.R
 import com.google.eRecept.ui.viewmodels.ProfileViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     onLogout: () -> Unit,
-    viewModel: ProfileViewModel = hiltViewModel(),
+    onChangePasswordClick: () -> Unit,
+    viewModel: ProfileViewModel,
 ) {
     var showLogoutDialog by remember { mutableStateOf(false) }
 
     val profile by viewModel.doctorProfile.collectAsState()
 
-    var selectedLanguageIndex by remember { mutableIntStateOf(0) }
     val languages = listOf("Русский", "Қазақша", "English")
 
-    var selectedThemeIndex by remember { mutableIntStateOf(0) }
+    val currentLanguageTag = AppCompatDelegate.getApplicationLocales().get(0)?.language ?: "ru"
+    var selectedLanguageIndex by remember {
+        mutableIntStateOf(
+            when (currentLanguageTag) {
+                "kk" -> 1
+                "en" -> 2
+                else -> 0
+            },
+        )
+    }
+
+    val currentThemeIndex by viewModel.themeMode.collectAsState()
     val themes = listOf("Светлая", "Темная", "Система")
 
     val doctorProfile by viewModel.doctorProfile.collectAsState()
@@ -51,7 +63,7 @@ fun ProfileScreen(
     ) {
         Spacer(modifier = Modifier.height(48.dp))
 
-        val doctorName = profile?.name ?: "Врач"
+        val doctorName = profile?.name ?: stringResource(R.string.doctor_default)
         val initial = if (doctorName.isNotBlank()) doctorName.first().uppercase() else "В"
         Box(
             modifier =
@@ -74,7 +86,7 @@ fun ProfileScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = doctorProfile?.name ?: "Загрузка...",
+            text = doctorProfile?.name ?: stringResource(R.string.loading),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground,
@@ -95,7 +107,7 @@ fun ProfileScreen(
                     .padding(horizontal = 16.dp),
         ) {
             Text(
-                text = "Настройки",
+                text = stringResource(R.string.settings),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(bottom = 12.dp, start = 8.dp),
@@ -111,7 +123,7 @@ fun ProfileScreen(
             ) {
                 Column(modifier = Modifier.padding(vertical = 12.dp)) {
                     Text(
-                        text = "Язык приложения",
+                        text = stringResource(R.string.app_language),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -120,7 +132,20 @@ fun ProfileScreen(
                     CustomSegmentedControl(
                         options = languages,
                         selectedOption = languages[selectedLanguageIndex],
-                        onOptionSelected = { selectedLanguageIndex = languages.indexOf(it) },
+                        onOptionSelected = { selectedLanguage ->
+                            val index = languages.indexOf(selectedLanguage)
+                            selectedLanguageIndex = index
+
+                            val tag =
+                                when (index) {
+                                    1 -> "kk"
+                                    2 -> "en"
+                                    else -> "ru"
+                                }
+
+                            // 3. Меняем язык во всем приложении (Compose сам все перерисует)
+                            AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(tag))
+                        },
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
 
@@ -130,7 +155,7 @@ fun ProfileScreen(
                     )
 
                     Text(
-                        text = "Оформление",
+                        text = stringResource(R.string.app_theme),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -138,8 +163,11 @@ fun ProfileScreen(
 
                     CustomSegmentedControl(
                         options = themes,
-                        selectedOption = themes[selectedThemeIndex],
-                        onOptionSelected = { selectedThemeIndex = themes.indexOf(it) },
+                        selectedOption = themes[currentThemeIndex],
+                        onOptionSelected = { selectedTheme ->
+                            val index = themes.indexOf(selectedTheme)
+                            viewModel.updateTheme(index)
+                        },
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     )
                 }
@@ -148,7 +176,7 @@ fun ProfileScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Card(
-                onClick = { /* TODO */ },
+                onClick = { onChangePasswordClick() },
                 modifier = Modifier.fillMaxWidth(),
                 colors =
                     CardDefaults.cardColors(
@@ -157,7 +185,7 @@ fun ProfileScreen(
                 shape = MaterialTheme.shapes.large,
             ) {
                 ListItem(
-                    headlineContent = { Text("Сменить пароль") },
+                    headlineContent = { Text(stringResource(R.string.change_password)) },
                     leadingContent = {
                         Icon(
                             Icons.Default.Lock,
@@ -189,14 +217,14 @@ fun ProfileScreen(
                 shape = MaterialTheme.shapes.large,
                 colors =
                     ButtonDefaults.buttonColors(
-                        containerColor = softRed, // фон
-                        contentColor = Color.White, // текст и иконка
+                        containerColor = softRed,
+                        contentColor = Color.White,
                     ),
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
             ) {
                 Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null)
                 Spacer(modifier = Modifier.width(12.dp))
-                Text("Выйти из аккаунта", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.logout), style = MaterialTheme.typography.titleMedium)
             }
 
             Spacer(modifier = Modifier.height(48.dp))
@@ -207,8 +235,8 @@ fun ProfileScreen(
         AlertDialog(
             onDismissRequest = { showLogoutDialog = false },
             icon = { Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null) },
-            title = { Text("Выход") },
-            text = { Text("Вы уверены, что хотите выйти из системы?") },
+            title = { Text(stringResource(R.string.logout_title)) },
+            text = { Text(stringResource(R.string.logout_confirmation)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -217,12 +245,12 @@ fun ProfileScreen(
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
                 ) {
-                    Text("Выйти")
+                    Text(stringResource(R.string.logout_action))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showLogoutDialog = false }) {
-                    Text("Отмена", color = MaterialTheme.colorScheme.onSurface)
+                    Text(stringResource(R.string.cancel), color = MaterialTheme.colorScheme.onSurface)
                 }
             },
         )

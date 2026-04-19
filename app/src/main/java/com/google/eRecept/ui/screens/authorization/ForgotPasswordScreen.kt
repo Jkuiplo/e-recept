@@ -34,11 +34,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.google.eRecept.R
 import com.google.eRecept.ui.viewmodels.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -146,7 +148,7 @@ fun ForgotPasswordScreen(
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = "Проверьте почту $email. Если письма нет, проверьте папку «Спам» или запросите повторно через минуту.",
+                    text = stringResource(R.string.check_email_spam, email),
                     style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -159,7 +161,7 @@ fun ForgotPasswordScreen(
                     enabled = timer == 0 && authState !is AuthViewModel.AuthState.Loading,
                 ) {
                     if (timer > 0) {
-                        Text("Отправить повторно через ${timer}с", color = Color.Gray)
+                        Text(stringResource(R.string.resend_timer, timer), color = Color.Gray)
                     } else {
                         Text("Отправить письмо еще раз")
                     }

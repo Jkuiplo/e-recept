@@ -30,12 +30,14 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
+import com.google.eRecept.R
 import com.google.eRecept.data.Medication
 import com.google.eRecept.data.Patient
 import com.google.eRecept.data.Recipe
@@ -49,7 +51,11 @@ import java.util.Locale
 @Composable
 fun SearchScreen(viewModel: SearchViewModel) {
     val focusManager = LocalFocusManager.current
-    val tabs = listOf("Пациенты", "Препараты", "История")
+    val tabs = listOf(
+        stringResource(R.string.tab_patients),
+        stringResource(R.string.tab_medications),
+        stringResource(R.string.tab_history)
+    )
     val pagerState = rememberPagerState(pageCount = { tabs.size })
     val coroutineScope = rememberCoroutineScope()
 
@@ -88,7 +94,7 @@ fun SearchScreen(viewModel: SearchViewModel) {
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = "Поиск",
+                text = stringResource(R.string.search_title),
                 style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold, fontSize = 32.sp),
                 color = MaterialTheme.colorScheme.onBackground,
             )
@@ -102,9 +108,9 @@ fun SearchScreen(viewModel: SearchViewModel) {
                     Text(
                         text =
                             when (pagerState.currentPage) {
-                                0 -> "ФИО или ИИН"
-                                1 -> "Название препарата"
-                                else -> "Поиск в истории"
+                                0 -> stringResource(R.string.search_patient_placeholder)
+                                1 -> stringResource(R.string.search_medication_placeholder)
+                                else -> stringResource(R.string.search_history_placeholder)
                             },
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                     )
@@ -169,14 +175,14 @@ fun SearchScreen(viewModel: SearchViewModel) {
                     modifier = Modifier.fillMaxSize(),
                 ) {
                     when (page) {
-                        0 -> {
+                        0 -> { // Пациенты
                             if (patientResults.isEmpty() && searchQuery.isNotEmpty() && !isSearching) {
                                 Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                                    SearchEmptyState("Пациенты не найдены", Icons.Default.PersonOff)
+                                    SearchEmptyState(stringResource(R.string.patients_not_found), Icons.Default.PersonOff)
                                 }
                             } else if (patientResults.isEmpty() && searchQuery.isEmpty()) {
                                 Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                                    SearchEmptyState("Введите ИИН или ФИО для поиска пациента", Icons.Default.Search)
+                                    SearchEmptyState(stringResource(R.string.enter_patient_search), Icons.Default.Search)
                                 }
                             } else {
                                 LazyColumn(
@@ -191,12 +197,18 @@ fun SearchScreen(viewModel: SearchViewModel) {
                             }
                         }
 
-                        1 -> {
+                        1 -> { // Препараты
                             if (isSearching && medicationResults.isEmpty()) {
                                 MedicationSkeletonList()
                             } else if (medicationResults.isEmpty() && searchQuery.isNotEmpty() && !isSearching) {
                                 Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                                    SearchEmptyState("Препараты не найдены", Icons.Default.MedicalServices)
+                                    // Когда искали, но ничего нет
+                                    SearchEmptyState(stringResource(R.string.medication_not_found), Icons.Default.MedicalServices)
+                                }
+                            } else if (medicationResults.isEmpty() && searchQuery.isEmpty()) {
+                                Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                                    // НОВОЕ: Когда строка поиска пустая
+                                    SearchEmptyState(stringResource(R.string.enter_medication_search), Icons.Default.Search)
                                 }
                             } else {
                                 LazyColumn(
@@ -211,14 +223,15 @@ fun SearchScreen(viewModel: SearchViewModel) {
                             }
                         }
 
-                        2 -> {
-                            // Убрали всю ручную фильтрацию! ViewModel всё сделала за нас.
+                        2 -> { // История
                             if (filteredRecipes.isEmpty() && !isSearching) {
                                 Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                                    SearchEmptyState(
-                                        if (searchQuery.isNotEmpty()) "Рецепты не найдены" else "История рецептов пуста",
-                                        Icons.Default.ReceiptLong,
-                                    )
+                                    // Разделяем логику для пустого поиска и пустой истории
+                                    if (searchQuery.isNotEmpty()) {
+                                        SearchEmptyState(stringResource(R.string.recipes_not_found), Icons.Default.SearchOff)
+                                    } else {
+                                        SearchEmptyState(stringResource(R.string.recipe_history_empty), Icons.Default.ReceiptLong)
+                                    }
                                 }
                             } else {
                                 LazyColumn(
@@ -327,7 +340,7 @@ fun PatientListItem(
     ) {
         ListItem(
             headlineContent = { Text(patient.full_name, fontWeight = FontWeight.Bold) },
-            supportingContent = { Text("ИИН: ${patient.iin}") },
+            supportingContent = { Text(stringResource(R.string.iin, patient.iin)) },
             trailingContent = { Icon(Icons.Default.ChevronRight, contentDescription = null) },
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         )
@@ -378,7 +391,7 @@ fun SearchRecipeHistoryCard(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Рецепт №$recipeNum",
+                    text = stringResource(R.string.recipe_number_format, recipeNum),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.primary,
                 )
@@ -411,14 +424,14 @@ fun SearchRecipeHistoryCard(
                             .padding(horizontal = 8.dp, vertical = 6.dp),
                 ) {
                     Text(
-                        text = if (isActive) "Активен" else "Истек",
+                        text = if (isActive) stringResource(R.string.status_active) else stringResource(R.string.status_expired),
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                         color = badgeContentColor,
                     )
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "до $expireStr",
+                    text = stringResource(R.string.until_date_format, expireStr),
                     style = MaterialTheme.typography.labelSmall,
                     color = badgeContentColor.copy(alpha = 0.8f),
                 )
@@ -447,14 +460,14 @@ fun PatientProfileSheet(
                     .verticalScroll(rememberScrollState()),
         ) {
             Text(text = patient.full_name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            Text(text = "ИИН: ${patient.iin}", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(text = "Пол: ${patient.gender} • Рождение: ${patient.birth_date}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(text = stringResource(R.string.iin, patient.iin), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(text = stringResource(R.string.gender_and_birth, patient.gender, patient.birth_date), color = MaterialTheme.colorScheme.onSurfaceVariant)
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Text("Примечание", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+            Text(stringResource(R.string.note), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-            Text(text = patient.allergies.ifEmpty { "Нет примечаний" }, style = MaterialTheme.typography.bodyLarge)
+            Text(text = patient.allergies.ifEmpty { stringResource(R.string.no_notes) }, style = MaterialTheme.typography.bodyLarge)
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -467,7 +480,7 @@ fun PatientProfileSheet(
                         Icon(Icons.Default.ReceiptLong, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
-                            "Выписанные рецепты (${recipes.size})",
+                            stringResource(R.string.prescribed_recipes_count, recipes.size),
                             style = MaterialTheme.typography.titleMedium,
                             modifier = Modifier.weight(1f),
                         )
@@ -480,7 +493,7 @@ fun PatientProfileSheet(
                     AnimatedVisibility(visible = recipesExpanded) {
                         Column(modifier = Modifier.padding(top = 16.dp)) {
                             if (recipes.isEmpty()) {
-                                Text("История пуста", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(stringResource(R.string.history_empty), color = MaterialTheme.colorScheme.onSurfaceVariant)
                             } else {
                                 recipes.forEach { recipe ->
                                     val dateStr = SimpleDateFormat("dd.MM.yyyy", Locale("ru")).format(Date(recipe.date))
@@ -491,7 +504,7 @@ fun PatientProfileSheet(
                                     ) {
                                         Text(dateStr, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
                                         Text(
-                                            "№${recipe.id.takeLast(4).uppercase()}",
+                                            stringResource(R.string.number_format, recipe.id.takeLast(4).uppercase()),
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.primary,
                                         )
@@ -506,7 +519,7 @@ fun PatientProfileSheet(
 
             Spacer(modifier = Modifier.height(32.dp))
             Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth().height(56.dp), shape = RoundedCornerShape(16.dp)) {
-                Text("Закрыть")
+                Text(stringResource(R.string.close))
             }
         }
     }
@@ -549,40 +562,40 @@ fun MedicationInfoSheet(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Text("Формы выпуска и дозировки", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+            Text(stringResource(R.string.forms_and_dosages), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "${medication.forms.joinToString(", ")}\nДоступно: ${medication.availableDosages.joinToString(", ")}",
+                text = stringResource(R.string.available_dosages_format, medication.forms.joinToString(", "), medication.availableDosages.joinToString(", ")),
                 style = MaterialTheme.typography.bodyMedium,
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text("Фармакологическое действие", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+            Text(stringResource(R.string.pharmacological_action), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(medication.description.ifEmpty { "Нет описания" }, style = MaterialTheme.typography.bodyMedium)
+            Text(medication.description.ifEmpty { stringResource(R.string.no_description) }, style = MaterialTheme.typography.bodyMedium)
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text("Показания", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+            Text(stringResource(R.string.indications), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(medication.indications.ifEmpty { "Не указаны" }, style = MaterialTheme.typography.bodyMedium)
+            Text(medication.indications.ifEmpty { stringResource(R.string.not_specified) }, style = MaterialTheme.typography.bodyMedium)
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text("Противопоказания", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.error)
+            Text(stringResource(R.string.contraindications), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.error)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(medication.contraindications.ifEmpty { "Не указаны" }, style = MaterialTheme.typography.bodyMedium)
+            Text(medication.contraindications.ifEmpty { stringResource(R.string.not_specified) }, style = MaterialTheme.typography.bodyMedium)
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text("Побочные действия", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.tertiary)
+            Text(stringResource(R.string.side_effects), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.tertiary)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(medication.sideEffects.ifEmpty { "Не указаны" }, style = MaterialTheme.typography.bodyMedium)
+            Text(medication.sideEffects.ifEmpty { stringResource(R.string.not_specified) }, style = MaterialTheme.typography.bodyMedium)
 
             Spacer(modifier = Modifier.height(32.dp))
             Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth().height(56.dp), shape = RoundedCornerShape(16.dp)) {
-                Text("Закрыть")
+                Text(stringResource(R.string.close))
             }
         }
     }
@@ -597,27 +610,27 @@ fun SearchRecipeDetailsDialog(
     val qrUrl = "https://e-recepta.vercel.app/recipes/${recipe.id}/qr"
     AlertDialog(
         onDismissRequest = onDismiss,
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Закрыть") } },
-        title = { Text("Детали рецепта", fontWeight = FontWeight.Bold) },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) } },
+        title = { Text(stringResource(R.string.recipe_details), fontWeight = FontWeight.Bold) },
         text = {
             Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     AsyncImage(
                         model = qrUrl,
-                        contentDescription = "QR Code",
+                        contentDescription = stringResource(R.string.qr_code),
                         modifier = Modifier.size(200.dp),
                         contentScale = ContentScale.Fit,
                     )
                 }
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("Пациент: ${recipe.patient_name}", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
-                Text("ИИН: ${recipe.patient_iin}", style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.patient_name_format, recipe.patient_name), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.iin, recipe.patient_iin), style = MaterialTheme.typography.bodyMedium)
                 Spacer(modifier = Modifier.height(16.dp))
                 HorizontalDivider()
                 Spacer(modifier = Modifier.height(8.dp))
 
                 if (recipe.medications.isEmpty()) {
-                    Text("• Нет указанных препаратов", modifier = Modifier.padding(vertical = 4.dp))
+                    Text(stringResource(R.string.no_medications_specified), modifier = Modifier.padding(vertical = 4.dp))
                 } else {
                     recipe.medications.forEach { med ->
                         Text("• ${med.name}", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 4.dp))
@@ -630,7 +643,7 @@ fun SearchRecipeDetailsDialog(
                     Spacer(modifier = Modifier.height(8.dp))
                     HorizontalDivider()
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("Рекомендации: ${recipe.notes}", style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.recommendations_format, recipe.notes), style = MaterialTheme.typography.bodyMedium)
                 }
             }
         },

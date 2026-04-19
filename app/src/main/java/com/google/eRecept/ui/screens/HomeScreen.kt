@@ -26,8 +26,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -36,6 +38,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.google.eRecept.R
 import com.google.eRecept.data.Appointment
 import com.google.eRecept.ui.viewmodels.HomeViewModel
 import kotlinx.coroutines.delay
@@ -60,14 +63,25 @@ fun HomeScreen(
     val appointments by viewModel.appointments.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
 
-    val days = listOf("Сегодня", "Завтра", "Послезавтра")
+    val days =
+        listOf(
+            stringResource(R.string.day_today),
+            stringResource(R.string.day_tomorrow),
+            stringResource(R.string.day_after_tomorrow),
+        )
     val daysPagerState = rememberPagerState(pageCount = { days.size })
     val coroutineScope = rememberCoroutineScope()
+
+    val currentLocale = LocalConfiguration.current.locales[0]
 
     val calendar = Calendar.getInstance()
     calendar.add(Calendar.DAY_OF_YEAR, daysPagerState.currentPage)
     val selectedDate = calendar.time
-    val dateFormatter = SimpleDateFormat("d MMMM, EEEE", Locale("ru"))
+    val dateFormatter =
+        remember(currentLocale) {
+            SimpleDateFormat("d MMMM, EEEE", currentLocale)
+        }
+
     val formattedDate = dateFormatter.format(selectedDate)
 
     Box(
@@ -100,7 +114,7 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Text(
-                    text = "Расписание",
+                    text = stringResource(R.string.schedule_txt),
                     style =
                         MaterialTheme.typography.headlineLarge.copy(
                             fontWeight = FontWeight.Bold,
@@ -308,14 +322,24 @@ fun AppointmentCard(
 
             val containerColor =
                 when (appointment.status) {
-                    "Состоялась" -> MaterialTheme.colorScheme.secondaryContainer
-                    "Не явился", "Отменена" -> MaterialTheme.colorScheme.errorContainer
+                    stringResource(R.string.status_completed) -> MaterialTheme.colorScheme.secondaryContainer
+
+                    stringResource(
+                        R.string.status_didnt_came,
+                    ), stringResource(R.string.status_cancel),
+                    -> MaterialTheme.colorScheme.errorContainer
+
                     else -> MaterialTheme.colorScheme.primaryContainer
                 }
             val contentColor =
                 when (appointment.status) {
-                    "Состоялась" -> MaterialTheme.colorScheme.onSecondaryContainer
-                    "Не явился", "Отменена" -> MaterialTheme.colorScheme.onErrorContainer
+                    stringResource(R.string.status_completed) -> MaterialTheme.colorScheme.onSecondaryContainer
+
+                    stringResource(
+                        R.string.status_didnt_came,
+                    ), stringResource(R.string.status_cancel),
+                    -> MaterialTheme.colorScheme.onErrorContainer
+
                     else -> MaterialTheme.colorScheme.onPrimaryContainer
                 }
 
@@ -393,10 +417,10 @@ fun AddPatientBottomSheetContent(
                         appointmentDate = sdf.format(Date(it))
                     }
                     showDatePicker = false
-                }) { Text("OK") }
+                }) { Text(stringResource(R.string.ok)) }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("Отмена") }
+                TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.cancel)) }
             },
         ) {
             DatePicker(state = datePickerState)
@@ -435,7 +459,7 @@ fun AddPatientBottomSheetContent(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Запись пациента",
+            text = stringResource(R.string.patient_record),
             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurface,
         )
@@ -448,7 +472,7 @@ fun AddPatientBottomSheetContent(
                     iin = it
                 }
             },
-            label = { Text("ИИН пациента") },
+            label = { Text(stringResource(R.string.patient_iin)) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
@@ -462,7 +486,7 @@ fun AddPatientBottomSheetContent(
 
         AnimatedVisibility(visible = showNotFoundError) {
             Text(
-                text = "Пациент не найден",
+                text = stringResource(R.string.patient_not_found),
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(top = 4.dp, start = 4.dp),
@@ -475,7 +499,7 @@ fun AddPatientBottomSheetContent(
                 OutlinedTextField(
                     value = patientResult!!.full_name,
                     onValueChange = {},
-                    label = { Text("ФИО") },
+                    label = { Text(stringResource(R.string.full_name)) },
                     readOnly = true,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
@@ -485,8 +509,8 @@ fun AddPatientBottomSheetContent(
                 OutlinedTextField(
                     value = appointmentDate,
                     onValueChange = { },
-                    label = { Text("Дата приема") },
-                    placeholder = { Text("Выберите дату") },
+                    label = { Text(stringResource(R.string.date_of_admission)) },
+                    placeholder = { Text(stringResource(R.string.select_date)) },
                     readOnly = true,
                     trailingIcon = {
                         IconButton(onClick = { showDatePicker = true }) {
@@ -511,7 +535,11 @@ fun AddPatientBottomSheetContent(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Text("Время приема", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                Text(
+                    stringResource(R.string.appointment_time),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
                 Spacer(modifier = Modifier.height(8.dp))
 
                 times.chunked(4).forEach { rowTimes ->
@@ -565,7 +593,7 @@ fun AddPatientBottomSheetContent(
                     .height(56.dp),
             shape = RoundedCornerShape(16.dp),
         ) {
-            Text("Создать запись")
+            Text(stringResource(R.string.create_record))
         }
     }
 }
@@ -577,7 +605,13 @@ fun AppointmentDetailsBottomSheetContent(
     onSave: (String) -> Unit,
     onCreateRecipeClick: () -> Unit,
 ) {
-    val statuses = listOf("Запланирована", "Состоялась", "Не явился", "Отменена")
+    val statuses =
+        listOf(
+            stringResource(R.string.status_planned),
+            stringResource(R.string.status_completed),
+            stringResource(R.string.status_didnt_came),
+            stringResource(R.string.status_cancel),
+        )
     var selectedStatus by remember(appointment.status) { mutableStateOf(appointment.status) }
 
     Column(
@@ -592,7 +626,7 @@ fun AppointmentDetailsBottomSheetContent(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Детали приема",
+            text = stringResource(R.string.apointment_details),
             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurface,
         )
@@ -604,13 +638,13 @@ fun AppointmentDetailsBottomSheetContent(
             color = MaterialTheme.colorScheme.onSurface,
         )
         Text(
-            text = "ИИН: ${appointment.patient_iin}",
+            text = stringResource(R.string.iin, appointment.patient_iin),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            text = "${appointment.age} · Пол: ${appointment.gender}",
+            text = stringResource(R.string.gender, appointment.age, appointment.gender),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -618,7 +652,7 @@ fun AppointmentDetailsBottomSheetContent(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Статус приема",
+            text = stringResource(R.string.appointment_status),
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.primary,
         )
@@ -673,13 +707,13 @@ fun AppointmentDetailsBottomSheetContent(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Информация:",
+            text = stringResource(R.string.information),
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurface,
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            text = appointment.history.ifEmpty { "Нет данных" },
+            text = appointment.history.ifEmpty { stringResource(R.string.no_data) },
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -694,7 +728,7 @@ fun AppointmentDetailsBottomSheetContent(
                     .height(56.dp),
             shape = RoundedCornerShape(16.dp),
         ) {
-            Text("Сохранить", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.save), style = MaterialTheme.typography.titleMedium)
         }
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -707,7 +741,7 @@ fun AppointmentDetailsBottomSheetContent(
                     .height(56.dp),
             shape = RoundedCornerShape(16.dp),
         ) {
-            Text("Выписать рецепт", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.write_prescription), style = MaterialTheme.typography.titleMedium)
         }
     }
 }
@@ -734,13 +768,13 @@ fun EmptyScheduleState() {
             )
             Spacer(modifier = Modifier.height(24.dp))
             Text(
-                text = "Записей пока нет",
+                text = stringResource(R.string.empty_appointments),
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "На этот день у вас не запланировано\nни одного приема",
+                text = stringResource(R.string.no_appointments_for_day),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,

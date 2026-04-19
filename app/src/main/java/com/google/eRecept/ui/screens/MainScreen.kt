@@ -18,12 +18,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.eRecept.ui.BottomNavItem
+import com.google.eRecept.ui.screens.ProfileScreen
 import com.google.eRecept.ui.viewmodels.HomeViewModel
+import com.google.eRecept.ui.viewmodels.ProfileViewModel
 import com.google.eRecept.ui.viewmodels.RecipeViewModel
 import com.google.eRecept.ui.viewmodels.SearchViewModel
 
 @Composable
-fun MainScreen(onLogout: () -> Unit) {
+fun MainScreen(
+    onLogout: () -> Unit,
+    onChangePasswordClick: () -> Unit,
+    profileViewModel: ProfileViewModel,
+) {
     val homeViewModel: HomeViewModel = hiltViewModel()
     val recipeViewModel: RecipeViewModel = hiltViewModel()
     val searchViewModel: SearchViewModel = hiltViewModel()
@@ -86,7 +92,11 @@ fun MainScreen(onLogout: () -> Unit) {
                 }
 
                 3 -> {
-                    ProfileScreen(onLogout = onLogout)
+                    ProfileScreen(
+                        onLogout = onLogout,
+                        onChangePasswordClick = onChangePasswordClick,
+                        viewModel = profileViewModel,
+                    )
                 }
             }
         }

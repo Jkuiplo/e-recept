@@ -87,14 +87,6 @@ fun LoginScreen(
                 color = MaterialTheme.colorScheme.primary,
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "eRecept — ваш помощник",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-
             Spacer(modifier = Modifier.height(48.dp))
 
             OutlinedTextField(
@@ -158,7 +150,7 @@ fun LoginScreen(
                 Text(
                     text = "Запомнить меня",
                     style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(start = 4.dp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 TextButton(onClick = onNavigateToForgot) {

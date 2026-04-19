@@ -10,6 +10,10 @@ android {
     namespace = "com.google.eRecept"
     compileSdk = 35
 
+    androidResources {
+        generateLocaleConfig = true
+    }
+
     defaultConfig {
         applicationId = "com.google.eRecept"
         minSdk = 24
@@ -43,8 +47,10 @@ android {
 }
 
 dependencies {
+    implementation("androidx.core:core-splashscreen:1.0.1")
     implementation(libs.hilt.android)
     implementation(libs.androidx.compose.animation.core)
+    implementation(libs.androidx.appcompat)
     kapt(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
 

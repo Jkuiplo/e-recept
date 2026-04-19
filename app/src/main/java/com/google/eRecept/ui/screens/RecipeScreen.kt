@@ -31,6 +31,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -45,6 +46,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
+import com.google.eRecept.R
 import com.google.eRecept.data.MedicationItem
 import com.google.eRecept.data.Recipe
 import com.google.eRecept.ui.viewmodels.HomeViewModel
@@ -111,7 +113,7 @@ fun RecipeScreen(
             ) {
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
-                    text = "Рецепты",
+                    text = stringResource(R.string.recipes_title),
                     style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold, fontSize = 32.sp),
                     color = MaterialTheme.colorScheme.onBackground,
                 )
@@ -176,7 +178,7 @@ fun RecipeScreen(
                                 .verticalScroll(rememberScrollState()),
                     ) {
                         Text(
-                            text = "Выписать рецепт",
+                            text = stringResource(R.string.write_prescription),
                             style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSurface,
                         )
@@ -189,7 +191,7 @@ fun RecipeScreen(
                                     viewModel.updateDraftIin(it)
                                 }
                             },
-                            label = { Text("ИИН пациента") },
+                            label = { Text(stringResource(R.string.patient_iin)) },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
                             singleLine = true,
@@ -199,7 +201,7 @@ fun RecipeScreen(
                                     CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                                 } else if (draftPatientIin.isNotEmpty()) {
                                     IconButton(onClick = { viewModel.updateDraftIin("") }) {
-                                        Icon(Icons.Default.Clear, contentDescription = "Очистить")
+                                        Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.clear))
                                     }
                                 }
                             },
@@ -207,7 +209,7 @@ fun RecipeScreen(
 
                         if (draftPatientIin.length == 12 && !isSearchingPatient && patientResult == null) {
                             Text(
-                                text = "Пациент не найден",
+                                text = stringResource(R.string.patient_not_found),
                                 color = MaterialTheme.colorScheme.error,
                                 style = MaterialTheme.typography.bodySmall,
                                 modifier = Modifier.padding(top = 4.dp, start = 4.dp),
@@ -215,7 +217,7 @@ fun RecipeScreen(
                         } else if (patientResult != null && draftPatientIin.length == 12) {
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = "Пациент: ${patientResult!!.full_name}",
+                                text = stringResource(R.string.patient_name_format, patientResult!!.full_name),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.padding(start = 4.dp),
@@ -224,7 +226,7 @@ fun RecipeScreen(
 
                         Spacer(modifier = Modifier.height(32.dp))
                         Text(
-                            text = "Назначения",
+                            text = stringResource(R.string.prescriptions_list),
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.primary,
                         )
@@ -260,18 +262,18 @@ fun RecipeScreen(
                         ) {
                             Icon(Icons.Default.Add, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Добавить препарат")
+                            Text(stringResource(R.string.add_medication))
                         }
 
                         Spacer(modifier = Modifier.height(24.dp))
                         Text(
-                            text = "Настройки рецепта",
+                            text = stringResource(R.string.recipe_settings),
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.primary,
                         )
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        Text("Срок действия рецепта (дней)", style = MaterialTheme.typography.labelMedium)
+                        Text(stringResource(R.string.recipe_validity_days), style = MaterialTheme.typography.labelMedium)
                         Spacer(modifier = Modifier.height(8.dp))
                         CustomSegmentedControl(
                             options = listOf("10", "15", "30", "60"),
@@ -284,7 +286,7 @@ fun RecipeScreen(
                         OutlinedTextField(
                             value = draftNotes,
                             onValueChange = { viewModel.updateDraftNotes(it) },
-                            label = { Text("Общие рекомендации (опционально)") },
+                            label = { Text(stringResource(R.string.general_recommendations)) },
                             modifier = Modifier.fillMaxWidth().heightIn(min = 100.dp),
                             shape = RoundedCornerShape(12.dp),
                         )
@@ -300,7 +302,7 @@ fun RecipeScreen(
                         ) {
                             Column {
                                 Text(
-                                    "Итоговый рецепт:",
+                                    stringResource(R.string.final_recipe),
                                     style = MaterialTheme.typography.titleSmall,
                                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                                 )
@@ -311,7 +313,7 @@ fun RecipeScreen(
                                         Text("  ${med.summary}", style = MaterialTheme.typography.bodySmall)
                                         if (med.note.isNotBlank()) {
                                             Text(
-                                                "  Прим: ${med.note}",
+                                                stringResource(R.string.note_format, med.note),
                                                 style = MaterialTheme.typography.bodySmall,
                                                 color = MaterialTheme.colorScheme.primary,
                                             )
@@ -324,7 +326,7 @@ fun RecipeScreen(
                                     color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.2f),
                                 )
                                 Text(
-                                    "Действителен: $draftExpireDays дней",
+                                    stringResource(R.string.valid_for_days, draftExpireDays),
                                     style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.Bold,
                                 )
@@ -348,7 +350,7 @@ fun RecipeScreen(
                                 draftMedications.isNotEmpty() &&
                                 draftMedications.all { it.id.isNotBlank() },
                     ) {
-                        Text("Выписать рецепт", style = MaterialTheme.typography.titleMedium)
+                        Text(stringResource(R.string.write_prescription), style = MaterialTheme.typography.titleMedium)
                     }
                 }
             }
@@ -378,7 +380,7 @@ fun RecipeHistoryCard(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Рецепт №$recipeNum",
+                    text = stringResource(R.string.recipe_number_format, recipeNum),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.primary,
                 )
@@ -410,14 +412,14 @@ fun RecipeHistoryCard(
                             .padding(horizontal = 8.dp, vertical = 6.dp),
                 ) {
                     Text(
-                        text = if (recipe.isActive) "Активен" else "Истек",
+                        text = if (recipe.isActive) stringResource(R.string.status_active) else stringResource(R.string.status_expired),
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                         color = badgeContentColor,
                     )
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "до $expireStr",
+                    text = stringResource(R.string.until_date_format, expireStr),
                     style = MaterialTheme.typography.labelSmall,
                     color = badgeContentColor.copy(alpha = 0.8f),
                 )
@@ -462,12 +464,12 @@ fun SmartMedicationRow(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("Препарат ${index + 1}", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                Text(stringResource(R.string.medication_number, index + 1), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                 if (onRemove != null) {
                     IconButton(onClick = onRemove, modifier = Modifier.size(24.dp)) {
                         Icon(
                             Icons.Default.Delete,
-                            contentDescription = "Удалить",
+                            contentDescription = stringResource(R.string.delete),
                             tint = MaterialTheme.colorScheme.error,
                             modifier = Modifier.size(20.dp),
                         )
@@ -489,11 +491,11 @@ fun SmartMedicationRow(
                         viewModel.searchMedications(it)
                         nameExpanded = true
                     },
-                    label = { Text("Название") },
+                    label = { Text(stringResource(R.string.medication_name)) },
                     isError = isMedicationNotSelected,
                     supportingText = {
                         if (isMedicationNotSelected) {
-                            Text("Обязательно выберите препарат из списка")
+                            Text(stringResource(R.string.medication_required))
                         }
                     },
                     modifier = Modifier.fillMaxWidth().onGloballyPositioned { fieldSize = it.size.toSize() },
@@ -532,7 +534,7 @@ fun SmartMedicationRow(
             Spacer(modifier = Modifier.height(16.dp))
 
             // 2. ДОЗИРОВКА (Компактный дизайн)
-            Text("Дозировка", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.dosage), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(modifier = Modifier.height(4.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -555,13 +557,13 @@ fun SmartMedicationRow(
                             ) {
                                 onMedicationChange(medication.copy(dosageValue = (current - 1).toString().removeSuffix(".0")))
                             }
-                        }) { Icon(Icons.Default.Remove, "Меньше", tint = MaterialTheme.colorScheme.primary) }
+                        }) { Icon(Icons.Default.Remove, stringResource(R.string.less), tint = MaterialTheme.colorScheme.primary) }
                     },
                     trailingIcon = {
                         IconButton(onClick = {
                             val current = medication.dosageValue.toDoubleOrNull() ?: 0.0
                             onMedicationChange(medication.copy(dosageValue = (current + 1).toString().removeSuffix(".0")))
-                        }) { Icon(Icons.Default.Add, "Больше", tint = MaterialTheme.colorScheme.primary) }
+                        }) { Icon(Icons.Default.Add, stringResource(R.string.more), tint = MaterialTheme.colorScheme.primary) }
                     },
                 )
 
@@ -576,7 +578,7 @@ fun SmartMedicationRow(
             Spacer(modifier = Modifier.height(16.dp))
 
             // 3. КРАТНОСТЬ
-            Text("Кратность приёма", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.frequency), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(modifier = Modifier.height(4.dp))
             CustomSegmentedControl(
                 options = frequencies,
@@ -588,7 +590,7 @@ fun SmartMedicationRow(
             Spacer(modifier = Modifier.height(16.dp))
 
             // 4. ДЛИТЕЛЬНОСТЬ (Компактный дизайн)
-            Text("Длительность", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.duration), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(modifier = Modifier.height(4.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -611,13 +613,13 @@ fun SmartMedicationRow(
                             ) {
                                 onMedicationChange(medication.copy(durationValue = (current - 1).toString().removeSuffix(".0")))
                             }
-                        }) { Icon(Icons.Default.Remove, "Меньше", tint = MaterialTheme.colorScheme.primary) }
+                        }) { Icon(Icons.Default.Remove, stringResource(R.string.less), tint = MaterialTheme.colorScheme.primary) }
                     },
                     trailingIcon = {
                         IconButton(onClick = {
                             val current = medication.durationValue.toDoubleOrNull() ?: 0.0
                             onMedicationChange(medication.copy(durationValue = (current + 1).toString().removeSuffix(".0")))
-                        }) { Icon(Icons.Default.Add, "Больше", tint = MaterialTheme.colorScheme.primary) }
+                        }) { Icon(Icons.Default.Add, stringResource(R.string.more), tint = MaterialTheme.colorScheme.primary) }
                     },
                 )
                 CustomSegmentedControl(
@@ -634,7 +636,7 @@ fun SmartMedicationRow(
             OutlinedTextField(
                 value = medication.note,
                 onValueChange = { onMedicationChange(medication.copy(note = it)) },
-                label = { Text("Особые указания (напр. после еды)") },
+                label = { Text(stringResource(R.string.special_instructions)) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 singleLine = true,
@@ -657,14 +659,14 @@ fun RecipeDetailsDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Закрыть") } },
-        title = { Text("Детали рецепта", fontWeight = FontWeight.Bold) },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) } },
+        title = { Text(stringResource(R.string.recipe_details), fontWeight = FontWeight.Bold) },
         text = {
             Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     SubcomposeAsyncImage(
                         model = qrUrl,
-                        contentDescription = "QR Code",
+                        contentDescription = stringResource(R.string.qr_code),
                         modifier = Modifier.size(200.dp),
                         contentScale = ContentScale.Fit,
                         loading = {
@@ -673,7 +675,7 @@ fun RecipeDetailsDialog(
                         error = {
                             Icon(
                                 imageVector = Icons.Default.ErrorOutline,
-                                contentDescription = "Ошибка загрузки",
+                                contentDescription = stringResource(R.string.loading_error),
                                 tint = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.size(64.dp),
                             )
@@ -694,25 +696,25 @@ fun RecipeDetailsDialog(
                                 .padding(horizontal = 8.dp, vertical = 4.dp),
                     ) {
                         Text(
-                            if (recipe.isActive) "АКТИВЕН" else "ИСТЕК",
+                            if (recipe.isActive) stringResource(R.string.status_active_caps) else stringResource(R.string.status_expired_caps),
                             style = MaterialTheme.typography.labelSmall,
                             color = textColor,
                             fontWeight = FontWeight.Bold,
                         )
                     }
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Выписан: $dateStr", style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.prescribed_date, dateStr), style = MaterialTheme.typography.bodySmall)
                 }
                 Text(
-                    "Действителен до: $expireStr",
+                    stringResource(R.string.valid_until_date, expireStr),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(top = 4.dp),
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("Пациент: ${recipe.patient_name}", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
-                Text("ИИН: ${recipe.patient_iin}", style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.patient_name_format, recipe.patient_name), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.iin, recipe.patient_iin), style = MaterialTheme.typography.bodyMedium)
                 Spacer(modifier = Modifier.height(16.dp))
                 HorizontalDivider()
                 Spacer(modifier = Modifier.height(8.dp))
@@ -722,7 +724,7 @@ fun RecipeDetailsDialog(
                     Text("  ${med.summary}", style = MaterialTheme.typography.bodySmall)
                     if (med.note.isNotBlank()) {
                         Text(
-                            "  Прим: ${med.note}",
+                            stringResource(R.string.note_format, med.note),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(bottom = 4.dp),
@@ -736,7 +738,7 @@ fun RecipeDetailsDialog(
                     Spacer(modifier = Modifier.height(8.dp))
                     HorizontalDivider()
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("Общие рекомендации: ${recipe.notes}", style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.general_recommendations_format, recipe.notes), style = MaterialTheme.typography.bodyMedium)
                 }
             }
         },
@@ -758,13 +760,13 @@ fun EmptyRecipesState() {
         )
         Spacer(modifier = Modifier.height(24.dp))
         Text(
-            text = "Рецептов пока нет",
+            text = stringResource(R.string.no_recipes_yet),
             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurface,
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Вы еще не выписали ни одного рецепта.\nНажмите +, чтобы создать первый.",
+            text = stringResource(R.string.no_recipes_description),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,

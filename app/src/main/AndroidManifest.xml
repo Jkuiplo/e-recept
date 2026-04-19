@@ -28,7 +28,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
                     android:scheme="https"
-                    android:host="erecept.kz"
+                    android:host="e-recepta.vercel.app"
                     android:pathPrefix="/reset-password" />
             </intent-filter>
         </activity>

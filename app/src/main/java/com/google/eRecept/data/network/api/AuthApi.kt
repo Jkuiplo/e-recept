@@ -20,4 +20,9 @@ interface AuthApi {
     suspend fun resetPassword(
         @Body request: ResetPasswordRequest,
     ): Response<BaseMessageResponse>
+
+    @POST("profile/change-password")
+    suspend fun changePassword(
+        @Body request: ChangePasswordRequest,
+    ): Response<BaseMessageResponse>
 }
