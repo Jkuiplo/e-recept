@@ -2,6 +2,8 @@ package com.google.eRecept.ui.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -231,15 +233,13 @@ fun RecipeScreen(
                                     newList[index] = updatedMed
                                     viewModel.updateDraftMedications(newList)
                                 },
-                                onRemove =
-                                    if (draftMedications.size > 1) {
-                                        {
-                                            val newList = draftMedications.filterIndexed { i, _ -> i != index }
-                                            viewModel.updateDraftMedications(newList)
-                                        }
-                                    } else {
-                                        null
-                                    },
+                                onRemove = if (draftMedications.size > 1) {
+                                    {
+                                        val newList = draftMedications.toMutableList()
+                                        newList.removeAt(index)
+                                        viewModel.updateDraftMedications(newList)
+                                    }
+                                } else null,
                             )
                             Spacer(modifier = Modifier.height(16.dp))
                         }
@@ -263,15 +263,12 @@ fun RecipeScreen(
 
                         Text("Срок действия рецепта (дней)", style = MaterialTheme.typography.labelMedium)
                         Spacer(modifier = Modifier.height(8.dp))
-                        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                            listOf(10, 15, 30, 60).forEachIndexed { index, days ->
-                                SegmentedButton(
-                                    shape = SegmentedButtonDefaults.itemShape(index = index, count = 4),
-                                    onClick = { viewModel.updateDraftExpireDays(days) },
-                                    selected = draftExpireDays == days,
-                                ) { Text("$days") }
-                            }
-                        }
+                        CustomSegmentedControl(
+                            options = listOf("10", "15", "30", "60"),
+                            selectedOption = draftExpireDays.toString(),
+                            onOptionSelected = { viewModel.updateDraftExpireDays(it.toIntOrNull() ?: 30) },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
 
                         Spacer(modifier = Modifier.height(16.dp))
                         OutlinedTextField(
@@ -431,7 +428,7 @@ fun SmartMedicationRow(
 
     val dosageUnits = listOf("мг", "мл", "таб")
     val frequencies = listOf("1×", "2×", "3×", "4×")
-    val durationUnits = listOf("дней", "нед", "мес")
+    val durationUnits = listOf("дн.", "нед", "мес")
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -543,30 +540,24 @@ fun SmartMedicationRow(
                     }
                 }
 
-                SingleChoiceSegmentedButtonRow(modifier = Modifier.weight(1.1f)) {
-                    dosageUnits.forEachIndexed { i, unit ->
-                        SegmentedButton(
-                            shape = SegmentedButtonDefaults.itemShape(index = i, count = dosageUnits.size),
-                            onClick = { onMedicationChange(medication.copy(dosageUnit = unit)) },
-                            selected = medication.dosageUnit == unit,
-                        ) { Text(unit, style = MaterialTheme.typography.labelSmall) }
-                    }
-                }
+                CustomSegmentedControl(
+                    options = dosageUnits,
+                    selectedOption = medication.dosageUnit,
+                    onOptionSelected = { onMedicationChange(medication.copy(dosageUnit = it)) },
+                    modifier = Modifier.weight(1.1f),
+                )
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
             Text("Кратность приёма", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(modifier = Modifier.height(4.dp))
-            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                frequencies.forEachIndexed { i, freq ->
-                    SegmentedButton(
-                        shape = SegmentedButtonDefaults.itemShape(index = i, count = frequencies.size),
-                        onClick = { onMedicationChange(medication.copy(frequency = freq)) },
-                        selected = medication.frequency == freq,
-                    ) { Text(freq) }
-                }
-            }
+            CustomSegmentedControl(
+                options = frequencies,
+                selectedOption = medication.frequency,
+                onOptionSelected = { onMedicationChange(medication.copy(frequency = it)) },
+                modifier = Modifier.fillMaxWidth(),
+            )
 
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -585,15 +576,12 @@ fun SmartMedicationRow(
                     shape = RoundedCornerShape(12.dp),
                     singleLine = true,
                 )
-                SingleChoiceSegmentedButtonRow(modifier = Modifier.weight(1.2f)) {
-                    durationUnits.forEachIndexed { i, unit ->
-                        SegmentedButton(
-                            shape = SegmentedButtonDefaults.itemShape(index = i, count = durationUnits.size),
-                            onClick = { onMedicationChange(medication.copy(durationUnit = unit)) },
-                            selected = medication.durationUnit == unit,
-                        ) { Text(unit, style = MaterialTheme.typography.labelSmall) }
-                    }
-                }
+                CustomSegmentedControl(
+                    options = durationUnits,
+                    selectedOption = medication.durationUnit,
+                    onOptionSelected = { onMedicationChange(medication.copy(durationUnit = it)) },
+                    modifier = Modifier.weight(1.2f),
+                )
             }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -725,5 +713,45 @@ fun EmptyRecipesState() {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
+    }
+}
+
+@Composable
+fun CustomSegmentedControl(
+    options: List<String>,
+    selectedOption: String,
+    onOptionSelected: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier =
+            modifier
+                .height(IntrinsicSize.Min) // Важно для корректной работы VerticalDivider
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp))
+                .clip(RoundedCornerShape(12.dp)),
+    ) {
+        options.forEachIndexed { index, option ->
+            val isSelected = option == selectedOption
+            Box(
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+                        .clickable { onOptionSelected(option) }
+                        .padding(vertical = 12.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = option,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                )
+            }
+            if (index < options.size - 1) {
+                VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            }
+        }
     }
 }

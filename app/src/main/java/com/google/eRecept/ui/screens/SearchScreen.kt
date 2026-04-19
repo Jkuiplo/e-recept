@@ -594,7 +594,7 @@ fun SearchRecipeDetailsDialog(
     onDismiss: () -> Unit,
     viewModel: SearchViewModel,
 ) {
-    val qrUrl = "https://e-recepta-mbfodsfs.vercel.app/recipes/${recipe.id}/qr"
+    val qrUrl = "https://e-recepta.vercel.app/recipes/${recipe.id}/qr"
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = { TextButton(onClick = onDismiss) { Text("Закрыть") } },

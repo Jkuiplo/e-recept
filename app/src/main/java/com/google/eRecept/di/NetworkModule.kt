@@ -17,7 +17,7 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
-    private const val BASE_URL = "https://e-recepta-mbfodsfs.vercel.app/"
+    private const val BASE_URL = "https://e-recepta.vercel.app/"
 
     @Provides
     @Singleton
