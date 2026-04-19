@@ -1,15 +1,17 @@
 package com.google.eRecept.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -114,22 +116,13 @@ fun ProfileScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                     )
-                    SingleChoiceSegmentedButtonRow(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp),
-                    ) {
-                        languages.forEachIndexed { index, label ->
-                            SegmentedButton(
-                                shape = SegmentedButtonDefaults.itemShape(index = index, count = languages.size),
-                                onClick = { selectedLanguageIndex = index },
-                                selected = selectedLanguageIndex == index,
-                            ) {
-                                Text(label, style = MaterialTheme.typography.labelMedium)
-                            }
-                        }
-                    }
+
+                    CustomSegmentedControl(
+                        options = languages,
+                        selectedOption = languages[selectedLanguageIndex],
+                        onOptionSelected = { selectedLanguageIndex = languages.indexOf(it) },
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    )
 
                     HorizontalDivider(
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
@@ -142,22 +135,13 @@ fun ProfileScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                     )
-                    SingleChoiceSegmentedButtonRow(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp),
-                    ) {
-                        themes.forEachIndexed { index, label ->
-                            SegmentedButton(
-                                shape = SegmentedButtonDefaults.itemShape(index = index, count = themes.size),
-                                onClick = { selectedThemeIndex = index },
-                                selected = selectedThemeIndex == index,
-                            ) {
-                                Text(label, style = MaterialTheme.typography.labelMedium)
-                            }
-                        }
-                    }
+
+                    CustomSegmentedControl(
+                        options = themes,
+                        selectedOption = themes[selectedThemeIndex],
+                        onOptionSelected = { selectedThemeIndex = themes.indexOf(it) },
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    )
                 }
             }
 
@@ -194,6 +178,8 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
+            val softRed = Color(0xFFD32F2F)
+
             Button(
                 onClick = { showLogoutDialog = true },
                 modifier =
@@ -203,9 +189,10 @@ fun ProfileScreen(
                 shape = MaterialTheme.shapes.large,
                 colors =
                     ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer,
-                        contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                        containerColor = softRed, // фон
+                        contentColor = Color.White, // текст и иконка
                     ),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
             ) {
                 Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null)
                 Spacer(modifier = Modifier.width(12.dp))

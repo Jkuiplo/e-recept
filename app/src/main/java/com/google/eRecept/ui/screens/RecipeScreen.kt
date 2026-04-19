@@ -1,10 +1,13 @@
 package com.google.eRecept.ui.screens
 
-import androidx.compose.foundation.Image
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -32,8 +35,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.times
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -47,6 +52,7 @@ import com.google.eRecept.ui.viewmodels.RecipeViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -782,25 +788,49 @@ fun CustomSegmentedControl(
     ) {
         options.forEachIndexed { index, option ->
             val isSelected = option == selectedOption
+
+            // Плавная анимация фона
+            val backgroundColor by animateColorAsState(
+                targetValue = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                animationSpec = tween(durationMillis = 200, easing = LinearOutSlowInEasing),
+                label = "segmentBackground",
+            )
+
+            // Плавная анимация цвета текста
+            val textColor by animateColorAsState(
+                targetValue = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                animationSpec = tween(durationMillis = 200, easing = LinearOutSlowInEasing),
+                label = "segmentText",
+            )
+
             Box(
                 modifier =
                     Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
-                        .clickable { onOptionSelected(option) }
-                        .padding(vertical = 12.dp),
+                        .background(color = backgroundColor)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null, // Оставляем null, если не нужен стандартный ripple эффект поверх нашей анимации
+                        ) {
+                            onOptionSelected(option)
+                        }.padding(vertical = 12.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = option,
                     style = MaterialTheme.typography.labelMedium,
-                    color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                    color = textColor,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                 )
             }
+
+            // Разделитель между опциями
             if (index < options.size - 1) {
-                VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                VerticalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant,
+                    thickness = 1.dp,
+                )
             }
         }
     }
