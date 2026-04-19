@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -206,7 +207,6 @@ fun RecipeScreen(
                                 }
                             },
                         )
-
                         if (draftPatientIin.length == 12 && !isSearchingPatient && patientResult == null) {
                             Text(
                                 text = stringResource(R.string.patient_not_found),
@@ -215,13 +215,92 @@ fun RecipeScreen(
                                 modifier = Modifier.padding(top = 4.dp, start = 4.dp),
                             )
                         } else if (patientResult != null && draftPatientIin.length == 12) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = stringResource(R.string.patient_name_format, patientResult!!.full_name),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(start = 4.dp),
-                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(16.dp),
+                                colors =
+                                    CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f),
+                                    ),
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Surface(
+                                            shape = RoundedCornerShape(12.dp),
+                                            color = MaterialTheme.colorScheme.secondary,
+                                            modifier = Modifier.size(48.dp),
+                                        ) {
+                                            Box(contentAlignment = Alignment.Center) {
+                                                Text(
+                                                    text = patientResult!!.full_name.firstOrNull()?.toString() ?: "?",
+                                                    style = MaterialTheme.typography.titleLarge,
+                                                    color = MaterialTheme.colorScheme.onSecondary,
+                                                )
+                                            }
+                                        }
+                                        Spacer(modifier = Modifier.width(16.dp))
+                                        Column {
+                                            Text(
+                                                text = patientResult!!.full_name,
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontWeight = FontWeight.Bold,
+                                            )
+                                            Text(
+                                                text = "ИИН: $draftPatientIin",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f),
+                                            )
+                                        }
+                                    }
+
+                                    // Дополнительные данные пациента (из эндпоинта Appointments или профиля)
+                                    // ... (внутри карточки пациента)
+
+// Дополнительные данные пациента (из эндпоинта Appointments или профиля)
+                                    HorizontalDivider(
+                                        modifier = Modifier.padding(vertical = 12.dp),
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.1f),
+                                    )
+
+                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                        // Подставляем реальные данные из patientResult
+                                        // Если в твоей data class модели переменные в camelCase (patientGender), поменяй названия
+                                        InfoTag(label = "Пол", value = patientResult!!.gender ?: "Не указан")
+                                        InfoTag(label = "Дата рожд.", value = patientResult!!.birth_date ?: "Не указана")
+                                    }
+
+// Реальное примечание (patient_note)
+                                    val note = patientResult!!.allergies ?: ""
+                                    if (note.isNotBlank()) {
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Box(
+                                            modifier =
+                                                Modifier
+                                                    .fillMaxWidth()
+                                                    .clip(RoundedCornerShape(8.dp))
+                                                    .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f))
+                                                    .padding(8.dp),
+                                        ) {
+                                            Row {
+                                                Icon(
+                                                    Icons.Default.Warning,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(16.dp),
+                                                    tint = MaterialTheme.colorScheme.error,
+                                                )
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                Text(
+                                                    text = note,
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onErrorContainer,
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
 
                         Spacer(modifier = Modifier.height(32.dp))
@@ -335,7 +414,7 @@ fun RecipeScreen(
 
                         Spacer(modifier = Modifier.height(40.dp))
                     }
-
+                    val isCreating by viewModel.isCreating.collectAsStateWithLifecycle()
                     Button(
                         onClick = { viewModel.createRecipe(patientResult?.full_name ?: "Неизвестно") },
                         modifier =
@@ -345,12 +424,20 @@ fun RecipeScreen(
                                 .height(56.dp),
                         shape = RoundedCornerShape(16.dp),
                         enabled =
-                            draftPatientIin.length == 12 &&
+                            !isCreating && // Блокировка при загрузке
+                                draftPatientIin.length == 12 &&
                                 patientResult != null &&
-                                draftMedications.isNotEmpty() &&
-                                draftMedications.all { it.id.isNotBlank() },
+                                draftMedications.any { it.id.isNotBlank() },
                     ) {
-                        Text(stringResource(R.string.write_prescription), style = MaterialTheme.typography.titleMedium)
+                        if (isCreating) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                strokeWidth = 2.dp,
+                            )
+                        } else {
+                            Text(stringResource(R.string.write_prescription), style = MaterialTheme.typography.titleMedium)
+                        }
                     }
                 }
             }
@@ -446,11 +533,31 @@ fun SmartMedicationRow(
     val frequencies = listOf("1×", "2×", "3×", "4×")
     val durationUnits = listOf("дн.", "нед", "мес")
 
-    // Локальная функция для обработки ввода цифр (защита от <= 0)
-    fun safeNumberInput(input: String): String {
-        val filtered = input.filter { it.isDigit() || it == '.' }
-        if (filtered == "0" || filtered.startsWith("-")) return "1"
+    // Универсальная безопасная фильтрация ввода
+    fun safeNumberInput(
+        input: String,
+        allowDecimal: Boolean,
+    ): String {
+        var filtered = input.filter { it.isDigit() || (allowDecimal && it == '.') }
+        if (allowDecimal) {
+            // Разрешаем только одну точку
+            val firstDotIndex = filtered.indexOf('.')
+            if (firstDotIndex != -1) {
+                val beforeDot = filtered.substring(0, firstDotIndex)
+                val afterDot = filtered.substring(firstDotIndex + 1).replace(".", "")
+                filtered = "$beforeDot.$afterDot"
+            }
+            if (filtered.startsWith(".")) {
+                filtered = "0$filtered"
+            }
+        }
         return filtered
+    }
+
+    // Жестко фиксим баг 0.9999999 и красиво форматируем числа
+    fun formatNumber(value: Double): String {
+        val rounded = (value * 10.0).roundToInt() / 10.0
+        return if (rounded % 1.0 == 0.0) rounded.toInt().toString() else rounded.toString()
     }
 
     Card(
@@ -464,7 +571,11 @@ fun SmartMedicationRow(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(stringResource(R.string.medication_number, index + 1), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                Text(
+                    stringResource(R.string.medication_number, index + 1),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                )
                 if (onRemove != null) {
                     IconButton(onClick = onRemove, modifier = Modifier.size(24.dp)) {
                         Icon(
@@ -486,7 +597,6 @@ fun SmartMedicationRow(
                 OutlinedTextField(
                     value = medication.name,
                     onValueChange = {
-                        // ВАЖНО: Если пользователь меняет текст руками, сбрасываем ID
                         onMedicationChange(medication.copy(name = it, id = ""))
                         viewModel.searchMedications(it)
                         nameExpanded = true
@@ -517,7 +627,6 @@ fun SmartMedicationRow(
                                 }
                             },
                             onClick = {
-                                // Сохраняем ID при клике
                                 onMedicationChange(
                                     medication.copy(
                                         id = suggestion.id,
@@ -533,52 +642,61 @@ fun SmartMedicationRow(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 2. ДОЗИРОВКА (Компактный дизайн)
-            Text(stringResource(R.string.dosage), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            // 2. ДОЗИРОВКА (Умный шаг и поддержка дробей)
+            Text(
+                stringResource(R.string.dosage),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             Spacer(modifier = Modifier.height(4.dp))
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                OutlinedTextField(
-                    value = medication.dosageValue,
-                    onValueChange = { onMedicationChange(medication.copy(dosageValue = safeNumberInput(it))) },
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = true,
-                    textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center, fontWeight = FontWeight.Bold),
-                    leadingIcon = {
-                        IconButton(onClick = {
-                            val current = medication.dosageValue.toDoubleOrNull() ?: 1.0
-                            if (current >
-                                1.0
-                            ) {
-                                onMedicationChange(medication.copy(dosageValue = (current - 1).toString().removeSuffix(".0")))
-                            }
-                        }) { Icon(Icons.Default.Remove, stringResource(R.string.less), tint = MaterialTheme.colorScheme.primary) }
+                StepperInput(
+                    value = medication.dosageValue.ifEmpty { "1" }, // Дефолт 1
+                    onValueChange = { onMedicationChange(medication.copy(dosageValue = safeNumberInput(it, allowDecimal = true))) },
+                    onDecrement = {
+                        val current = medication.dosageValue.toDoubleOrNull() ?: 1.0
+                        // Умный шаг: если целое число, отнимаем 1. Если дробное — 0.1
+                        val step = if (current % 1.0 == 0.0) 1.0 else 0.1
+                        val newValue = if (current - step < 0.1) 0.1 else current - step
+                        onMedicationChange(medication.copy(dosageValue = formatNumber(newValue)))
                     },
-                    trailingIcon = {
-                        IconButton(onClick = {
-                            val current = medication.dosageValue.toDoubleOrNull() ?: 0.0
-                            onMedicationChange(medication.copy(dosageValue = (current + 1).toString().removeSuffix(".0")))
-                        }) { Icon(Icons.Default.Add, stringResource(R.string.more), tint = MaterialTheme.colorScheme.primary) }
+                    onIncrement = {
+                        val current = medication.dosageValue.toDoubleOrNull() ?: 0.0
+                        val step = if (current % 1.0 == 0.0) 1.0 else 0.1
+                        onMedicationChange(medication.copy(dosageValue = formatNumber(current + step)))
                     },
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
                 )
 
                 CustomSegmentedControl(
                     options = dosageUnits,
                     selectedOption = medication.dosageUnit,
                     onOptionSelected = { onMedicationChange(medication.copy(dosageUnit = it)) },
-                    modifier = Modifier.weight(1f),
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
                 )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
             // 3. КРАТНОСТЬ
-            Text(stringResource(R.string.frequency), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                stringResource(R.string.frequency),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             Spacer(modifier = Modifier.height(4.dp))
             CustomSegmentedControl(
                 options = frequencies,
@@ -589,44 +707,47 @@ fun SmartMedicationRow(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 4. ДЛИТЕЛЬНОСТЬ (Компактный дизайн)
-            Text(stringResource(R.string.duration), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            // 4. ДЛИТЕЛЬНОСТЬ (Только целые числа)
+            Text(
+                stringResource(R.string.duration),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             Spacer(modifier = Modifier.height(4.dp))
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                OutlinedTextField(
-                    value = medication.durationValue,
-                    onValueChange = { onMedicationChange(medication.copy(durationValue = safeNumberInput(it))) },
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = true,
-                    textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center, fontWeight = FontWeight.Bold),
-                    leadingIcon = {
-                        IconButton(onClick = {
-                            val current = medication.durationValue.toDoubleOrNull() ?: 1.0
-                            if (current >
-                                1.0
-                            ) {
-                                onMedicationChange(medication.copy(durationValue = (current - 1).toString().removeSuffix(".0")))
-                            }
-                        }) { Icon(Icons.Default.Remove, stringResource(R.string.less), tint = MaterialTheme.colorScheme.primary) }
+                StepperInput(
+                    value = medication.durationValue.ifEmpty { "1" }, // Дефолт 1
+                    onValueChange = { onMedicationChange(medication.copy(durationValue = safeNumberInput(it, allowDecimal = false))) },
+                    onDecrement = {
+                        val current = medication.durationValue.toIntOrNull() ?: 1
+                        val newValue = if (current > 1) current - 1 else 1
+                        onMedicationChange(medication.copy(durationValue = newValue.toString()))
                     },
-                    trailingIcon = {
-                        IconButton(onClick = {
-                            val current = medication.durationValue.toDoubleOrNull() ?: 0.0
-                            onMedicationChange(medication.copy(durationValue = (current + 1).toString().removeSuffix(".0")))
-                        }) { Icon(Icons.Default.Add, stringResource(R.string.more), tint = MaterialTheme.colorScheme.primary) }
+                    onIncrement = {
+                        val current = medication.durationValue.toIntOrNull() ?: 0
+                        onMedicationChange(medication.copy(durationValue = (current + 1).toString()))
                     },
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
                 )
+
                 CustomSegmentedControl(
                     options = durationUnits,
                     selectedOption = medication.durationUnit,
                     onOptionSelected = { onMedicationChange(medication.copy(durationUnit = it)) },
-                    modifier = Modifier.weight(1f),
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
                 )
             }
 
@@ -696,7 +817,13 @@ fun RecipeDetailsDialog(
                                 .padding(horizontal = 8.dp, vertical = 4.dp),
                     ) {
                         Text(
-                            if (recipe.isActive) stringResource(R.string.status_active_caps) else stringResource(R.string.status_expired_caps),
+                            if (recipe.isActive) {
+                                stringResource(
+                                    R.string.status_active_caps,
+                                )
+                            } else {
+                                stringResource(R.string.status_expired_caps)
+                            },
                             style = MaterialTheme.typography.labelSmall,
                             color = textColor,
                             fontWeight = FontWeight.Bold,
@@ -713,7 +840,11 @@ fun RecipeDetailsDialog(
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
-                Text(stringResource(R.string.patient_name_format, recipe.patient_name), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                Text(
+                    stringResource(R.string.patient_name_format, recipe.patient_name),
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold,
+                )
                 Text(stringResource(R.string.iin, recipe.patient_iin), style = MaterialTheme.typography.bodyMedium)
                 Spacer(modifier = Modifier.height(16.dp))
                 HorizontalDivider()
@@ -835,5 +966,63 @@ fun CustomSegmentedControl(
                 )
             }
         }
+    }
+}
+
+@Composable
+fun StepperInput(
+    value: String,
+    onValueChange: (String) -> Unit,
+    onIncrement: () -> Unit,
+    onDecrement: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier =
+            modifier
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp))
+                .clip(RoundedCornerShape(12.dp))
+                .background(Color.Transparent),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        IconButton(
+            onClick = onDecrement,
+            modifier = Modifier.weight(1f),
+        ) {
+            Icon(Icons.Default.Remove, contentDescription = "Меньше", tint = MaterialTheme.colorScheme.primary)
+        }
+
+        BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = Modifier.weight(1.5f),
+            textStyle =
+                LocalTextStyle.current.copy(
+                    textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 16.sp,
+                ),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            singleLine = true,
+        )
+
+        IconButton(
+            onClick = onIncrement,
+            modifier = Modifier.weight(1f),
+        ) {
+            Icon(Icons.Default.Add, contentDescription = "Больше", tint = MaterialTheme.colorScheme.primary)
+        }
+    }
+}
+
+@Composable
+fun InfoTag(
+    label: String,
+    value: String,
+) {
+    Column {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.6f))
+        Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
     }
 }

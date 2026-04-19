@@ -115,7 +115,12 @@ class RecipeViewModel
             }
         }
 
+        private val _isCreating = MutableStateFlow(false)
+        val isCreating = _isCreating.asStateFlow()
+
         fun createRecipe(patientName: String) {
+            if (_isCreating.value) return
+
             val doctorId = repository.currentUserId ?: return
             val iin = _draftPatientIin.value
             val meds = _draftMedications.value.filter { it.name.isNotBlank() }
@@ -123,24 +128,31 @@ class RecipeViewModel
             val expireDays = _draftExpireDays.value
 
             viewModelScope.launch {
-                val doctorProfile = repository.getDoctorProfile(doctorId)
-                val currentTime = System.currentTimeMillis()
-                val expireTime = currentTime + (expireDays * 24L * 60L * 60L * 1000L)
+                _isCreating.value = true
+                try {
+                    val doctorProfile = repository.getDoctorProfile(doctorId)
+                    val currentTime = System.currentTimeMillis()
+                    val expireTime = currentTime + (expireDays * 24L * 60L * 60L * 1000L)
 
-                val recipe =
-                    Recipe(
-                        doctor_id = doctorId,
-                        doctor_name = doctorProfile?.name ?: "Врач",
-                        patient_iin = iin,
-                        patient_name = patientName,
-                        date = currentTime,
-                        expire_date = expireTime,
-                        medications = meds,
-                        notes = notes,
-                    )
-                repository.createRecipe(recipe)
-                clearDraft()
-                closeCreateSheet()
+                    val recipe =
+                        Recipe(
+                            doctor_id = doctorId,
+                            doctor_name = doctorProfile?.name ?: "Врач",
+                            patient_iin = iin,
+                            patient_name = patientName,
+                            date = currentTime,
+                            expire_date = expireTime,
+                            medications = meds,
+                            notes = notes,
+                        )
+                    repository.createRecipe(recipe)
+                    clearDraft()
+                    closeCreateSheet()
+                } catch (e: Exception) {
+                    //
+                } finally {
+                    _isCreating.value = false
+                }
             }
         }
     }

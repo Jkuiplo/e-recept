@@ -1,5 +1,6 @@
 package com.google.eRecept.data.network.api
 
+import com.google.eRecept.data.network.dto.AppointmentDto
 import com.google.eRecept.data.network.dto.CreateRecipeRequest
 import com.google.eRecept.data.network.dto.MedicationDto
 import com.google.eRecept.data.network.dto.RecipeResponseDto
@@ -25,4 +26,10 @@ interface RecipeApi {
     suspend fun createRecipe(
         @Body request: CreateRecipeRequest,
     ): Response<RecipeResponseDto>
+
+    @GET("appointments/{doctor_id}")
+    suspend fun getAppointments(
+        @Path("doctor_id") doctorId: String,
+        @Query("date") date: String,
+    ): Response<List<AppointmentDto>>
 }
