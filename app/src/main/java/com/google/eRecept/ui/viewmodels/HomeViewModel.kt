@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.eRecept.data.Appointment
 import com.google.eRecept.data.Patient
+import com.google.eRecept.data.mockRepository.DoctorSchedule
 import com.google.eRecept.data.mockRepository.HomeRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -33,6 +34,9 @@ class HomeViewModel
         private val _isRefreshing = MutableStateFlow(false)
         val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
+        private val _doctorSchedule = MutableStateFlow<DoctorSchedule?>(null)
+        val doctorSchedule: StateFlow<DoctorSchedule?> = _doctorSchedule.asStateFlow()
+
         init {
             loadAppointments()
         }
@@ -40,15 +44,46 @@ class HomeViewModel
         private fun loadAppointments() {
             repository.currentUserId?.let { doctorId ->
                 viewModelScope.launch {
+                    _doctorSchedule.value = repository.getDoctorSchedule(doctorId)
+
                     repository
                         .getAppointments(doctorId)
-                        .map { list ->
-                            list.sortedBy { it.time }
-                        }.collect {
-                            _appointments.value = it
-                        }
+                        .map { list -> list.sortedBy { it.time } }
+                        .collect { _appointments.value = it }
                 }
             }
+        }
+
+        fun getAvailableTimeSlots(date: String): List<String> {
+            val schedule = _doctorSchedule.value ?: return emptyList()
+
+            val bookedTimes =
+                _appointments.value
+                    .filter { it.date == date && it.status != "Отменена" }
+                    .map { it.time }
+
+            val slots = mutableListOf<String>()
+
+            val start = parseTime(schedule.workStart)
+            val end = parseTime(schedule.workEnd)
+            val breakStart = parseTime(schedule.breakStart)
+            val breakEnd = parseTime(schedule.breakEnd)
+
+            val current = start.clone() as Calendar
+
+            while (current.before(end)) {
+                val slotUiStr = String.format("%02d:%02d", current.get(Calendar.HOUR_OF_DAY), current.get(Calendar.MINUTE))
+
+                val isDuringBreak = current.timeInMillis >= breakStart.timeInMillis && current.timeInMillis < breakEnd.timeInMillis
+
+                if (!isDuringBreak && !bookedTimes.contains(slotUiStr)) {
+                    slots.add(slotUiStr)
+                }
+
+                current.add(Calendar.MINUTE, schedule.slotDuration)
+            }
+
+            return slots
         }
 
         fun refresh() {
@@ -119,5 +154,20 @@ class HomeViewModel
                 val isCompleted = newStatus == "Завершен" || newStatus == "Не явился"
                 repository.updateAppointmentStatus(appointment.id, newStatus, isCompleted)
             }
+        }
+
+        private fun parseTime(timeStr: String): Calendar {
+            val cal =
+                Calendar.getInstance().apply {
+                    set(Calendar.YEAR, 2000) // Фиксированная дата, нас интересует только время
+                    set(Calendar.MONTH, 0)
+                    set(Calendar.DAY_OF_MONTH, 1)
+                }
+            val parts = timeStr.split(":")
+            cal.set(Calendar.HOUR_OF_DAY, parts.getOrNull(0)?.toInt() ?: 0)
+            cal.set(Calendar.MINUTE, parts.getOrNull(1)?.toInt() ?: 0)
+            cal.set(Calendar.SECOND, parts.getOrNull(2)?.toInt() ?: 0)
+            cal.set(Calendar.MILLISECOND, 0)
+            return cal
         }
     }

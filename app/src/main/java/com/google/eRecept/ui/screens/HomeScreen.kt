@@ -384,7 +384,13 @@ fun AddPatientBottomSheetContent(
     }
     var selectedTime by remember { mutableStateOf("") }
 
-    val times = listOf("09:00", "09:20", "09:40", "10:00", "10:20", "10:40", "11:00", "11:20", "14:00", "14:20", "14:40", "15:00")
+    val doctorSchedule by viewModel.doctorSchedule.collectAsStateWithLifecycle()
+    val appointmentsList by viewModel.appointments.collectAsStateWithLifecycle()
+
+    val availableTimes =
+        remember(appointmentDate, doctorSchedule, appointmentsList) {
+            viewModel.getAvailableTimeSlots(appointmentDate)
+        }
 
     var showDatePicker by remember { mutableStateOf(false) }
 
@@ -542,37 +548,45 @@ fun AddPatientBottomSheetContent(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
-                times.chunked(4).forEach { rowTimes ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        rowTimes.forEach { time ->
-                            val isSelected = selectedTime == time
-                            Box(
-                                modifier =
-                                    Modifier
-                                        .weight(1f)
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .background(
-                                            if (isSelected) {
-                                                MaterialTheme.colorScheme.primary
-                                            } else {
-                                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                                            },
-                                        ).clickable { selectedTime = time }
-                                        .padding(vertical = 10.dp),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Text(
-                                    text = time,
-                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                                )
+                if (availableTimes.isEmpty()) {
+                    Text(
+                        text = "Нет свободного времени на выбранную дату",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                } else {
+                    availableTimes.chunked(4).forEach { rowTimes ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            rowTimes.forEach { time ->
+                                val isSelected = selectedTime == time
+                                Box(
+                                    modifier =
+                                        Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(
+                                                if (isSelected) {
+                                                    MaterialTheme.colorScheme.primary
+                                                } else {
+                                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                                },
+                                            ).clickable { selectedTime = time }
+                                            .padding(vertical = 10.dp),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Text(
+                                        text = time,
+                                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                                    )
+                                }
                             }
                         }
+                        Spacer(modifier = Modifier.height(8.dp))
                     }
-                    Spacer(modifier = Modifier.height(8.dp))
                 }
             }
         }

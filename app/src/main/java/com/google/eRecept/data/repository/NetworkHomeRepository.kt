@@ -3,6 +3,7 @@ package com.google.eRecept.data.repository
 import android.content.Context
 import com.google.eRecept.data.Appointment
 import com.google.eRecept.data.Patient
+import com.google.eRecept.data.mockRepository.DoctorSchedule
 import com.google.eRecept.data.mockRepository.HomeRepository
 import com.google.eRecept.data.network.api.HomeApi
 import com.google.eRecept.data.network.dto.CreateAppointmentRequest
@@ -150,6 +151,27 @@ class NetworkHomeRepository
                 e.printStackTrace()
             }
         }
+
+        override suspend fun getDoctorSchedule(doctorId: String): DoctorSchedule? =
+            try {
+                val response = api.getDoctorProfile(doctorId)
+                if (response.isSuccessful) {
+                    response.body()?.let { dto ->
+                        DoctorSchedule(
+                            workStart = dto.workStart,
+                            workEnd = dto.workEnd,
+                            breakStart = dto.breakStart,
+                            breakEnd = dto.breakEnd,
+                            slotDuration = dto.slotDuration,
+                        )
+                    }
+                } else {
+                    null
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                null
+            }
 
         private fun calculateAge(birthDate: String): String =
             try {

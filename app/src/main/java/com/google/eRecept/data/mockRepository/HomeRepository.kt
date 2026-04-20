@@ -10,8 +10,18 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 
+data class DoctorSchedule(
+    val workStart: String,
+    val workEnd: String,
+    val breakStart: String,
+    val breakEnd: String,
+    val slotDuration: Int,
+)
+
 interface HomeRepository {
     val currentUserId: String?
+
+    suspend fun getDoctorSchedule(doctorId: String): DoctorSchedule?
 
     suspend fun getAppointments(doctorId: String): Flow<List<Appointment>>
 
@@ -28,6 +38,11 @@ interface HomeRepository {
 
 class MockHomeRepository : HomeRepository {
     override val currentUserId: String = "mock_doctor_id"
+
+    override suspend fun getDoctorSchedule(doctorId: String): DoctorSchedule? {
+        TODO("Not yet implemented")
+    }
+
     private val _appointments = MutableStateFlow<List<Appointment>>(emptyList())
 
     init {

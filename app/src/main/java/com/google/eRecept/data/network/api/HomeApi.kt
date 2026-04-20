@@ -2,6 +2,7 @@ package com.google.eRecept.data.network.api
 
 import com.google.eRecept.data.network.dto.AppointmentDto
 import com.google.eRecept.data.network.dto.CreateAppointmentRequest
+import com.google.eRecept.data.network.dto.DoctorProfileDto
 import com.google.eRecept.data.network.dto.PatientDto
 import com.google.eRecept.data.network.dto.UpdateStatusRequest
 import retrofit2.Response
@@ -29,10 +30,14 @@ interface HomeApi {
         @Body request: CreateAppointmentRequest,
     ): Response<AppointmentDto>
 
-    // В файле HomeApi.kt
     @PATCH("appointments/{id}/status")
     suspend fun updateAppointmentStatus(
         @Path("id") id: String,
         @Body request: UpdateStatusRequest,
     ): Response<Unit>
+
+    @GET("profile/{doctor_id}")
+    suspend fun getDoctorProfile(
+        @Path("doctor_id") doctorId: String,
+    ): Response<DoctorProfileDto>
 }

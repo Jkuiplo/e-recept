@@ -35,6 +35,18 @@ data class CreateAppointmentRequest(
     val history: String,
 )
 
+data class DoctorProfileDto(
+    val phone: String,
+    val email: String,
+    @SerializedName("full_name") val fullName: String,
+    val specialization: String,
+    @SerializedName("work_start") val workStart: String,
+    @SerializedName("work_end") val workEnd: String,
+    @SerializedName("break_start") val breakStart: String,
+    @SerializedName("break_end") val breakEnd: String,
+    @SerializedName("slot_duration") val slotDuration: Int,
+)
+
 data class UpdateStatusRequest(
     val status: String,
 )
