@@ -140,7 +140,6 @@ fun SearchScreen(viewModel: SearchViewModel) {
             PrimaryTabRow(
                 selectedTabIndex = pagerState.currentPage,
                 containerColor = Color.Transparent,
-                // divider = {} // Убрали, так как в новых версиях M3 это вызывает ошибку
             ) {
                 tabs.forEachIndexed { index, title ->
                     Tab(
@@ -181,7 +180,6 @@ fun SearchScreen(viewModel: SearchViewModel) {
                                     if (searchQuery.isNotEmpty()) {
                                         SearchEmptyState(stringResource(R.string.patients_not_found), Icons.Default.PersonOff)
                                     } else {
-                                        // Если запрос пуст, но пациентов все равно 0 (врач еще никого не принимал)
                                         SearchEmptyState("Список пациентов пуст", Icons.Default.GroupOff)
                                     }
                                 }

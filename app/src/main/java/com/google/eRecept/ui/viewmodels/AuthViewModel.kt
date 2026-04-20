@@ -88,10 +88,18 @@ class AuthViewModel
                         _authState.value = AuthState.Authenticated
                     },
                     onFailure = { exception ->
-                        _authState.value = AuthState.Error(exception.message ?: "Неизвестная ошибка")
+                        if (exception.message == "NO_INTERNET") {
+                            _authState.value = AuthState.NoInternet
+                        } else {
+                            _authState.value = AuthState.Error(exception.message ?: "Неизвестная ошибка")
+                        }
                     },
                 )
             }
+        }
+
+        fun resetState() {
+            _authState.value = AuthState.Idle
         }
 
         private val _resendTimer = MutableStateFlow(0)
@@ -121,8 +129,12 @@ class AuthViewModel
                         onEmailSent()
                         startResendTimer()
                     },
-                    onFailure = { error ->
-                        _authState.value = AuthState.Error(error.message ?: "Ошибка")
+                    onFailure = { exception ->
+                        if (exception.message == "NO_INTERNET") {
+                            _authState.value = AuthState.NoInternet
+                        } else {
+                            _authState.value = AuthState.Error(exception.message ?: "Неизвестная ошибка")
+                        }
                     },
                 )
             }
@@ -154,8 +166,6 @@ class AuthViewModel
                 remove("doctor_specialization")
                 remove("remember_me")
                 remove("saved_email")
-                // saved_email можно не удалять, если хотите,
-                // чтобы почта осталась вбитой в поле ввода для удобства
             }
             _authState.value = AuthState.Unauthenticated
         }
@@ -168,6 +178,8 @@ class AuthViewModel
             object Authenticated : AuthState()
 
             object Unauthenticated : AuthState()
+
+            object NoInternet : AuthState()
 
             data class Error(
                 val message: String,

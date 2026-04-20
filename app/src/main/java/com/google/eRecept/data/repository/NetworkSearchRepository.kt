@@ -53,10 +53,8 @@ class NetworkSearchRepository
             }
         }
 
-        // НОВАЯ ФУНКЦИЯ: Получаем пациентов из приемов врача (убираем дубликаты по ИИН)
         override suspend fun getDoctorPatients(doctorId: String): List<Patient> =
             try {
-                // ВАЖНО: Убедись, что в SearchApi.kt добавлена ручка getDoctorAppointments
                 val response = api.getDoctorAppointments(doctorId)
                 if (response.isSuccessful) {
                     response
@@ -97,7 +95,39 @@ class NetworkSearchRepository
                                 availableDosages = dto.availableDosages ?: emptyList(),
                                 forms = dto.forms ?: emptyList(),
                             )
-                        }?.sortedBy { it.name } ?: emptyList() // <-- Сортировка по алфавиту добавлена тут
+                        }?.sortedBy { it.name } ?: emptyList()
+                } else {
+                    emptyList()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                emptyList()
+            }
+
+        override suspend fun getAllMedications(
+            limit: Int,
+            offset: Int,
+        ): List<Medication> =
+            try {
+                // ИСПРАВЛЕНО: Вызываем api.getAllMedications, а не searchMedications
+                val response = api.getAllMedications(limit, offset)
+                if (response.isSuccessful) {
+                    response
+                        .body()
+                        ?.map { dto ->
+                            Medication(
+                                id = dto.id ?: "",
+                                name = dto.name,
+                                activeSubstance = dto.activeSubstance,
+                                category = dto.category ?: "",
+                                description = dto.description ?: "",
+                                indications = dto.indications ?: "",
+                                contraindications = dto.contraindications ?: "",
+                                sideEffects = dto.sideEffects ?: "",
+                                availableDosages = dto.availableDosages ?: emptyList(),
+                                forms = dto.forms ?: emptyList(),
+                            )
+                        }?.sortedBy { it.name } ?: emptyList()
                 } else {
                     emptyList()
                 }

@@ -18,6 +18,11 @@ interface SearchRepository {
     suspend fun getRecentRecipes(doctorId: String): Flow<List<Recipe>>
 
     suspend fun getDoctorPatients(doctorId: String): List<Patient>
+
+    suspend fun getAllMedications(
+        limit: Int,
+        offset: Int,
+    ): List<Medication>
 }
 
 class MockSearchRepository : SearchRepository {
@@ -25,7 +30,6 @@ class MockSearchRepository : SearchRepository {
 
     private val mockPatients =
         listOf(
-            // ALERGIES это не аллергии а примечание будет
             Patient("123456789012", "Иванов Иван Иванович", "Мужской", "1996-05-15", "Жалобы на боли в спине"),
             Patient("098765432109", "Смирнова Анна", "Женский", "2001-08-20", "Нет"),
             Patient("112233445566", "Ахметов Серик", "Мужской", "1985-11-02", "рак яичек"),
@@ -104,7 +108,7 @@ class MockSearchRepository : SearchRepository {
                     doctor_name = "Д-р Хаус",
                     patient_iin = "123456789012",
                     patient_name = "Иванов Иван Иванович",
-                    date = System.currentTimeMillis() - 86400000, // Вчера
+                    date = System.currentTimeMillis() - 86400000,
                     medications = emptyList(),
                     notes = "Соблюдать постельный режим",
                 ),
@@ -114,7 +118,7 @@ class MockSearchRepository : SearchRepository {
                     doctor_name = "Д-р Хаус",
                     patient_iin = "098765432109",
                     patient_name = "Смирнова Анна",
-                    date = System.currentTimeMillis(), // Сегодня
+                    date = System.currentTimeMillis(),
                     medications = emptyList(),
                     notes = "Пить больше воды",
                 ),
@@ -122,14 +126,14 @@ class MockSearchRepository : SearchRepository {
         )
 
     override suspend fun searchPatients(query: String): List<Patient> {
-        delay(400) // Лоадер покрутится 0.4 сек
+        delay(400)
         return mockPatients.filter {
             it.iin.contains(query) || it.full_name.contains(query, ignoreCase = true)
         }
     }
 
     override suspend fun searchMedications(query: String): List<Medication> {
-        delay(400) // Лоадер покрутится 0.4 сек
+        delay(400)
         return mockMedications.filter {
             it.name.contains(query, ignoreCase = true) || it.activeSubstance.contains(query, ignoreCase = true)
         }
@@ -140,4 +144,9 @@ class MockSearchRepository : SearchRepository {
     override suspend fun getDoctorPatients(doctorId: String): List<Patient> {
         TODO("Not yet implemented")
     }
+
+    override suspend fun getAllMedications(
+        limit: Int,
+        offset: Int,
+    ): List<Medication> = mockMedications
 }

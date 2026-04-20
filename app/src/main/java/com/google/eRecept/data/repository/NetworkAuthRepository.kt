@@ -6,6 +6,7 @@ import com.google.eRecept.data.network.dto.ForgotPasswordRequest
 import com.google.eRecept.data.network.dto.LoginRequest
 import com.google.eRecept.data.network.dto.LoginResponse
 import com.google.eRecept.data.network.dto.ResetPasswordRequest
+import java.io.IOException
 import javax.inject.Inject
 
 class NetworkAuthRepository
@@ -24,12 +25,12 @@ class NetworkAuthRepository
                 if (response.isSuccessful && response.body() != null) {
                     Result.success(response.body()!!)
                 } else {
-                    // Если статус 401, 400 и тд
                     Result.failure(Exception("Ошибка авторизации: ${response.code()}"))
                 }
+            } catch (e: IOException) {
+                Result.failure(Exception("NO_INTERNET"))
             } catch (e: Exception) {
-                // Если нет интернета или сервак упал
-                Result.failure(Exception("Ошибка сети: ${e.message}"))
+                Result.failure(Exception("Неизвестная ошибка: ${e.message}"))
             }
 
         override suspend fun forgotPassword(email: String): Result<String> =

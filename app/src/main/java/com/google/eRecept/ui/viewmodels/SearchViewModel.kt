@@ -50,16 +50,13 @@ class SearchViewModel
 
             _isSearching.value = true
 
-            // 1. История рецептов (Flow)
             viewModelScope.launch {
                 repository.getRecentRecipes(doctorId).collect { list ->
                     _allRecipes.value = list
-                    // Если мы в истории и поиск пустой — обновляем экран
                     if (currentTabIndex == 2 && currentQuery.isBlank()) {
                         _filteredRecipes.value = list
                     }
 
-                    // ВАЛИДАЦИЯ: Добавляем пациентов из рецептов в общий список врача
                     val patientsFromRecipes =
                         list.map {
                             Patient(it.patient_iin, it.patient_name, "", "", "")
@@ -68,17 +65,13 @@ class SearchViewModel
                 }
             }
 
-            // 2. Пациенты из приемов и Препараты
             viewModelScope.launch {
                 try {
-                    // Загружаем пациентов из приемов
                     val patientsFromApps = repository.getDoctorPatients(doctorId)
                     updateDoctorPatients(patientsFromApps)
 
-                    // Загружаем препараты (пустой запрос для дефолтного списка)
-                    val meds = repository.searchMedications("")
+                    val meds = repository.getAllMedications(limit = 200, offset = 0)
                     _allMedications.value = meds
-                    // Сразу пушим в UI, чтобы список не был пустым при переключении
                     _medicationResults.value = meds
                 } catch (e: Exception) {
                     e.printStackTrace()
@@ -88,13 +81,11 @@ class SearchViewModel
             }
         }
 
-        // Вспомогательный метод для синхронизации списка "своих" пациентов
         private fun updateDoctorPatients(newPatients: List<Patient>) {
             val currentList = _allPatients.value
             val combined = (currentList + newPatients).distinctBy { it.iin }
             _allPatients.value = combined
 
-            // Если поиск пустой, обновляем то, что видит юзер
             if (currentQuery.isBlank()) {
                 _patientResults.value = combined
             }
@@ -108,7 +99,6 @@ class SearchViewModel
             currentTabIndex = tabIndex
 
             viewModelScope.launch {
-                // ФИКС: Если запрос стерли — возвращаем ПОЛНЫЕ списки для всех вкладок
                 if (query.isBlank()) {
                     _patientResults.value = _allPatients.value
                     _medicationResults.value = _allMedications.value
@@ -118,20 +108,20 @@ class SearchViewModel
 
                 val lowerQuery = query.lowercase()
                 when (tabIndex) {
-                    0 -> { // Локальный поиск по "своим" пациентам
+                    0 -> {
                         _patientResults.value =
                             _allPatients.value.filter {
                                 it.full_name.lowercase().contains(lowerQuery) || it.iin.contains(query)
                             }
                     }
 
-                    1 -> { // Поиск препаратов через API
+                    1 -> {
                         _isSearching.value = true
                         _medicationResults.value = repository.searchMedications(query)
                         _isSearching.value = false
                     }
 
-                    2 -> { // Локальный поиск по истории
+                    2 -> {
                         _filteredRecipes.value =
                             _allRecipes.value.filter { recipe ->
                                 recipe.id.lowercase().contains(lowerQuery) ||

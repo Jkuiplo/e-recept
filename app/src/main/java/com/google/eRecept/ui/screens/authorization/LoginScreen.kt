@@ -89,6 +89,38 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(48.dp))
 
+            if (authState is AuthViewModel.AuthState.NoInternet) {
+                AlertDialog(
+                    onDismissRequest = {
+                        viewModel.resetState()
+                    },
+                    title = {
+                        Text(
+                            text = "Нет подключения",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    },
+                    text = {
+                        Text(
+                            text = "Пожалуйста, проверьте подключение к интернету и попробуйте снова.",
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                viewModel.resetState()
+                            },
+                        ) {
+                            Text("Понятно")
+                        }
+                    },
+                    shape = RoundedCornerShape(16.dp),
+                    containerColor = MaterialTheme.colorScheme.surface,
+                )
+            }
+
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },

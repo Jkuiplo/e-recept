@@ -20,6 +20,12 @@ interface SearchApi {
         @Query("query") query: String,
     ): Response<List<MedicationDto>>
 
+    @GET("medications/")
+    suspend fun getAllMedications(
+        @Query("limit") limit: Int,
+        @Query("offset") offset: Int,
+    ): Response<List<MedicationDto>>
+
     @GET("recipes/{doctor_id}")
     suspend fun getRecentRecipes(
         @Path("doctor_id") doctorId: String,
