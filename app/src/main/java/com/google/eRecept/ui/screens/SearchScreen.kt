@@ -34,10 +34,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
 import com.google.eRecept.R
 import com.google.eRecept.data.Medication
 import com.google.eRecept.data.Patient
 import com.google.eRecept.data.Recipe
+import com.google.eRecept.ui.viewmodels.RecipeViewModel
 import com.google.eRecept.ui.viewmodels.SearchViewModel
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -46,7 +48,11 @@ import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchScreen(viewModel: SearchViewModel) {
+fun SearchScreen(
+    viewModel: SearchViewModel,
+    recipeViewModel: RecipeViewModel,
+    onEditRecipe: () -> Unit,
+) {
     val focusManager = LocalFocusManager.current
     val tabs =
         listOf(
@@ -238,7 +244,12 @@ fun SearchScreen(viewModel: SearchViewModel) {
                                     modifier = Modifier.fillMaxSize(),
                                 ) {
                                     items(filteredRecipes, key = { it.id }) { recipe ->
-                                        SearchRecipeHistoryCard(recipe = recipe, onClick = { selectedRecipe = recipe })
+                                        SearchRecipeHistoryCard(
+                                            recipe = recipe,
+                                            onClick = { selectedRecipe = recipe },
+                                            viewModel = recipeViewModel,
+                                            onEdit = onEditRecipe,
+                                        )
                                     }
                                 }
                             }
@@ -268,7 +279,12 @@ fun SearchScreen(viewModel: SearchViewModel) {
     }
 
     if (selectedRecipe != null) {
-        SearchRecipeDetailsDialog(recipe = selectedRecipe!!, onDismiss = { selectedRecipe = null }, viewModel = viewModel)
+        SearchRecipeDetailsDialog(
+            recipe = selectedRecipe!!,
+            onDismiss = { selectedRecipe = null },
+            viewModel = recipeViewModel,
+            onEdit = onEditRecipe,
+        )
     }
 }
 
@@ -372,11 +388,17 @@ fun MedicationListItem(
 fun SearchRecipeHistoryCard(
     recipe: Recipe,
     onClick: () -> Unit,
+    viewModel: RecipeViewModel,
+    onEdit: () -> Unit,
 ) {
     val sdf = SimpleDateFormat("d MMMM yyyy", Locale("ru"))
     val dateStr = sdf.format(Date(recipe.date))
     val expireStr = sdf.format(Date(recipe.expire_date))
     val recipeNum = recipe.id.takeLast(4).uppercase()
+
+    var showMenu by remember { mutableStateOf(false) }
+    var showRevokeConfirm by remember { mutableStateOf(false) }
+    val isRevoking by viewModel.isRevoking.collectAsStateWithLifecycle(initialValue = false)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -388,7 +410,12 @@ fun SearchRecipeHistoryCard(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(
+                        start = 16.dp,
+                        top = 16.dp,
+                        bottom = 16.dp,
+                        end = if (recipe.isActive) 4.dp else 16.dp,
+                    ),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
@@ -438,7 +465,83 @@ fun SearchRecipeHistoryCard(
                     color = badgeContentColor.copy(alpha = 0.8f),
                 )
             }
+
+            if (recipe.isActive) {
+                Box(modifier = Modifier.padding(start = 4.dp)) {
+                    IconButton(onClick = { showMenu = true }) {
+                        Icon(Icons.Default.MoreVert, contentDescription = "Опции")
+                    }
+
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false },
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Редактировать") },
+                            onClick = {
+                                showMenu = false
+                                viewModel.openEditSheet(recipe)
+                                onEdit()
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Default.Edit, contentDescription = null)
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Отозвать", color = MaterialTheme.colorScheme.error) },
+                            onClick = {
+                                showMenu = false
+                                showRevokeConfirm = true
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Cancel,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error,
+                                )
+                            },
+                        )
+                    }
+                }
+            }
         }
+    }
+
+    if (showRevokeConfirm) {
+        AlertDialog(
+            onDismissRequest = { if (!isRevoking) showRevokeConfirm = false },
+            title = { Text("Отозвать рецепт?", fontWeight = FontWeight.Bold) },
+            text = {
+                Text(
+                    "Вы уверены, что хотите деактивировать этот рецепт? После отзыва пациент не сможет получить по нему препараты в аптеке.",
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.revokeRecipe(recipe.id) {
+                            showRevokeConfirm = false
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                ) {
+                    if (isRevoking) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = MaterialTheme.colorScheme.onError,
+                            strokeWidth = 2.dp,
+                        )
+                    } else {
+                        Text("Отозвать", color = MaterialTheme.colorScheme.onError)
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRevokeConfirm = false }, enabled = !isRevoking) {
+                    Text("Отмена")
+                }
+            },
+        )
     }
 }
 
@@ -646,23 +749,123 @@ fun MedicationInfoSheet(
 fun SearchRecipeDetailsDialog(
     recipe: Recipe,
     onDismiss: () -> Unit,
-    viewModel: SearchViewModel,
+    viewModel: RecipeViewModel,
+    onEdit: () -> Unit,
 ) {
+    val sdf = SimpleDateFormat("dd.MM.yyyy", Locale("ru"))
+    val dateStr = sdf.format(Date(recipe.date))
+    val expireStr = sdf.format(Date(recipe.expire_date))
     val qrUrl = "https://e-recepta.vercel.app/recipes/${recipe.id}/qr"
+
+    var showMenu by remember { mutableStateOf(false) }
+    var showRevokeConfirm by remember { mutableStateOf(false) }
+    val isRevoking by viewModel.isRevoking.collectAsStateWithLifecycle(initialValue = false)
+
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) } },
-        title = { Text(stringResource(R.string.recipe_details), fontWeight = FontWeight.Bold) },
+        title = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(stringResource(R.string.recipe_details), fontWeight = FontWeight.Bold)
+
+                if (recipe.isActive) {
+                    Box {
+                        IconButton(onClick = { showMenu = true }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "Опции")
+                        }
+
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false },
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Редактировать") },
+                                onClick = {
+                                    showMenu = false
+                                    onDismiss()
+                                    viewModel.openEditSheet(recipe)
+                                    onEdit()
+                                },
+                                leadingIcon = {
+                                    Icon(Icons.Default.Edit, contentDescription = null)
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Отозвать", color = MaterialTheme.colorScheme.error) },
+                                onClick = {
+                                    showMenu = false
+                                    showRevokeConfirm = true
+                                },
+                                leadingIcon = {
+                                    Icon(Icons.Default.Cancel, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+        },
         text = {
             Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    AsyncImage(
+                    SubcomposeAsyncImage(
                         model = qrUrl,
                         contentDescription = stringResource(R.string.qr_code),
                         modifier = Modifier.size(200.dp),
                         contentScale = ContentScale.Fit,
+                        loading = {
+                            CircularProgressIndicator(modifier = Modifier.padding(64.dp))
+                        },
+                        error = {
+                            Icon(
+                                imageVector = Icons.Default.ErrorOutline,
+                                contentDescription = stringResource(R.string.loading_error),
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(64.dp),
+                            )
+                        },
                     )
                 }
+                Spacer(modifier = Modifier.height(16.dp))
+
+                val badgeColor = if (recipe.isActive) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer
+                val textColor = if (recipe.isActive) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onErrorContainer
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier =
+                            Modifier
+                                .clip(
+                                    RoundedCornerShape(8.dp),
+                                ).background(badgeColor)
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                    ) {
+                        Text(
+                            if (recipe.isActive) {
+                                stringResource(
+                                    R.string.status_active_caps,
+                                )
+                            } else {
+                                stringResource(R.string.status_expired_caps)
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            color = textColor,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(stringResource(R.string.prescribed_date, dateStr), style = MaterialTheme.typography.bodySmall)
+                }
+                Text(
+                    stringResource(R.string.valid_until_date, expireStr),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     stringResource(R.string.patient_name_format, recipe.patient_name),
@@ -679,8 +882,17 @@ fun SearchRecipeDetailsDialog(
                 } else {
                     recipe.medications.forEach { med ->
                         Text("• ${med.name}", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 4.dp))
-                        val desc = if (med.dosageValue.isNotBlank()) "${med.dosageValue} ${med.dosageUnit} × ${med.frequency}/день — ${med.durationValue} ${med.durationUnit}" else med.dosageUnit
-                        Text("  $desc", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 4.dp))
+                        Text("  ${med.summary}", style = MaterialTheme.typography.bodySmall)
+                        if (med.note.isNotBlank()) {
+                            Text(
+                                stringResource(R.string.note_format, med.note),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(bottom = 4.dp),
+                            )
+                        } else {
+                            Spacer(modifier = Modifier.height(4.dp))
+                        }
                     }
                 }
 
@@ -693,4 +905,45 @@ fun SearchRecipeDetailsDialog(
             }
         },
     )
+
+    if (showRevokeConfirm) {
+        AlertDialog(
+            onDismissRequest = { if (!isRevoking) showRevokeConfirm = false },
+            title = { Text("Отозвать рецепт?", fontWeight = FontWeight.Bold) },
+            text = {
+                Text(
+                    "Вы уверены, что хотите деактивировать этот рецепт? После отзыва пациент не сможет получить по нему препараты в аптеке.",
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.revokeRecipe(recipe.id) {
+                            showRevokeConfirm = false
+                            onDismiss()
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                ) {
+                    if (isRevoking) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = MaterialTheme.colorScheme.onError,
+                            strokeWidth = 2.dp,
+                        )
+                    } else {
+                        Text("Отозвать", color = MaterialTheme.colorScheme.onError)
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showRevokeConfirm = false },
+                    enabled = !isRevoking,
+                ) {
+                    Text("Отмена")
+                }
+            },
+        )
+    }
 }

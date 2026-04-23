@@ -30,9 +30,6 @@ object RepositoryModule {
     fun provideAuthRepository(api: AuthApi): AuthRepository {
         return NetworkAuthRepository(api) // Потом заменишь на NetworkAuthRepository(api)
     }
-    // fun provideAuthRepository(): AuthRepository {
-    //      return MockAuthRepository()
-    // }
 
     @Provides
     @Singleton

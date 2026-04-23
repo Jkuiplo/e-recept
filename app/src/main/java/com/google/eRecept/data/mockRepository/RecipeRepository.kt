@@ -3,6 +3,7 @@ package com.google.eRecept.data.mockRepository
 import com.google.eRecept.data.Doctor
 import com.google.eRecept.data.Medication
 import com.google.eRecept.data.Recipe
+import com.google.eRecept.data.network.dto.UpdateRecipeRequest
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -10,6 +11,13 @@ import kotlinx.coroutines.flow.asStateFlow
 
 interface RecipeRepository {
     val currentUserId: String?
+
+    suspend fun revokeRecipe(recipeId: String): Boolean
+
+    suspend fun updateRecipe(
+        recipeId: String,
+        request: UpdateRecipeRequest,
+    ): Boolean
 
     suspend fun getRecentRecipes(doctorId: String): Flow<List<Recipe>>
 
@@ -22,6 +30,28 @@ interface RecipeRepository {
 
 class MockRecipeRepository : RecipeRepository {
     override val currentUserId: String = "mock_doctor_id"
+
+    override suspend fun revokeRecipe(recipeId: String): Boolean {
+        kotlinx.coroutines.delay(500)
+        val currentList = _recipes.value.toMutableList()
+        val index = currentList.indexOfFirst { it.id == recipeId }
+
+        if (index != -1) {
+            // Чтобы рецепт стал неактивным, переносим дату окончания в прошлое
+            val revokedRecipe = currentList[index].copy(expire_date = System.currentTimeMillis() - 1000)
+            currentList[index] = revokedRecipe
+            _recipes.value = currentList
+            return true
+        }
+        return false
+    }
+
+    override suspend fun updateRecipe(
+        recipeId: String,
+        request: UpdateRecipeRequest,
+    ): Boolean {
+        TODO("Not yet implemented")
+    }
 
     private val _recipes = MutableStateFlow<List<Recipe>>(emptyList())
 

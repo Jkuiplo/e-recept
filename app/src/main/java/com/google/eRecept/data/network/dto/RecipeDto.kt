@@ -45,3 +45,9 @@ data class RecipeResponseDto(
     @SerializedName("qr_data") val qrData: String?,
     val items: List<RecipeItemDto>,
 )
+
+data class UpdateRecipeRequest(
+    val notes: String,
+    @SerializedName("expire_days") val expireDays: Int,
+    val items: List<RecipeItemDto>,
+)

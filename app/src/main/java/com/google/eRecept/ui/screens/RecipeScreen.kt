@@ -139,7 +139,7 @@ fun RecipeScreen(
                             modifier = Modifier.fillMaxSize(),
                         ) {
                             items(recipes, key = { it.id }) { recipe ->
-                                RecipeHistoryCard(recipe = recipe, onClick = { selectedRecipe = recipe })
+                                RecipeHistoryCard(recipe = recipe, onClick = { selectedRecipe = recipe }, viewModel = viewModel)
                             }
                         }
                     }
@@ -415,8 +415,12 @@ fun RecipeScreen(
                         Spacer(modifier = Modifier.height(40.dp))
                     }
                     val isCreating by viewModel.isCreating.collectAsStateWithLifecycle()
+                    val editingRecipeId by viewModel.editingRecipeId.collectAsStateWithLifecycle()
+                    val isEditing = editingRecipeId != null
+
                     Button(
-                        onClick = { viewModel.createRecipe(patientResult?.full_name ?: "Неизвестно") },
+                        // ИСПОЛЬЗУЕМ saveRecipe ВМЕСТО createRecipe
+                        onClick = { viewModel.saveRecipe(patientResult?.full_name ?: "Неизвестно") },
                         modifier =
                             Modifier
                                 .fillMaxWidth()
@@ -449,11 +453,16 @@ fun RecipeScreen(
 fun RecipeHistoryCard(
     recipe: Recipe,
     onClick: () -> Unit,
+    viewModel: RecipeViewModel,
 ) {
     val sdf = SimpleDateFormat("d MMMM yyyy", Locale("ru"))
     val dateStr = sdf.format(Date(recipe.date))
     val expireStr = sdf.format(Date(recipe.expire_date))
     val recipeNum = recipe.id.takeLast(4).uppercase()
+
+    var showMenu by remember { mutableStateOf(false) }
+    var showRevokeConfirm by remember { mutableStateOf(false) }
+    val isRevoking by viewModel.isRevoking.collectAsStateWithLifecycle(initialValue = false)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -462,7 +471,13 @@ fun RecipeHistoryCard(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            modifier =
+                Modifier.fillMaxWidth().padding(
+                    start = 16.dp,
+                    top = 16.dp,
+                    bottom = 16.dp,
+                    end = if (recipe.isActive) 4.dp else 16.dp,
+                ),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
@@ -511,7 +526,80 @@ fun RecipeHistoryCard(
                     color = badgeContentColor.copy(alpha = 0.8f),
                 )
             }
+            if (recipe.isActive) {
+                Box(modifier = Modifier.padding(start = 4.dp)) {
+                    IconButton(onClick = { showMenu = true }) {
+                        Icon(Icons.Default.MoreVert, contentDescription = "Опции")
+                    }
+
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false },
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Редактировать") },
+                            onClick = {
+                                showMenu = false
+                                viewModel.openEditSheet(recipe)
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Default.Edit, contentDescription = null)
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Отозвать", color = MaterialTheme.colorScheme.error) },
+                            onClick = {
+                                showMenu = false
+                                showRevokeConfirm = true
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Cancel,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error,
+                                )
+                            },
+                        )
+                    }
+                }
+            }
         }
+    }
+    if (showRevokeConfirm) {
+        AlertDialog(
+            onDismissRequest = { if (!isRevoking) showRevokeConfirm = false },
+            title = { Text("Отозвать рецепт?", fontWeight = FontWeight.Bold) },
+            text = {
+                Text(
+                    "Вы уверены, что хотите деактивировать этот рецепт? После отзыва пациент не сможет получить по нему препараты в аптеке.",
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.revokeRecipe(recipe.id) {
+                            showRevokeConfirm = false
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                ) {
+                    if (isRevoking) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = MaterialTheme.colorScheme.onError,
+                            strokeWidth = 2.dp,
+                        )
+                    } else {
+                        Text("Отозвать", color = MaterialTheme.colorScheme.onError)
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRevokeConfirm = false }, enabled = !isRevoking) {
+                    Text("Отмена")
+                }
+            },
+        )
     }
 }
 
@@ -778,11 +866,63 @@ fun RecipeDetailsDialog(
 
     val qrUrl = "https://e-recepta.vercel.app/recipes/${recipe.id}/qr"
 
+    // Стейты для меню и окна подтверждения
+    var showMenu by remember { mutableStateOf(false) }
+    var showRevokeConfirm by remember { mutableStateOf(false) }
+
+    // Получаем состояние загрузки (если ты добавил его во ViewModel на прошлом шаге)
+    val isRevoking by viewModel.isRevoking.collectAsStateWithLifecycle(initialValue = false)
+
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) } },
-        title = { Text(stringResource(R.string.recipe_details), fontWeight = FontWeight.Bold) },
+        title = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(stringResource(R.string.recipe_details), fontWeight = FontWeight.Bold)
+
+                // Показываем троеточие только для активных рецептов
+                if (recipe.isActive) {
+                    Box {
+                        IconButton(onClick = { showMenu = true }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "Опции")
+                        }
+
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false },
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Редактировать") },
+                                onClick = {
+                                    showMenu = false
+                                    onDismiss() // Закрываем диалог деталей
+                                    viewModel.openEditSheet(recipe) // Открываем создание/редактирование
+                                },
+                                leadingIcon = {
+                                    Icon(Icons.Default.Edit, contentDescription = null)
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Отозвать", color = MaterialTheme.colorScheme.error) },
+                                onClick = {
+                                    showMenu = false
+                                    showRevokeConfirm = true // Показываем окно подтверждения
+                                },
+                                leadingIcon = {
+                                    Icon(Icons.Default.Cancel, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+        },
         text = {
+            // ВЕСЬ ТВОЙ КОД ОСТАЛСЯ БЕЗ ИЗМЕНЕНИЙ НИЖЕ (QR-код, статус, лекарства)
             Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     SubcomposeAsyncImage(
@@ -874,6 +1014,48 @@ fun RecipeDetailsDialog(
             }
         },
     )
+
+    // МОДАЛЬНОЕ ОКНО ПОДТВЕРЖДЕНИЯ ОТЗЫВА
+    if (showRevokeConfirm) {
+        AlertDialog(
+            onDismissRequest = { if (!isRevoking) showRevokeConfirm = false },
+            title = { Text("Отозвать рецепт?", fontWeight = FontWeight.Bold) },
+            text = {
+                Text(
+                    "Вы уверены, что хотите деактивировать этот рецепт? После отзыва пациент не сможет получить по нему препараты в аптеке.",
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.revokeRecipe(recipe.id) {
+                            showRevokeConfirm = false
+                            onDismiss() // Закрываем основное окно деталей рецепта после успеха
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                ) {
+                    if (isRevoking) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = MaterialTheme.colorScheme.onError,
+                            strokeWidth = 2.dp,
+                        )
+                    } else {
+                        Text("Отозвать", color = MaterialTheme.colorScheme.onError)
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showRevokeConfirm = false },
+                    enabled = !isRevoking,
+                ) {
+                    Text("Отмена")
+                }
+            },
+        )
+    }
 }
 
 @Composable

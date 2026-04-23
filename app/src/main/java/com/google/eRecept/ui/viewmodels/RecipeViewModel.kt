@@ -1,15 +1,13 @@
 package com.google.eRecept.ui.viewmodels
 
-import android.graphics.Bitmap
-import android.graphics.Color
-import androidx.core.graphics.createBitmap
-import androidx.core.graphics.set
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.eRecept.data.Medication
 import com.google.eRecept.data.MedicationItem
 import com.google.eRecept.data.Recipe
 import com.google.eRecept.data.mockRepository.RecipeRepository
+import com.google.eRecept.data.network.dto.RecipeItemDto
+import com.google.eRecept.data.network.dto.UpdateRecipeRequest
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -48,6 +46,20 @@ class RecipeViewModel
         private val _draftMedications = MutableStateFlow(listOf(MedicationItem()))
         val draftMedications = _draftMedications.asStateFlow()
 
+        // --- НОВЫЕ СТЕЙТЫ ДЛЯ РЕДАКТИРОВАНИЯ И ОТЗЫВА ---
+        private val _isRevoking = MutableStateFlow(false)
+        val isRevoking = _isRevoking.asStateFlow()
+
+        private val _editingRecipeId = MutableStateFlow<String?>(null)
+        val editingRecipeId = _editingRecipeId.asStateFlow()
+
+        private val _isCreating = MutableStateFlow(false)
+        val isCreating = _isCreating.asStateFlow()
+
+        init {
+            loadRecipes()
+        }
+
         fun openCreateSheet(iin: String? = null) {
             if (iin != null) {
                 _draftPatientIin.value = iin
@@ -55,8 +67,24 @@ class RecipeViewModel
             _showCreateSheet.value = true
         }
 
+        // --- НОВЫЙ МЕТОД ДЛЯ ОТКРЫТИЯ РЕДАКТИРОВАНИЯ ---
+        fun openEditSheet(recipe: Recipe) {
+            _editingRecipeId.value = recipe.id
+            _draftPatientIin.value = recipe.patient_iin
+            _draftNotes.value = recipe.notes
+            _draftMedications.value = recipe.medications.ifEmpty { listOf(MedicationItem()) }
+
+            // Вычисляем оставшиеся дни для сегментированного контрола
+            val diffDays = ((recipe.expire_date - recipe.date) / (1000 * 60 * 60 * 24)).toInt().coerceAtLeast(1)
+            val closestOption = listOf(10, 15, 30, 60).minByOrNull { Math.abs(it - diffDays) } ?: 30
+            _draftExpireDays.value = closestOption
+
+            _showCreateSheet.value = true
+        }
+
         fun closeCreateSheet() {
             _showCreateSheet.value = false
+            _editingRecipeId.value = null // Сбрасываем ID при закрытии
         }
 
         fun updateDraftIin(iin: String) {
@@ -80,10 +108,7 @@ class RecipeViewModel
             _draftNotes.value = ""
             _draftMedications.value = listOf(MedicationItem())
             _draftExpireDays.value = 10
-        }
-
-        init {
-            loadRecipes()
+            _editingRecipeId.value = null // Сбрасываем ID при очистке
         }
 
         private fun loadRecipes() {
@@ -115,10 +140,23 @@ class RecipeViewModel
             }
         }
 
-        private val _isCreating = MutableStateFlow(false)
-        val isCreating = _isCreating.asStateFlow()
+        // --- НОВЫЙ МЕТОД ДЛЯ ОТЗЫВА ---
+        fun revokeRecipe(
+            recipeId: String,
+            onSuccess: () -> Unit,
+        ) {
+            viewModelScope.launch {
+                _isRevoking.value = true
+                val success = repository.revokeRecipe(recipeId)
+                _isRevoking.value = false
+                if (success) {
+                    onSuccess()
+                }
+            }
+        }
 
-        fun createRecipe(patientName: String) {
+        // --- ОБНОВЛЕННЫЙ МЕТОД СОХРАНЕНИЯ (Создание + Обновление) ---
+        fun saveRecipe(patientName: String) {
             if (_isCreating.value) return
 
             val doctorId = repository.currentUserId ?: return
@@ -126,30 +164,56 @@ class RecipeViewModel
             val meds = _draftMedications.value.filter { it.name.isNotBlank() }
             val notes = _draftNotes.value
             val expireDays = _draftExpireDays.value
+            val editId = _editingRecipeId.value
 
             viewModelScope.launch {
                 _isCreating.value = true
                 try {
-                    val doctorProfile = repository.getDoctorProfile(doctorId)
-                    val currentTime = System.currentTimeMillis()
-                    val expireTime = currentTime + (expireDays * 24L * 60L * 60L * 1000L)
+                    if (editId != null) {
+                        // Обновление существующего рецепта
+                        val itemsDto =
+                            meds.map {
+                                RecipeItemDto(
+                                    medicationId = it.id.ifBlank { null },
+                                    medicationName = it.name,
+                                    dosageValue = it.dosageValue,
+                                    dosageUnit = it.dosageUnit,
+                                    frequency = it.frequency,
+                                    durationValue = it.durationValue,
+                                    durationUnit = it.durationUnit,
+                                    note = it.note,
+                                )
+                            }
+                        val request =
+                            UpdateRecipeRequest(
+                                notes = notes,
+                                expireDays = expireDays,
+                                items = itemsDto,
+                            )
+                        repository.updateRecipe(editId, request)
+                    } else {
+                        // Создание нового рецепта
+                        val doctorProfile = repository.getDoctorProfile(doctorId)
+                        val currentTime = System.currentTimeMillis()
+                        val expireTime = currentTime + (expireDays * 24L * 60L * 60L * 1000L)
 
-                    val recipe =
-                        Recipe(
-                            doctor_id = doctorId,
-                            doctor_name = doctorProfile?.name ?: "Врач",
-                            patient_iin = iin,
-                            patient_name = patientName,
-                            date = currentTime,
-                            expire_date = expireTime,
-                            medications = meds,
-                            notes = notes,
-                        )
-                    repository.createRecipe(recipe)
+                        val recipe =
+                            Recipe(
+                                doctor_id = doctorId,
+                                doctor_name = doctorProfile?.name ?: "Врач",
+                                patient_iin = iin,
+                                patient_name = patientName,
+                                date = currentTime,
+                                expire_date = expireTime,
+                                medications = meds,
+                                notes = notes,
+                            )
+                        repository.createRecipe(recipe)
+                    }
                     clearDraft()
                     closeCreateSheet()
                 } catch (e: Exception) {
-                    //
+                    e.printStackTrace()
                 } finally {
                     _isCreating.value = false
                 }

@@ -88,7 +88,13 @@ fun MainScreen(
                 }
 
                 2 -> {
-                    SearchScreen(viewModel = searchViewModel)
+                    SearchScreen(
+                        viewModel = searchViewModel,
+                        recipeViewModel = recipeViewModel,
+                        onEditRecipe = {
+                            selectedTab = 1
+                        },
+                    )
                 }
 
                 3 -> {

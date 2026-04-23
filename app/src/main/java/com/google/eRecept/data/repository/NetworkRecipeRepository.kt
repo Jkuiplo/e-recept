@@ -9,6 +9,7 @@ import com.google.eRecept.data.mockRepository.RecipeRepository
 import com.google.eRecept.data.network.api.RecipeApi
 import com.google.eRecept.data.network.dto.CreateRecipeRequest
 import com.google.eRecept.data.network.dto.RecipeItemDto
+import com.google.eRecept.data.network.dto.UpdateRecipeRequest
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -158,4 +159,40 @@ class NetworkRecipeRepository
                 System.currentTimeMillis() + (10L * 24 * 60 * 60 * 1000)
             }
         }
+
+        override suspend fun revokeRecipe(recipeId: String): Boolean =
+            try {
+                val response = api.revokeRecipe(recipeId)
+                if (response.isSuccessful) {
+                    println("E-RECEPT: Успешно отозвано!")
+                    currentUserId?.let { loadRecipesFromNetwork(it) } // Обновляем список
+                    true
+                } else {
+                    // Если сервер вернул 4xx или 5xx ошибку
+                    println("E-RECEPT ОШИБКА: Код ${response.code()}, Тело: ${response.errorBody()?.string()}")
+                    false
+                }
+            } catch (e: Exception) {
+                // Если упал интернет или крашнулся парсинг Retrofit
+                println("E-RECEPT КРАШ: ${e.message}")
+                e.printStackTrace()
+                false
+            }
+
+        override suspend fun updateRecipe(
+            recipeId: String,
+            request: UpdateRecipeRequest,
+        ): Boolean =
+            try {
+                val response = api.updateRecipe(recipeId, request)
+                if (response.isSuccessful) {
+                    currentUserId?.let { loadRecipesFromNetwork(it) } // Обновляем список
+                    true
+                } else {
+                    false
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                false
+            }
     }
