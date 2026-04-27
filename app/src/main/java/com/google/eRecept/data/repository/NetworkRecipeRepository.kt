@@ -54,6 +54,7 @@ class NetworkRecipeRepository
                                 date = parseIsoDate(dto.createdAt),
                                 expire_date = parseIsoDate(dto.expireDate),
                                 notes = dto.notes,
+                                status = dto.status ?: "Активен", // Маппим статус с бекенда
                                 qr_data = dto.qrData ?: "",
                                 medications =
                                     dto.items.map { itemDto ->
@@ -155,7 +156,6 @@ class NetworkRecipeRepository
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                // В случае любой ошибки парсинга, чтобы рецепт не "сгорал" мгновенно, даем ему 10 дней
                 System.currentTimeMillis() + (10L * 24 * 60 * 60 * 1000)
             }
         }
@@ -165,15 +165,33 @@ class NetworkRecipeRepository
                 val response = api.revokeRecipe(recipeId)
                 if (response.isSuccessful) {
                     println("E-RECEPT: Успешно отозвано!")
-                    currentUserId?.let { loadRecipesFromNetwork(it) } // Обновляем список
+
+                    val updatedDto = response.body()
+                    val currentList = _recipes.value.toMutableList()
+                    val index = currentList.indexOfFirst { it.id == recipeId }
+
+                    if (index != -1) {
+                        val oldRecipe = currentList[index]
+                        val newStatus = updatedDto?.status ?: "Отозван" // Резервный статус, если бекенд вернул null
+
+                        // Реактивно обновляем конкретный элемент
+                        val revokedRecipe =
+                            oldRecipe.copy(
+                                status = newStatus,
+                                expire_date = if (newStatus != "Активен") System.currentTimeMillis() - 1000 else oldRecipe.expire_date,
+                            )
+                        currentList[index] = revokedRecipe
+                        _recipes.value = currentList
+                    } else {
+                        // Если элемента локально нет (маловероятно), просто дергаем сеть
+                        currentUserId?.let { loadRecipesFromNetwork(it) }
+                    }
                     true
                 } else {
-                    // Если сервер вернул 4xx или 5xx ошибку
                     println("E-RECEPT ОШИБКА: Код ${response.code()}, Тело: ${response.errorBody()?.string()}")
                     false
                 }
             } catch (e: Exception) {
-                // Если упал интернет или крашнулся парсинг Retrofit
                 println("E-RECEPT КРАШ: ${e.message}")
                 e.printStackTrace()
                 false
@@ -186,7 +204,7 @@ class NetworkRecipeRepository
             try {
                 val response = api.updateRecipe(recipeId, request)
                 if (response.isSuccessful) {
-                    currentUserId?.let { loadRecipesFromNetwork(it) } // Обновляем список
+                    currentUserId?.let { loadRecipesFromNetwork(it) }
                     true
                 } else {
                     false

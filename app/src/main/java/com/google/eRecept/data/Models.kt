@@ -31,6 +31,7 @@ data class Appointment(
 
 data class Recipe(
     val id: String = "",
+    val status: String = "Активен",
     val doctor_id: String = "",
     val doctor_name: String = "",
     val patient_iin: String = "",

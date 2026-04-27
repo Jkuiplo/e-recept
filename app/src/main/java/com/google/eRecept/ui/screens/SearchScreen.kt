@@ -33,7 +33,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
 import com.google.eRecept.R
 import com.google.eRecept.data.Medication
@@ -67,10 +66,30 @@ fun SearchScreen(
 
     val patientResults by viewModel.patientResults.collectAsStateWithLifecycle()
     val medicationResults by viewModel.medicationResults.collectAsStateWithLifecycle()
-    val allRecipes: List<Recipe> by viewModel.allRecipes.collectAsStateWithLifecycle()
-    val filteredRecipes by viewModel.filteredRecipes.collectAsStateWithLifecycle()
     val isSearching by viewModel.isSearching.collectAsStateWithLifecycle()
-    val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
+
+    // Берем рецепты напрямую из RecipeViewModel для 100% реактивности
+    val allRecipes by recipeViewModel.recipes.collectAsStateWithLifecycle()
+
+    // Локальная фильтрация рецептов без задержек
+    val filteredRecipes =
+        remember(allRecipes, searchQuery) {
+            if (searchQuery.isBlank()) {
+                allRecipes
+            } else {
+                val lowerQuery = searchQuery.lowercase()
+                allRecipes.filter { recipe ->
+                    recipe.id.lowercase().contains(lowerQuery) ||
+                        recipe.patient_name.lowercase().contains(lowerQuery) ||
+                        recipe.patient_iin.contains(searchQuery)
+                }
+            }
+        }
+
+    // Комбинируем состояние загрузки из обоих ViewModel
+    val isSearchRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
+    val isRecipeRefreshing by recipeViewModel.isRefreshing.collectAsStateWithLifecycle()
+    val isRefreshing = isSearchRefreshing || isRecipeRefreshing
 
     var selectedPatient by remember { mutableStateOf<Patient?>(null) }
     var selectedMedication by remember { mutableStateOf<Medication?>(null) }
@@ -174,11 +193,14 @@ fun SearchScreen(
             ) { page ->
                 PullToRefreshBox(
                     isRefreshing = isRefreshing,
-                    onRefresh = { viewModel.refresh() },
+                    onRefresh = {
+                        viewModel.refresh()
+                        recipeViewModel.refresh() // Обновляем оба стейта для надежности
+                    },
                     modifier = Modifier.fillMaxSize(),
                 ) {
                     when (page) {
-                        0 -> { // Пациенты
+                        0 -> {
                             if (isSearching && patientResults.isEmpty()) {
                                 SkeletonList()
                             } else if (patientResults.isEmpty()) {
@@ -202,7 +224,7 @@ fun SearchScreen(
                             }
                         }
 
-                        1 -> { // Препараты
+                        1 -> {
                             if (isSearching && medicationResults.isEmpty()) {
                                 SkeletonList()
                             } else if (medicationResults.isEmpty()) {
@@ -226,7 +248,7 @@ fun SearchScreen(
                             }
                         }
 
-                        2 -> { // История рецептов
+                        2 -> {
                             if (isSearching && filteredRecipes.isEmpty()) {
                                 SkeletonList()
                             } else if (filteredRecipes.isEmpty()) {
@@ -400,6 +422,15 @@ fun SearchRecipeHistoryCard(
     var showRevokeConfirm by remember { mutableStateOf(false) }
     val isRevoking by viewModel.isRevoking.collectAsStateWithLifecycle(initialValue = false)
 
+    val isExpired = recipe.expire_date < System.currentTimeMillis()
+    val displayStatus =
+        when {
+            recipe.status == "Активен" && isExpired -> stringResource(R.string.status_expired)
+            recipe.status == "Активен" -> stringResource(R.string.status_active)
+            else -> recipe.status
+        }
+    val isGreenBadge = recipe.status == "Активен" && !isExpired
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         onClick = onClick,
@@ -414,7 +445,7 @@ fun SearchRecipeHistoryCard(
                         start = 16.dp,
                         top = 16.dp,
                         bottom = 16.dp,
-                        end = if (recipe.isActive) 4.dp else 16.dp,
+                        end = if (isGreenBadge) 4.dp else 16.dp,
                     ),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -440,9 +471,8 @@ fun SearchRecipeHistoryCard(
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            val isActive = recipe.isActive
-            val badgeContainerColor = if (isActive) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer
-            val badgeContentColor = if (isActive) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onErrorContainer
+            val badgeContainerColor = if (isGreenBadge) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer
+            val badgeContentColor = if (isGreenBadge) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onErrorContainer
 
             Column(horizontalAlignment = Alignment.End) {
                 Box(
@@ -453,7 +483,7 @@ fun SearchRecipeHistoryCard(
                             .padding(horizontal = 8.dp, vertical = 6.dp),
                 ) {
                     Text(
-                        text = if (isActive) stringResource(R.string.status_active) else stringResource(R.string.status_expired),
+                        text = displayStatus,
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                         color = badgeContentColor,
                     )
@@ -466,7 +496,7 @@ fun SearchRecipeHistoryCard(
                 )
             }
 
-            if (recipe.isActive) {
+            if (isGreenBadge) {
                 Box(modifier = Modifier.padding(start = 4.dp)) {
                     IconButton(onClick = { showMenu = true }) {
                         Icon(Icons.Default.MoreVert, contentDescription = "Опции")
@@ -761,6 +791,15 @@ fun SearchRecipeDetailsDialog(
     var showRevokeConfirm by remember { mutableStateOf(false) }
     val isRevoking by viewModel.isRevoking.collectAsStateWithLifecycle(initialValue = false)
 
+    val isExpired = recipe.expire_date < System.currentTimeMillis()
+    val displayStatusCaps =
+        when {
+            recipe.status == "Активен" && isExpired -> stringResource(R.string.status_expired_caps)
+            recipe.status == "Активен" -> stringResource(R.string.status_active_caps)
+            else -> recipe.status.uppercase()
+        }
+    val isGreenBadge = recipe.status == "Активен" && !isExpired
+
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) } },
@@ -772,7 +811,7 @@ fun SearchRecipeDetailsDialog(
             ) {
                 Text(stringResource(R.string.recipe_details), fontWeight = FontWeight.Bold)
 
-                if (recipe.isActive) {
+                if (isGreenBadge) {
                     Box {
                         IconButton(onClick = { showMenu = true }) {
                             Icon(Icons.Default.MoreVert, contentDescription = "Опции")
@@ -832,8 +871,8 @@ fun SearchRecipeDetailsDialog(
                 }
                 Spacer(modifier = Modifier.height(16.dp))
 
-                val badgeColor = if (recipe.isActive) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer
-                val textColor = if (recipe.isActive) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onErrorContainer
+                val badgeColor = if (isGreenBadge) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer
+                val textColor = if (isGreenBadge) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onErrorContainer
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier =
@@ -844,13 +883,7 @@ fun SearchRecipeDetailsDialog(
                                 .padding(horizontal = 8.dp, vertical = 4.dp),
                     ) {
                         Text(
-                            if (recipe.isActive) {
-                                stringResource(
-                                    R.string.status_active_caps,
-                                )
-                            } else {
-                                stringResource(R.string.status_expired_caps)
-                            },
+                            displayStatusCaps,
                             style = MaterialTheme.typography.labelSmall,
                             color = textColor,
                             fontWeight = FontWeight.Bold,

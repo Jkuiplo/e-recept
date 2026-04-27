@@ -255,23 +255,16 @@ fun RecipeScreen(
                                         }
                                     }
 
-                                    // Дополнительные данные пациента (из эндпоинта Appointments или профиля)
-                                    // ... (внутри карточки пациента)
-
-// Дополнительные данные пациента (из эндпоинта Appointments или профиля)
                                     HorizontalDivider(
                                         modifier = Modifier.padding(vertical = 12.dp),
                                         color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.1f),
                                     )
 
                                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                        // Подставляем реальные данные из patientResult
-                                        // Если в твоей data class модели переменные в camelCase (patientGender), поменяй названия
                                         InfoTag(label = "Пол", value = patientResult!!.gender ?: "Не указан")
                                         InfoTag(label = "Дата рожд.", value = patientResult!!.birth_date ?: "Не указана")
                                     }
 
-// Реальное примечание (patient_note)
                                     val note = patientResult!!.allergies ?: ""
                                     if (note.isNotBlank()) {
                                         Spacer(modifier = Modifier.height(8.dp))
@@ -419,7 +412,6 @@ fun RecipeScreen(
                     val isEditing = editingRecipeId != null
 
                     Button(
-                        // ИСПОЛЬЗУЕМ saveRecipe ВМЕСТО createRecipe
                         onClick = { viewModel.saveRecipe(patientResult?.full_name ?: "Неизвестно") },
                         modifier =
                             Modifier
@@ -428,7 +420,7 @@ fun RecipeScreen(
                                 .height(56.dp),
                         shape = RoundedCornerShape(16.dp),
                         enabled =
-                            !isCreating && // Блокировка при загрузке
+                            !isCreating &&
                                 draftPatientIin.length == 12 &&
                                 patientResult != null &&
                                 draftMedications.any { it.id.isNotBlank() },
@@ -464,6 +456,19 @@ fun RecipeHistoryCard(
     var showRevokeConfirm by remember { mutableStateOf(false) }
     val isRevoking by viewModel.isRevoking.collectAsStateWithLifecycle(initialValue = false)
 
+    // Определяем логику статуса
+    val isExpired = recipe.expire_date < System.currentTimeMillis()
+    val displayStatus =
+        when {
+            recipe.status == "Активен" && isExpired -> stringResource(R.string.status_expired)
+            recipe.status == "Активен" -> stringResource(R.string.status_active)
+            else -> recipe.status // Если пришел "Отозван" или "Неактивен" с бэкенда
+        }
+    val isGreenBadge = recipe.status == "Активен" && !isExpired
+
+    val badgeContainerColor = if (isGreenBadge) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer
+    val badgeContentColor = if (isGreenBadge) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onErrorContainer
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         onClick = onClick,
@@ -476,7 +481,7 @@ fun RecipeHistoryCard(
                     start = 16.dp,
                     top = 16.dp,
                     bottom = 16.dp,
-                    end = if (recipe.isActive) 4.dp else 16.dp,
+                    end = if (isGreenBadge) 4.dp else 16.dp,
                 ),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -502,9 +507,6 @@ fun RecipeHistoryCard(
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            val badgeContainerColor = if (recipe.isActive) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer
-            val badgeContentColor = if (recipe.isActive) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onErrorContainer
-
             Column(horizontalAlignment = Alignment.End) {
                 Box(
                     modifier =
@@ -514,7 +516,7 @@ fun RecipeHistoryCard(
                             .padding(horizontal = 8.dp, vertical = 6.dp),
                 ) {
                     Text(
-                        text = if (recipe.isActive) stringResource(R.string.status_active) else stringResource(R.string.status_expired),
+                        text = displayStatus,
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                         color = badgeContentColor,
                     )
@@ -526,7 +528,7 @@ fun RecipeHistoryCard(
                     color = badgeContentColor.copy(alpha = 0.8f),
                 )
             }
-            if (recipe.isActive) {
+            if (isGreenBadge) {
                 Box(modifier = Modifier.padding(start = 4.dp)) {
                     IconButton(onClick = { showMenu = true }) {
                         Icon(Icons.Default.MoreVert, contentDescription = "Опции")
@@ -621,14 +623,12 @@ fun SmartMedicationRow(
     val frequencies = listOf("1×", "2×", "3×", "4×")
     val durationUnits = listOf("дн.", "нед", "мес")
 
-    // Универсальная безопасная фильтрация ввода
     fun safeNumberInput(
         input: String,
         allowDecimal: Boolean,
     ): String {
         var filtered = input.filter { it.isDigit() || (allowDecimal && it == '.') }
         if (allowDecimal) {
-            // Разрешаем только одну точку
             val firstDotIndex = filtered.indexOf('.')
             if (firstDotIndex != -1) {
                 val beforeDot = filtered.substring(0, firstDotIndex)
@@ -642,7 +642,6 @@ fun SmartMedicationRow(
         return filtered
     }
 
-    // Жестко фиксим баг 0.9999999 и красиво форматируем числа
     fun formatNumber(value: Double): String {
         val rounded = (value * 10.0).roundToInt() / 10.0
         return if (rounded % 1.0 == 0.0) rounded.toInt().toString() else rounded.toString()
@@ -678,7 +677,6 @@ fun SmartMedicationRow(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // 1. НАЗВАНИЕ
             Box {
                 val isMedicationNotSelected = medication.name.isNotBlank() && medication.id.isBlank()
 
@@ -730,7 +728,6 @@ fun SmartMedicationRow(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 2. ДОЗИРОВКА (Умный шаг и поддержка дробей)
             Text(
                 stringResource(R.string.dosage),
                 style = MaterialTheme.typography.labelMedium,
@@ -746,11 +743,10 @@ fun SmartMedicationRow(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 StepperInput(
-                    value = medication.dosageValue.ifEmpty { "1" }, // Дефолт 1
+                    value = medication.dosageValue.ifEmpty { "1" },
                     onValueChange = { onMedicationChange(medication.copy(dosageValue = safeNumberInput(it, allowDecimal = true))) },
                     onDecrement = {
                         val current = medication.dosageValue.toDoubleOrNull() ?: 1.0
-                        // Умный шаг: если целое число, отнимаем 1. Если дробное — 0.1
                         val step = if (current % 1.0 == 0.0) 1.0 else 0.1
                         val newValue = if (current - step < 0.1) 0.1 else current - step
                         onMedicationChange(medication.copy(dosageValue = formatNumber(newValue)))
@@ -779,7 +775,6 @@ fun SmartMedicationRow(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 3. КРАТНОСТЬ
             Text(
                 stringResource(R.string.frequency),
                 style = MaterialTheme.typography.labelMedium,
@@ -795,7 +790,6 @@ fun SmartMedicationRow(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 4. ДЛИТЕЛЬНОСТЬ (Только целые числа)
             Text(
                 stringResource(R.string.duration),
                 style = MaterialTheme.typography.labelMedium,
@@ -811,7 +805,7 @@ fun SmartMedicationRow(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 StepperInput(
-                    value = medication.durationValue.ifEmpty { "1" }, // Дефолт 1
+                    value = medication.durationValue.ifEmpty { "1" },
                     onValueChange = { onMedicationChange(medication.copy(durationValue = safeNumberInput(it, allowDecimal = false))) },
                     onDecrement = {
                         val current = medication.durationValue.toIntOrNull() ?: 1
@@ -841,7 +835,6 @@ fun SmartMedicationRow(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 5. УКАЗАНИЯ
             OutlinedTextField(
                 value = medication.note,
                 onValueChange = { onMedicationChange(medication.copy(note = it)) },
@@ -866,12 +859,19 @@ fun RecipeDetailsDialog(
 
     val qrUrl = "https://e-recepta.vercel.app/recipes/${recipe.id}/qr"
 
-    // Стейты для меню и окна подтверждения
     var showMenu by remember { mutableStateOf(false) }
     var showRevokeConfirm by remember { mutableStateOf(false) }
-
-    // Получаем состояние загрузки (если ты добавил его во ViewModel на прошлом шаге)
     val isRevoking by viewModel.isRevoking.collectAsStateWithLifecycle(initialValue = false)
+
+    // Вычисляем статусы
+    val isExpired = recipe.expire_date < System.currentTimeMillis()
+    val displayStatusCaps =
+        when {
+            recipe.status == "Активен" && isExpired -> stringResource(R.string.status_expired_caps)
+            recipe.status == "Активен" -> stringResource(R.string.status_active_caps)
+            else -> recipe.status.uppercase()
+        }
+    val isGreenBadge = recipe.status == "Активен" && !isExpired
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -884,8 +884,7 @@ fun RecipeDetailsDialog(
             ) {
                 Text(stringResource(R.string.recipe_details), fontWeight = FontWeight.Bold)
 
-                // Показываем троеточие только для активных рецептов
-                if (recipe.isActive) {
+                if (isGreenBadge) {
                     Box {
                         IconButton(onClick = { showMenu = true }) {
                             Icon(Icons.Default.MoreVert, contentDescription = "Опции")
@@ -899,8 +898,8 @@ fun RecipeDetailsDialog(
                                 text = { Text("Редактировать") },
                                 onClick = {
                                     showMenu = false
-                                    onDismiss() // Закрываем диалог деталей
-                                    viewModel.openEditSheet(recipe) // Открываем создание/редактирование
+                                    onDismiss()
+                                    viewModel.openEditSheet(recipe)
                                 },
                                 leadingIcon = {
                                     Icon(Icons.Default.Edit, contentDescription = null)
@@ -910,7 +909,7 @@ fun RecipeDetailsDialog(
                                 text = { Text("Отозвать", color = MaterialTheme.colorScheme.error) },
                                 onClick = {
                                     showMenu = false
-                                    showRevokeConfirm = true // Показываем окно подтверждения
+                                    showRevokeConfirm = true
                                 },
                                 leadingIcon = {
                                     Icon(Icons.Default.Cancel, contentDescription = null, tint = MaterialTheme.colorScheme.error)
@@ -922,7 +921,6 @@ fun RecipeDetailsDialog(
             }
         },
         text = {
-            // ВЕСЬ ТВОЙ КОД ОСТАЛСЯ БЕЗ ИЗМЕНЕНИЙ НИЖЕ (QR-код, статус, лекарства)
             Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     SubcomposeAsyncImage(
@@ -945,25 +943,18 @@ fun RecipeDetailsDialog(
                 }
                 Spacer(modifier = Modifier.height(16.dp))
 
-                val badgeColor = if (recipe.isActive) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer
-                val textColor = if (recipe.isActive) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onErrorContainer
+                val badgeColor = if (isGreenBadge) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer
+                val textColor = if (isGreenBadge) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onErrorContainer
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier =
                             Modifier
-                                .clip(
-                                    RoundedCornerShape(8.dp),
-                                ).background(badgeColor)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(badgeColor)
                                 .padding(horizontal = 8.dp, vertical = 4.dp),
                     ) {
                         Text(
-                            if (recipe.isActive) {
-                                stringResource(
-                                    R.string.status_active_caps,
-                                )
-                            } else {
-                                stringResource(R.string.status_expired_caps)
-                            },
+                            displayStatusCaps,
                             style = MaterialTheme.typography.labelSmall,
                             color = textColor,
                             fontWeight = FontWeight.Bold,
@@ -1015,7 +1006,6 @@ fun RecipeDetailsDialog(
         },
     )
 
-    // МОДАЛЬНОЕ ОКНО ПОДТВЕРЖДЕНИЯ ОТЗЫВА
     if (showRevokeConfirm) {
         AlertDialog(
             onDismissRequest = { if (!isRevoking) showRevokeConfirm = false },
@@ -1030,7 +1020,7 @@ fun RecipeDetailsDialog(
                     onClick = {
                         viewModel.revokeRecipe(recipe.id) {
                             showRevokeConfirm = false
-                            onDismiss() // Закрываем основное окно деталей рецепта после успеха
+                            onDismiss()
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
@@ -1104,14 +1094,12 @@ fun CustomSegmentedControl(
         options.forEachIndexed { index, option ->
             val isSelected = option == selectedOption
 
-            // Плавная анимация фона
             val backgroundColor by animateColorAsState(
                 targetValue = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
                 animationSpec = tween(durationMillis = 200, easing = LinearOutSlowInEasing),
                 label = "segmentBackground",
             )
 
-            // Плавная анимация цвета текста
             val textColor by animateColorAsState(
                 targetValue = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                 animationSpec = tween(durationMillis = 200, easing = LinearOutSlowInEasing),
@@ -1126,7 +1114,7 @@ fun CustomSegmentedControl(
                         .background(color = backgroundColor)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
-                            indication = null, // Оставляем null, если не нужен стандартный ripple эффект поверх нашей анимации
+                            indication = null,
                         ) {
                             onOptionSelected(option)
                         }.padding(vertical = 12.dp),
@@ -1140,7 +1128,6 @@ fun CustomSegmentedControl(
                 )
             }
 
-            // Разделитель между опциями
             if (index < options.size - 1) {
                 VerticalDivider(
                     color = MaterialTheme.colorScheme.outlineVariant,

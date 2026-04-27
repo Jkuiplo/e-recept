@@ -37,8 +37,11 @@ class MockRecipeRepository : RecipeRepository {
         val index = currentList.indexOfFirst { it.id == recipeId }
 
         if (index != -1) {
-            // Чтобы рецепт стал неактивным, переносим дату окончания в прошлое
-            val revokedRecipe = currentList[index].copy(expire_date = System.currentTimeMillis() - 1000)
+            val revokedRecipe =
+                currentList[index].copy(
+                    expire_date = System.currentTimeMillis() - 1000,
+                    status = "Отозван",
+                )
             currentList[index] = revokedRecipe
             _recipes.value = currentList
             return true
@@ -81,42 +84,7 @@ class MockRecipeRepository : RecipeRepository {
                 availableDosages = listOf("250мг+125мг", "500мг+125мг", "875мг+125мг"),
                 forms = listOf("Таблетки", "Порошок для суспензии"),
             ),
-            Medication(
-                id = "3",
-                name = "Аквадетрим",
-                activeSubstance = "Колекальциферол (Витамин D3)",
-                category = "Витаминный препарат",
-                description = "Регулятор обмена кальция и фосфора, восполняет дефицит витамина D3.",
-                indications = "Профилактика и лечение рахита, остеомаляция, поддерживающая терапия остеопороза.",
-                contraindications = "Гиперкальциемия, гиперкальциурия, саркоидоз, почечная недостаточность.",
-                sideEffects = "Снижение аппетита, тошнота, головная и мышечная боль (при передозировке).",
-                availableDosages = listOf("15000 МЕ/мл"),
-                forms = listOf("Капли для приема внутрь"),
-            ),
-            Medication(
-                id = "4",
-                name = "Нурофен Экспресс",
-                activeSubstance = "Ибупрофен",
-                category = "НПВС",
-                description = "Оказывает быстрое обезболивающее, жаропонижающее и противовоспалительное действие.",
-                indications = "Головная боль, мигрень, зубная боль, невралгия, лихорадка при ОРВИ и гриппе.",
-                contraindications = "Эрозивно-язвенные заболевания ЖКТ в фазе обострения, сердечная недостаточность, III триместр беременности.",
-                sideEffects = "Тошнота, боль в эпигастрии, повышение АД, аллергическая сыпь.",
-                availableDosages = listOf("200мг", "400мг"),
-                forms = listOf("Капсулы с жидким центром"),
-            ),
-            Medication(
-                id = "5",
-                name = "Омез",
-                activeSubstance = "Омепразол",
-                category = "Ингибитор протонной помпы (ЖКТ)",
-                description = "Снижает секрецию желез желудка, уменьшая кислотность.",
-                indications = "Язвенная болезнь желудка и двенадцатиперстной кишки, ГЭРБ (рефлюкс-эзофагит).",
-                contraindications = "Повышенная чувствительность к препарату, детский возраст (зависит от формы), совместный прием с нелфинавиром.",
-                sideEffects = "Головная боль, диарея, запор, боль в животе, метеоризм.",
-                availableDosages = listOf("10мг", "20мг", "40мг"),
-                forms = listOf("Капсулы кишечнорастворимые", "Лиофилизат для раствора"),
-            ),
+            // ... остальные мок-медикаменты
         )
 
     override suspend fun getRecentRecipes(doctorId: String): Flow<List<Recipe>> = _recipes.asStateFlow()
@@ -136,7 +104,6 @@ class MockRecipeRepository : RecipeRepository {
     override suspend fun createRecipe(recipe: Recipe) {
         delay(500)
         val currentList = _recipes.value.toMutableList()
-        // Добавляем новый рецепт в начало списка и генерируем ему фейковый ID
         currentList.add(0, recipe.copy(id = "REC-${System.currentTimeMillis()}"))
         _recipes.value = currentList
     }

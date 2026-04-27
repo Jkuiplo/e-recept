@@ -35,10 +35,10 @@ interface RecipeApi {
         @Query("date") date: String,
     ): Response<List<AppointmentDto>>
 
-    @PATCH("recipes/{recipe_id}/revoke")
+    @POST("recipes/{recipe_id}/revoke")
     suspend fun revokeRecipe(
         @Path("recipe_id") recipeId: String,
-    ): Response<Unit>
+    ): Response<RecipeResponseDto>
 
     @PATCH("recipes/{recipe_id}")
     suspend fun updateRecipe(

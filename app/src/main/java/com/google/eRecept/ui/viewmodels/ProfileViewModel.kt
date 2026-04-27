@@ -3,11 +3,15 @@ package com.google.eRecept.ui.viewmodels
 import android.app.Application
 import android.content.Context
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
 import com.google.eRecept.data.Doctor
+import com.google.eRecept.utils.getStringFlow
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
 @HiltViewModel
@@ -18,10 +22,18 @@ class ProfileViewModel
     ) : AndroidViewModel(application) {
         private val prefs = application.getSharedPreferences("erecept_prefs", Context.MODE_PRIVATE)
 
+        val doctorName: StateFlow<String> =
+            prefs
+                .getStringFlow("doctor_name", "Неизвестно")
+                .stateIn(
+                    scope = viewModelScope,
+                    started = SharingStarted.WhileSubscribed(5000),
+                    initialValue = prefs.getString("doctor_name", "Неизвестно") ?: "",
+                )
+
         private val _doctorProfile = MutableStateFlow<Doctor?>(null)
         val doctorProfile: StateFlow<Doctor?> = _doctorProfile.asStateFlow()
 
-        // 0 = Светлая, 1 = Темная, 2 = Система (по умолчанию)
         private val _themeMode = MutableStateFlow(prefs.getInt("theme_mode", 2))
         val themeMode: StateFlow<Int> = _themeMode.asStateFlow()
 
@@ -31,10 +43,9 @@ class ProfileViewModel
 
         private fun loadProfile() {
             val id = prefs.getString("doctor_id", "") ?: ""
-            val name = prefs.getString("doctor_name", "Врач") ?: "Врач"
             val specialization = prefs.getString("doctor_specialization", "Специалист") ?: "Специалист"
 
-            _doctorProfile.value = Doctor(id = id, name = name, specialization = specialization)
+            _doctorProfile.value = Doctor(id = id, name = doctorName.value, specialization = specialization)
         }
 
         fun updateTheme(index: Int) {

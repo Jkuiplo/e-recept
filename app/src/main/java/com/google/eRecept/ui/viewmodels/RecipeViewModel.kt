@@ -46,7 +46,6 @@ class RecipeViewModel
         private val _draftMedications = MutableStateFlow(listOf(MedicationItem()))
         val draftMedications = _draftMedications.asStateFlow()
 
-        // --- НОВЫЕ СТЕЙТЫ ДЛЯ РЕДАКТИРОВАНИЯ И ОТЗЫВА ---
         private val _isRevoking = MutableStateFlow(false)
         val isRevoking = _isRevoking.asStateFlow()
 
@@ -67,14 +66,12 @@ class RecipeViewModel
             _showCreateSheet.value = true
         }
 
-        // --- НОВЫЙ МЕТОД ДЛЯ ОТКРЫТИЯ РЕДАКТИРОВАНИЯ ---
         fun openEditSheet(recipe: Recipe) {
             _editingRecipeId.value = recipe.id
             _draftPatientIin.value = recipe.patient_iin
             _draftNotes.value = recipe.notes
             _draftMedications.value = recipe.medications.ifEmpty { listOf(MedicationItem()) }
 
-            // Вычисляем оставшиеся дни для сегментированного контрола
             val diffDays = ((recipe.expire_date - recipe.date) / (1000 * 60 * 60 * 24)).toInt().coerceAtLeast(1)
             val closestOption = listOf(10, 15, 30, 60).minByOrNull { Math.abs(it - diffDays) } ?: 30
             _draftExpireDays.value = closestOption
@@ -84,7 +81,7 @@ class RecipeViewModel
 
         fun closeCreateSheet() {
             _showCreateSheet.value = false
-            _editingRecipeId.value = null // Сбрасываем ID при закрытии
+            _editingRecipeId.value = null
         }
 
         fun updateDraftIin(iin: String) {
@@ -108,7 +105,7 @@ class RecipeViewModel
             _draftNotes.value = ""
             _draftMedications.value = listOf(MedicationItem())
             _draftExpireDays.value = 10
-            _editingRecipeId.value = null // Сбрасываем ID при очистке
+            _editingRecipeId.value = null
         }
 
         private fun loadRecipes() {
@@ -140,7 +137,6 @@ class RecipeViewModel
             }
         }
 
-        // --- НОВЫЙ МЕТОД ДЛЯ ОТЗЫВА ---
         fun revokeRecipe(
             recipeId: String,
             onSuccess: () -> Unit,
@@ -155,7 +151,6 @@ class RecipeViewModel
             }
         }
 
-        // --- ОБНОВЛЕННЫЙ МЕТОД СОХРАНЕНИЯ (Создание + Обновление) ---
         fun saveRecipe(patientName: String) {
             if (_isCreating.value) return
 
@@ -170,7 +165,6 @@ class RecipeViewModel
                 _isCreating.value = true
                 try {
                     if (editId != null) {
-                        // Обновление существующего рецепта
                         val itemsDto =
                             meds.map {
                                 RecipeItemDto(
@@ -192,7 +186,6 @@ class RecipeViewModel
                             )
                         repository.updateRecipe(editId, request)
                     } else {
-                        // Создание нового рецепта
                         val doctorProfile = repository.getDoctorProfile(doctorId)
                         val currentTime = System.currentTimeMillis()
                         val expireTime = currentTime + (expireDays * 24L * 60L * 60L * 1000L)
@@ -207,6 +200,7 @@ class RecipeViewModel
                                 expire_date = expireTime,
                                 medications = meds,
                                 notes = notes,
+                                status = "Активен", // Обязательно указываем статус
                             )
                         repository.createRecipe(recipe)
                     }

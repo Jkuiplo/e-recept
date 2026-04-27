@@ -33,7 +33,9 @@ fun ProfileScreen(
 ) {
     var showLogoutDialog by remember { mutableStateOf(false) }
 
-    val profile by viewModel.doctorProfile.collectAsState()
+    val doctorProfile by viewModel.doctorProfile.collectAsState()
+
+    val doctorName by viewModel.doctorName.collectAsState()
 
     val languages = listOf("Русский", "Қазақша", "English")
 
@@ -51,8 +53,6 @@ fun ProfileScreen(
     val currentThemeIndex by viewModel.themeMode.collectAsState()
     val themes = listOf("Светлая", "Темная", "Система")
 
-    val doctorProfile by viewModel.doctorProfile.collectAsState()
-
     Column(
         modifier =
             Modifier
@@ -63,8 +63,9 @@ fun ProfileScreen(
     ) {
         Spacer(modifier = Modifier.height(48.dp))
 
-        val doctorName = profile?.name ?: stringResource(R.string.doctor_default)
+        // Теперь doctorName доступен, используем его для инициала
         val initial = if (doctorName.isNotBlank()) doctorName.first().uppercase() else "В"
+
         Box(
             modifier =
                 Modifier
@@ -86,7 +87,7 @@ fun ProfileScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = doctorProfile?.name ?: stringResource(R.string.loading),
+            text = doctorName,
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground,
@@ -143,7 +144,6 @@ fun ProfileScreen(
                                     else -> "ru"
                                 }
 
-                            // 3. Меняем язык во всем приложении (Compose сам все перерисует)
                             AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(tag))
                         },
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
