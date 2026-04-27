@@ -71,12 +71,23 @@ class HomeViewModel
 
             val current = start.clone() as Calendar
 
+            val dateTimeFormat = java.text.SimpleDateFormat("dd.MM.yyyy HH:mm", java.util.Locale.getDefault())
+            val now = java.util.Date()
+
             while (current.before(end)) {
                 val slotUiStr = String.format("%02d:%02d", current.get(Calendar.HOUR_OF_DAY), current.get(Calendar.MINUTE))
 
                 val isDuringBreak = current.timeInMillis >= breakStart.timeInMillis && current.timeInMillis < breakEnd.timeInMillis
 
-                if (!isDuringBreak && !bookedTimes.contains(slotUiStr)) {
+                val isPast =
+                    try {
+                        val slotDateTime = dateTimeFormat.parse("$date $slotUiStr")
+                        slotDateTime != null && slotDateTime.before(now)
+                    } catch (e: Exception) {
+                        false
+                    }
+
+                if (!isDuringBreak && !bookedTimes.contains(slotUiStr) && !isPast) {
                     slots.add(slotUiStr)
                 }
 
