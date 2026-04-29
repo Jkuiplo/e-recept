@@ -1,24 +1,24 @@
 package com.google.eRecept
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.google.eRecept.feature.home.HomeScreen
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import com.google.eRecept.core.navigation.BottomNavItem
+import com.google.eRecept.feature.home.HomeScreen
 import com.google.eRecept.feature.home.HomeViewModel
 import com.google.eRecept.feature.profile.ProfileScreen
 import com.google.eRecept.feature.profile.ProfileViewModel
@@ -37,22 +37,20 @@ fun MainScreen(
     val recipeViewModel: RecipeViewModel = hiltViewModel()
     val searchViewModel: SearchViewModel = hiltViewModel()
 
+    val bottomNavController = rememberNavController()
+
+    val navBackStackEntry by bottomNavController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+
     val navItems = BottomNavItem.entries.toTypedArray()
-
-    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
-
-    BackHandler(enabled = selectedTab != 0) {
-        selectedTab = 0
-    }
 
     Scaffold(
         bottomBar = {
-            NavigationBar(
-                containerColor = MaterialTheme.colorScheme.surface,
-                contentColor = MaterialTheme.colorScheme.onSurface,
-            ) {
-                navItems.forEachIndexed { index, item ->
-                    val isSelected = selectedTab == index
+            NavigationBar {
+                navItems.forEach { item ->
+                    val itemRoute = item.name.lowercase()
+                    val isSelected = currentRoute == itemRoute
+
                     NavigationBarItem(
                         icon = {
                             Icon(
@@ -62,45 +60,57 @@ fun MainScreen(
                         },
                         label = { Text(item.title) },
                         selected = isSelected,
-                        onClick = { selectedTab = index },
+                        onClick = {
+                            bottomNavController.navigate(itemRoute) {
+                                popUpTo(bottomNavController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
                     )
                 }
             }
         },
     ) { paddingValues ->
         Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
         ) {
-            when (selectedTab) {
-                0 -> {
+            NavHost(
+                navController = bottomNavController,
+                startDestination = BottomNavItem.Schedule.route,
+            ) {
+                composable(BottomNavItem.Schedule.route) {
                     HomeScreen(
                         viewModel = homeViewModel,
-                        onProfileClick = { selectedTab = 3 },
+                        onProfileClick = {
+                            bottomNavController.navigate(BottomNavItem.Profile.route)
+                        },
                         onCreateRecipeClick = { iin ->
                             recipeViewModel.openCreateSheet(iin)
-                            selectedTab = 1
+                            bottomNavController.navigate(BottomNavItem.Recipes.route)
                         },
                     )
                 }
 
-                1 -> {
+                composable(BottomNavItem.Recipes.route) {
                     RecipeScreen(viewModel = recipeViewModel, homeViewModel = homeViewModel)
                 }
 
-                2 -> {
+                composable(BottomNavItem.Search.route) {
                     SearchScreen(
                         viewModel = searchViewModel,
                         recipeViewModel = recipeViewModel,
                         onEditRecipe = {
-                            selectedTab = 1
+                            bottomNavController.navigate(BottomNavItem.Recipes.route)
                         },
                     )
                 }
 
-                3 -> {
+                composable(BottomNavItem.Profile.route) {
                     ProfileScreen(
                         onLogout = onLogout,
                         onChangePasswordClick = onChangePasswordClick,
