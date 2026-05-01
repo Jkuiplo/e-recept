@@ -122,7 +122,8 @@ fun HomeScreen(
                             )
                         }
                     },
-                    divider = {}
+                    divider = {},
+                    modifier = Modifier.padding(bottom = 8.dp)
                 ) {
                     days.forEachIndexed { index, title ->
                         Tab(
@@ -285,6 +286,7 @@ fun AppointmentCard(
                     Modifier
                         .clip(RoundedCornerShape(8.dp))
                         .background(containerColor)
+                        .clickable(onClick = onClick)
                         .padding(horizontal = 8.dp, vertical = 6.dp),
             ) {
                 Text(

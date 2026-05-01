@@ -267,7 +267,7 @@ fun EditRecipeScreen(
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
-                enabled = !isCreating && draftMedications.any { it.id.isNotBlank() },
+                enabled = !isCreating && draftMedications.any { it.name.isNotBlank() },
             ) {
                 if (isCreating) {
                     CircularProgressIndicator(

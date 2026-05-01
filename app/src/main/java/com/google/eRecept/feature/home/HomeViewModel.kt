@@ -166,7 +166,7 @@ class HomeViewModel
             newStatus: String,
         ) {
             viewModelScope.launch {
-                val isCompleted = newStatus == "Завершен" || newStatus == "Не явился"
+                val isCompleted = newStatus == "Состоялась" || newStatus == "Не явился"
                 repository.updateAppointmentStatus(appointment.id, newStatus, isCompleted)
             }
         }

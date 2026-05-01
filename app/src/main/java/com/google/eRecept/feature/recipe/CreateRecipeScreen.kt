@@ -285,7 +285,7 @@ fun CreateRecipeScreen(
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
-                enabled = !isCreating && draftPatientIin.length == 12 && patientResult != null && draftMedications.any { it.id.isNotBlank() },
+                enabled = !isCreating && draftPatientIin.length == 12 && patientResult != null && draftMedications.any { it.name.isNotBlank() },
             ) {
                 if (isCreating) {
                     CircularProgressIndicator(
@@ -317,7 +317,7 @@ fun SmartMedicationRow(
 
     val dosageUnits = listOf("мг", "мл", "таб")
     val frequencies = listOf("1×", "2×", "3×", "4×")
-    val durationUnits = listOf("дн.", "нед", "мес")
+    val durationUnits = listOf("дней", "нед", "мес")
 
     fun safeNumberInput(
         input: String,
@@ -384,12 +384,6 @@ fun SmartMedicationRow(
                         nameExpanded = true
                     },
                     label = { Text(stringResource(R.string.medication_name)) },
-                    isError = isMedicationNotSelected,
-                    supportingText = {
-                        if (isMedicationNotSelected) {
-                            Text(stringResource(R.string.medication_required))
-                        }
-                    },
                     modifier = Modifier.fillMaxWidth().onGloballyPositioned { fieldSize = it.size.toSize() },
                     shape = RoundedCornerShape(12.dp),
                     singleLine = true,
@@ -439,7 +433,7 @@ fun SmartMedicationRow(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 StepperInput(
-                    value = medication.dosageValue.ifEmpty { "1" },
+                    value = medication.dosageValue,
                     onValueChange = { onMedicationChange(medication.copy(dosageValue = safeNumberInput(it, allowDecimal = true))) },
                     onDecrement = {
                         val current = medication.dosageValue.toDoubleOrNull() ?: 1.0
@@ -501,7 +495,7 @@ fun SmartMedicationRow(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 StepperInput(
-                    value = medication.durationValue.ifEmpty { "1" },
+                    value = medication.durationValue,
                     onValueChange = { onMedicationChange(medication.copy(durationValue = safeNumberInput(it, allowDecimal = false))) },
                     onDecrement = {
                         val current = medication.durationValue.toIntOrNull() ?: 1

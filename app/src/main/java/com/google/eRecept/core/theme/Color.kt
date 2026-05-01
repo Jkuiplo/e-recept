@@ -14,13 +14,13 @@ val Pink40 = Color(0xFF7D5260)
 val MainBg = Color(0xFFF8FAFC)
 
 // Светло-голубой для выделения карточек или областей
-val SecBg = Color(0xFFF1F5F9)
+val SecBg = Color(0xFFFFFFFF)
 
 // Основной акцентный — глубокий «медицинский» синий (доверие)
-val MainAc = Color(0xFF0284C7)
+val MainAc = Color(0xFF0EA5E9)
 
 // Вторичный акцентный — мягкая бирюза или светлый небесный
-val SecAc = Color(0xFFE0F2FE)
+val SecAc = Color(0xFFF0F9FF)
 
 // Текст: почти черный для заголовков
 val MainTx = Color(0xFF0F172A)
@@ -34,3 +34,6 @@ val FavTx = Color(0xFF1E293B)
 // Заменяем Purple на изумрудно-зеленый (ассоциация со здоровьем/аптекой)
 // Либо оставляем фиолетовый, но делаем его более "технологичным"
 val PrimaryPurple = Color(0xFF10B981)
+
+val SurfaceVariantLight = Color(0xFFF1F5F9)
+val OnSurfaceVariantLight = Color(0xFF475569)
