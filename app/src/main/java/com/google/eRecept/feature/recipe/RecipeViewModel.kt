@@ -13,6 +13,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -30,6 +31,9 @@ class RecipeViewModel
 
         private val _isRefreshing = MutableStateFlow(false)
         val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
+        private val _isLoading = MutableStateFlow(false)
+        val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
         private val _showCreateSheet = MutableStateFlow(false)
         val showCreateSheet = _showCreateSheet.asStateFlow()
@@ -111,8 +115,10 @@ class RecipeViewModel
         private fun loadRecipes() {
             repository.currentUserId?.let { doctorId ->
                 viewModelScope.launch {
+                    _isLoading.value = true
                     repository.getRecentRecipes(doctorId).collect {
                         _recipes.value = it
+                        _isLoading.value = false
                     }
                 }
             }
@@ -121,9 +127,16 @@ class RecipeViewModel
         fun refresh() {
             viewModelScope.launch {
                 _isRefreshing.value = true
-                delay(500)
-                loadRecipes()
-                _isRefreshing.value = false
+                try {
+                    repository.currentUserId?.let { doctorId ->
+                        val list = repository.getRecentRecipes(doctorId).first()
+                        _recipes.value = list
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                } finally {
+                    _isRefreshing.value = false
+                }
             }
         }
 

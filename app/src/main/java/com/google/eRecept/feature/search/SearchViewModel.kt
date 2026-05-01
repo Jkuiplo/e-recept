@@ -11,6 +11,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -40,6 +41,9 @@ class SearchViewModel
         private val _isRefreshing = MutableStateFlow(false)
         val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
+        private val _isLoading = MutableStateFlow(false)
+        val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
         private var currentQuery = ""
         private var currentTabIndex = 0
 
@@ -50,7 +54,7 @@ class SearchViewModel
         private fun loadInitialData() {
             val doctorId = repository.currentUserId ?: return
 
-            _isSearching.value = true
+            _isLoading.value = true
 
             viewModelScope.launch {
                 repository.getRecentRecipes(doctorId).collect { list ->
@@ -78,7 +82,7 @@ class SearchViewModel
                 } catch (e: Exception) {
                     e.printStackTrace()
                 } finally {
-                    _isSearching.value = false
+                    _isLoading.value = false
                 }
             }
         }
@@ -138,9 +142,28 @@ class SearchViewModel
         fun refresh() {
             viewModelScope.launch {
                 _isRefreshing.value = true
-                delay(500)
-                loadInitialData()
-                _isRefreshing.value = false
+                try {
+                    val doctorId = repository.currentUserId
+                    if (doctorId != null) {
+                        // Force reload data
+                        val list = repository.getRecentRecipes(doctorId).first()
+                        _allRecipes.value = list
+                        if (currentTabIndex == 2 && currentQuery.isBlank()) {
+                            _filteredRecipes.value = list
+                        }
+                        updateDoctorPatients(list.map { Patient(it.patient_iin, it.patient_name, "", "", "") })
+
+                        val patientsFromApps = repository.getDoctorPatients(doctorId)
+                        updateDoctorPatients(patientsFromApps)
+
+                        val meds = repository.getAllMedications(limit = 200, offset = 0)
+                        _allMedications.value = meds
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                } finally {
+                    _isRefreshing.value = false
+                }
             }
         }
     }

@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.eRecept.R
+import com.google.eRecept.core.ui.components.SkeletonList
 import com.google.eRecept.feature.recipe.RecipeViewModel
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -54,6 +55,7 @@ fun SearchScreen(
     val isRecipeRefreshing by recipeViewModel.isRefreshing.collectAsStateWithLifecycle()
     val isRefreshing = isSearchRefreshing || isRecipeRefreshing
     val isSearching by viewModel.isSearching.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
 
     LaunchedEffect(searchQuery, pagerState.currentPage) {
         viewModel.search(searchQuery, pagerState.currentPage)
@@ -146,7 +148,8 @@ fun SearchScreen(
                 state = pagerState,
                 modifier = Modifier.fillMaxSize(),
                 verticalAlignment = Alignment.Top,
-                pageSpacing = 16.dp
+                pageSpacing = 16.dp,
+                userScrollEnabled = !isLoading
             ) { page ->
                 PullToRefreshBox(
                     isRefreshing = isRefreshing,
@@ -156,10 +159,14 @@ fun SearchScreen(
                     },
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    when (page) {
-                        0 -> PatientsTabContent(viewModel, recipeViewModel, searchQuery, isSearching)
-                        1 -> MedicationsTabContent(viewModel, searchQuery, isSearching)
-                        2 -> HistoryTabContent(recipeViewModel, searchQuery, isSearching, onEditRecipe)
+                    if (isLoading) {
+                        SkeletonList()
+                    } else {
+                        when (page) {
+                            0 -> PatientsTabContent(viewModel, recipeViewModel, searchQuery, isSearching)
+                            1 -> MedicationsTabContent(viewModel, searchQuery, isSearching)
+                            2 -> HistoryTabContent(recipeViewModel, searchQuery, isSearching, onEditRecipe)
+                        }
                     }
                 }
             }
@@ -168,35 +175,6 @@ fun SearchScreen(
 }
 
 // --- Shared UI Components ---
-
-@Composable
-fun SkeletonList() {
-    val infiniteTransition = rememberInfiniteTransition(label = "skeleton")
-    val alpha by infiniteTransition.animateFloat(
-        initialValue = 0.3f,
-        targetValue = 0.7f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(800, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "alpha",
-    )
-
-    Column(
-        modifier = Modifier.fillMaxSize().padding(top = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        repeat(6) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(88.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = alpha)),
-            )
-        }
-    }
-}
 
 @Composable
 fun SearchEmptyState(

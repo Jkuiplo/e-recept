@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.eRecept.R
+import com.google.eRecept.core.ui.components.SkeletonList
 import com.google.eRecept.data.model.Appointment
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -56,6 +57,7 @@ fun HomeScreen(
 
     val appointments by viewModel.appointments.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
 
     val days = listOf(
         stringResource(R.string.day_today),
@@ -151,7 +153,8 @@ fun HomeScreen(
                     state = daysPagerState,
                     modifier = Modifier.weight(1f),
                     verticalAlignment = Alignment.Top,
-                    pageSpacing = 16.dp
+                    pageSpacing = 16.dp,
+                    userScrollEnabled = !isLoading
                 ) { page ->
                     val pageDateStr = remember(page) {
                         SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()).format(
@@ -166,7 +169,9 @@ fun HomeScreen(
                         onRefresh = { viewModel.refresh() },
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        if (scheduleForDay.isEmpty()) {
+                        if (isLoading) {
+                            SkeletonList()
+                        } else if (scheduleForDay.isEmpty()) {
                             Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                                 EmptyScheduleState()
                             }
@@ -178,7 +183,10 @@ fun HomeScreen(
                                 items(scheduleForDay, key = { it.id }) { appointment ->
                                     AppointmentCard(
                                         appointment = appointment,
-                                        onClick = { selectedAppointment = appointment }
+                                        onClick = { selectedAppointment = appointment },
+                                        onStatusChange = { newStatus ->
+                                            viewModel.changeAppointmentStatus(appointment, newStatus)
+                                        }
                                     )
                                     Spacer(modifier = Modifier.height(12.dp))
                                 }
@@ -222,7 +230,16 @@ fun HomeScreen(
 fun AppointmentCard(
     appointment: Appointment,
     onClick: () -> Unit,
+    onStatusChange: (String) -> Unit,
 ) {
+    var statusExpanded by remember { mutableStateOf(false) }
+    val statuses = listOf(
+        stringResource(R.string.status_planned),
+        stringResource(R.string.status_completed),
+        stringResource(R.string.status_didnt_came),
+        stringResource(R.string.status_cancel),
+    )
+
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
@@ -282,19 +299,42 @@ fun AppointmentCard(
                     else -> MaterialTheme.colorScheme.onPrimaryContainer
                 }
 
-            Box(
-                modifier =
-                    Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(containerColor)
-                        .clickable(onClick = onClick)
-                        .padding(horizontal = 8.dp, vertical = 6.dp),
-            ) {
-                Text(
-                    text = appointment.status,
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                    color = contentColor,
-                )
+            Box {
+                Box(
+                    modifier =
+                        Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(containerColor)
+                            .clickable { statusExpanded = true }
+                            .padding(horizontal = 8.dp, vertical = 6.dp),
+                ) {
+                    Text(
+                        text = appointment.status,
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = contentColor,
+                    )
+                }
+
+                DropdownMenu(
+                    expanded = statusExpanded,
+                    onDismissRequest = { statusExpanded = false }
+                ) {
+                    statuses.forEach { status ->
+                        DropdownMenuItem(
+                            text = { Text(status) },
+                            onClick = {
+                                onStatusChange(status)
+                                statusExpanded = false
+                            },
+                            leadingIcon = {
+                                RadioButton(
+                                    selected = appointment.status == status,
+                                    onClick = null
+                                )
+                            }
+                        )
+                    }
+                }
             }
         }
     }

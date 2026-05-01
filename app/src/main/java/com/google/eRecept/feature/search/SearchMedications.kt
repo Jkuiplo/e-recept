@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.eRecept.R
+import com.google.eRecept.core.ui.components.SkeletonList
 import com.google.eRecept.data.model.Medication
 
 @Composable

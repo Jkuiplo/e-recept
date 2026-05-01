@@ -3,20 +3,21 @@ package com.google.eRecept
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerDefaults
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
 import com.google.eRecept.core.navigation.BottomNavItem
 import com.google.eRecept.feature.home.HomeScreen
 import com.google.eRecept.feature.home.HomeViewModel
@@ -26,6 +27,7 @@ import com.google.eRecept.feature.recipe.RecipeScreen
 import com.google.eRecept.feature.recipe.RecipeViewModel
 import com.google.eRecept.feature.search.SearchScreen
 import com.google.eRecept.feature.search.SearchViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun MainScreen(
@@ -35,25 +37,20 @@ fun MainScreen(
     onNavigateToCreateRecipe: (String) -> Unit, // <-- Now expects a String (IIN)
     onEditRecipe: () -> Unit,
     profileViewModel: ProfileViewModel,
-
 ) {
     val homeViewModel: HomeViewModel = hiltViewModel()
     val recipeViewModel: RecipeViewModel = hiltViewModel()
     val searchViewModel: SearchViewModel = hiltViewModel()
 
-    val bottomNavController = rememberNavController()
-
-    val navBackStackEntry by bottomNavController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
-
     val navItems = BottomNavItem.entries.toTypedArray()
+    val pagerState = rememberPagerState(pageCount = { navItems.size })
+    val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
         bottomBar = {
             NavigationBar {
-                navItems.forEach { item ->
-                    val itemRoute = item.name.lowercase()
-                    val isSelected = currentRoute == itemRoute
+                navItems.forEachIndexed { index, item ->
+                    val isSelected = pagerState.currentPage == index
 
                     NavigationBarItem(
                         icon = {
@@ -65,12 +62,8 @@ fun MainScreen(
                         label = { Text(item.title) },
                         selected = isSelected,
                         onClick = {
-                            bottomNavController.navigate(itemRoute) {
-                                popUpTo(bottomNavController.graph.findStartDestination().id) {
-                                    saveState = true
-                                }
-                                launchSingleTop = true
-                                restoreState = true
+                            coroutineScope.launch {
+                                pagerState.scrollToPage(index)
                             }
                         },
                     )
@@ -78,20 +71,23 @@ fun MainScreen(
             }
         },
     ) { paddingValues ->
-        Box(
+        HorizontalPager(
+            state = pagerState,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-        ) {
-            NavHost(
-                navController = bottomNavController,
-                startDestination = BottomNavItem.Schedule.route,
-            ) {
-                composable(BottomNavItem.Schedule.route) {
+            beyondViewportPageCount = 1,
+            flingBehavior = PagerDefaults.flingBehavior(
+                state = pagerState,
+                snapPositionalThreshold = 0.15f
+            )
+        ) { page ->
+            when (navItems[page]) {
+                BottomNavItem.Schedule -> {
                     HomeScreen(
                         viewModel = homeViewModel,
                         onProfileClick = {
-                            bottomNavController.navigate(BottomNavItem.Profile.route)
+                            coroutineScope.launch { pagerState.scrollToPage(3) }
                         },
                         onNavigateToCreateAppointment = onNavigateToCreateAppointment,
                         onCreateRecipeClick = { iin ->
@@ -100,14 +96,15 @@ fun MainScreen(
                     )
                 }
 
-                composable(BottomNavItem.Recipes.route) {
+                BottomNavItem.Recipes -> {
                     RecipeScreen(
                         viewModel = recipeViewModel,
                         onNavigateToCreateRecipe = { onNavigateToCreateRecipe("") },
-                        onEditRecipe = onEditRecipe )
+                        onEditRecipe = onEditRecipe
+                    )
                 }
 
-                composable(BottomNavItem.Search.route) {
+                BottomNavItem.Search -> {
                     SearchScreen(
                         viewModel = searchViewModel,
                         recipeViewModel = recipeViewModel,
@@ -115,12 +112,11 @@ fun MainScreen(
                     )
                 }
 
-                composable(BottomNavItem.Profile.route) {
+                BottomNavItem.Profile -> {
                     ProfileScreen(
                         onLogout = onLogout,
                         onChangePasswordClick = onChangePasswordClick,
                         viewModel = profileViewModel,
-
                     )
                 }
             }

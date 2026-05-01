@@ -49,10 +49,10 @@ data class Recipe(
 data class MedicationItem(
     val id: String = "",
     val name: String = "",
-    val dosageValue: String = "",
+    val dosageValue: String = "1",
     val dosageUnit: String = "мг",
     val frequency: String = "2×",
-    val durationValue: String = "",
+    val durationValue: String = "1",
     val durationUnit: String = "дней",
     val note: String = "",
 ) {

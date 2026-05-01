@@ -22,6 +22,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.SubcomposeAsyncImage
 import com.google.eRecept.R
 import com.google.eRecept.core.ui.components.RecipeCard
+import com.google.eRecept.core.ui.components.SkeletonList
 import com.google.eRecept.data.model.Recipe
 import com.google.eRecept.feature.recipe.RecipeViewModel
 import java.text.SimpleDateFormat

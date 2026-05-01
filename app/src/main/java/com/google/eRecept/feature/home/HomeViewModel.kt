@@ -11,6 +11,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -37,6 +38,9 @@ class HomeViewModel
         private val _isRefreshing = MutableStateFlow(false)
         val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
+        private val _isLoading = MutableStateFlow(false)
+        val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
         private val _doctorSchedule = MutableStateFlow<DoctorSchedule?>(null)
         val doctorSchedule: StateFlow<DoctorSchedule?> = _doctorSchedule.asStateFlow()
 
@@ -47,12 +51,16 @@ class HomeViewModel
         private fun loadAppointments() {
             repository.currentUserId?.let { doctorId ->
                 viewModelScope.launch {
+                    _isLoading.value = true
                     _doctorSchedule.value = repository.getDoctorSchedule(doctorId)
 
                     repository
                         .getAppointments(doctorId)
                         .map { list -> list.sortedBy { it.time } }
-                        .collect { _appointments.value = it }
+                        .collect { 
+                            _appointments.value = it 
+                            _isLoading.value = false
+                        }
                 }
             }
         }
@@ -104,9 +112,17 @@ class HomeViewModel
         fun refresh() {
             viewModelScope.launch {
                 _isRefreshing.value = true
-                delay(500)
-                loadAppointments()
-                _isRefreshing.value = false
+                try {
+                    repository.currentUserId?.let { doctorId ->
+                        _doctorSchedule.value = repository.getDoctorSchedule(doctorId)
+                        val list = repository.getAppointments(doctorId).first()
+                        _appointments.value = list.sortedBy { it.time }
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                } finally {
+                    _isRefreshing.value = false
+                }
             }
         }
 
