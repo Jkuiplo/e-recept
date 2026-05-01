@@ -20,25 +20,45 @@ import androidx.core.view.WindowCompat
 
 private val LightColorScheme =
     lightColorScheme(
-        background = Color.White,
-        onBackground = MainTx,
-        surface = Color.White,
-        onSurface = MainTx,
-        primary = PrimaryPurple,
+        background = Color(0xFFF0F4FA),
+        onBackground = Color(0xFF1A2B45) ,
+
+        surface = Color(0xFFFFFFFF),
+        onSurface = Color(0xFF1A2B45) ,
+
+        primary = Color(0xFF1A73E8) ,
         onPrimary = Color.White,
-        secondary = MainAc,
+
+        secondary = Color(0xFF0288D1),
         onSecondary = Color.White,
-        tertiary = SecAc,
-        onTertiary = MainAc,
-        surfaceVariant = SurfaceVariantLight,
-        onSurfaceVariant = OnSurfaceVariantLight,
+
+        tertiary = Color(0xFFE3F2FD),
+        onTertiary = Color(0xFF0D47A1),
+
+        surfaceVariant = Color(0xFFE1E9F5),
+        onSurfaceVariant = Color(0xFF5B7299),
     )
 
 private val DarkColorScheme =
     darkColorScheme(
-        // Пока оставим стандартной, Compose заполнит ее базовыми темными цветами
-    )
+        background = Color(0xFF0D1117),
+        onBackground = Color(0xFFE8EFF9),
 
+        surface = Color(0xFF161D2A),
+        onSurface = Color(0xFFE8EFF9),
+
+        primary = Color(0xFF4A9EFF),
+        onPrimary = Color.White,
+
+        secondary = Color(0xFF29B6F6),
+        onSecondary = Color(0xFF0A1929),
+
+        tertiary = Color(0xFF1E3A5F),
+        onTertiary = Color(0xFF90C4F9),
+
+        surfaceVariant = Color(0xFF1C2B3E),
+        onSurfaceVariant = Color(0xFF8FAEC8),
+    )
 @Composable
 fun EreceptTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
