@@ -21,7 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.os.LocaleListCompat
 import com.google.eRecept.R
-import com.google.eRecept.feature.recipe.CustomSegmentedControl
+import com.google.eRecept.core.ui.components.CustomSegmentedControl
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

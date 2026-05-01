@@ -5,6 +5,8 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -22,9 +24,14 @@ import com.google.eRecept.feature.auth.AuthViewModel
 import com.google.eRecept.feature.auth.ui.ForgotPasswordScreen
 import com.google.eRecept.feature.auth.ui.LoginScreen
 import com.google.eRecept.feature.auth.ui.ResetPasswordScreen
+import com.google.eRecept.feature.home.CreateAppointmentScreen
+import com.google.eRecept.feature.home.HomeViewModel
 import com.google.eRecept.feature.profile.ChangePasswordScreen
 import com.google.eRecept.feature.profile.ChangePasswordViewModel
 import com.google.eRecept.feature.profile.ProfileViewModel
+import com.google.eRecept.feature.recipe.CreateRecipeScreen
+import com.google.eRecept.feature.recipe.EditRecipeScreen
+import com.google.eRecept.feature.recipe.RecipeViewModel
 
 @Composable
 fun RootNavGraph(profileViewModel: ProfileViewModel){
@@ -103,10 +110,64 @@ fun RootNavGraph(profileViewModel: ProfileViewModel){
                             popUpTo("main") { inclusive = true }
                         }
                     },
-                    onChangePasswordClick = {
-                        navController.navigate("change_password")
+                    onChangePasswordClick = { navController.navigate("change_password") },
+                    onNavigateToCreateAppointment = { navController.navigate("create_appointment") },
+                    onNavigateToCreateRecipe = { iin ->
+                        if (iin.isNotBlank()) {
+                            navController.navigate("create_recipe?iin=$iin")
+                        } else {
+                            navController.navigate("create_recipe")
+                        }
                     },
+                    onEditRecipe = { navController.navigate("edit_recipe") },
                     profileViewModel = profileViewModel,
+                )
+            }
+            composable("create_appointment") {
+                val homeViewModel: HomeViewModel = hiltViewModel()
+
+                CreateAppointmentScreen(
+                    viewModel = homeViewModel,
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                route = "create_recipe?iin={iin}",
+                arguments = listOf(navArgument("iin") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                })
+            ) { backStackEntry ->
+                val parentEntry = remember(backStackEntry) { navController.getBackStackEntry("main") }
+                val recipeViewModel: RecipeViewModel = hiltViewModel(parentEntry)
+                val homeViewModel: HomeViewModel = hiltViewModel(parentEntry)
+
+                val passedIin = backStackEntry.arguments?.getString("iin")
+
+                LaunchedEffect(passedIin) {
+                    if (!passedIin.isNullOrBlank()) {
+                        recipeViewModel.updateDraftIin(passedIin)
+                    }
+                }
+
+                CreateRecipeScreen(
+                    viewModel = recipeViewModel,
+                    homeViewModel = homeViewModel,
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+
+            composable("edit_recipe") { backStackEntry ->
+                val parentEntry = remember(backStackEntry) { navController.getBackStackEntry("main") }
+                val recipeViewModel: RecipeViewModel = hiltViewModel(parentEntry)
+                val homeViewModel: HomeViewModel = hiltViewModel(parentEntry)
+
+                EditRecipeScreen(
+                    viewModel = recipeViewModel,
+                    homeViewModel = homeViewModel,
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
             composable("change_password") {

@@ -31,7 +31,11 @@ import com.google.eRecept.feature.search.SearchViewModel
 fun MainScreen(
     onLogout: () -> Unit,
     onChangePasswordClick: () -> Unit,
+    onNavigateToCreateAppointment: () -> Unit,
+    onNavigateToCreateRecipe: (String) -> Unit, // <-- Now expects a String (IIN)
+    onEditRecipe: () -> Unit,
     profileViewModel: ProfileViewModel,
+
 ) {
     val homeViewModel: HomeViewModel = hiltViewModel()
     val recipeViewModel: RecipeViewModel = hiltViewModel()
@@ -89,24 +93,25 @@ fun MainScreen(
                         onProfileClick = {
                             bottomNavController.navigate(BottomNavItem.Profile.route)
                         },
+                        onNavigateToCreateAppointment = onNavigateToCreateAppointment,
                         onCreateRecipeClick = { iin ->
-                            recipeViewModel.openCreateSheet(iin)
-                            bottomNavController.navigate(BottomNavItem.Recipes.route)
-                        },
+                            onNavigateToCreateRecipe(iin)
+                        }
                     )
                 }
 
                 composable(BottomNavItem.Recipes.route) {
-                    RecipeScreen(viewModel = recipeViewModel, homeViewModel = homeViewModel)
+                    RecipeScreen(
+                        viewModel = recipeViewModel,
+                        onNavigateToCreateRecipe = { onNavigateToCreateRecipe("") },
+                        onEditRecipe = onEditRecipe )
                 }
 
                 composable(BottomNavItem.Search.route) {
                     SearchScreen(
                         viewModel = searchViewModel,
                         recipeViewModel = recipeViewModel,
-                        onEditRecipe = {
-                            bottomNavController.navigate(BottomNavItem.Recipes.route)
-                        },
+                        onEditRecipe = onEditRecipe,
                     )
                 }
 
@@ -115,6 +120,7 @@ fun MainScreen(
                         onLogout = onLogout,
                         onChangePasswordClick = onChangePasswordClick,
                         viewModel = profileViewModel,
+
                     )
                 }
             }
