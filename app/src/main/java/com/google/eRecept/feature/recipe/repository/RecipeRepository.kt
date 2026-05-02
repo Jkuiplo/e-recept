@@ -23,6 +23,11 @@ interface RecipeRepository {
 
     suspend fun searchMedications(query: String): List<Medication>
 
+    suspend fun getAllMedications(
+        limit: Int = 500,
+        offset: Int = 0,
+    ): List<Medication>
+
     suspend fun getDoctorProfile(doctorId: String): Doctor?
 
     suspend fun createRecipe(recipe: Recipe)

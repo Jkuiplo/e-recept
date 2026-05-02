@@ -65,7 +65,7 @@ fun EreceptTheme(
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit,
 ) {
-    val colorScheme =
+    val targetColorScheme =
         when {
             dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
                 val context = LocalContext.current
@@ -80,6 +80,8 @@ fun EreceptTheme(
                 LightColorScheme
             }
         }
+
+    val colorScheme = targetColorScheme
 
     val view = LocalView.current
     if (!view.isInEditMode) {
@@ -99,3 +101,4 @@ fun EreceptTheme(
         content = content,
     )
 }
+

@@ -29,6 +29,9 @@ class RecipeViewModel
         private val _medicationSuggestions = MutableStateFlow<List<Medication>>(emptyList())
         val medicationSuggestions: StateFlow<List<Medication>> = _medicationSuggestions.asStateFlow()
 
+        private val _allMedications = MutableStateFlow<List<Medication>>(emptyList())
+        val allMedications: StateFlow<List<Medication>> = _allMedications.asStateFlow()
+
         private val _isRefreshing = MutableStateFlow(false)
         val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
@@ -61,6 +64,13 @@ class RecipeViewModel
 
         init {
             loadRecipes()
+            loadAllMedications()
+        }
+
+        private fun loadAllMedications() {
+            viewModelScope.launch {
+                _allMedications.value = repository.getAllMedications(limit = 500)
+            }
         }
 
         fun openCreateSheet(iin: String? = null) {

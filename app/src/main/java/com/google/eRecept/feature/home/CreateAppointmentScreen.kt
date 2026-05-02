@@ -37,7 +37,8 @@ import java.util.TimeZone
 @Composable
 fun CreateAppointmentScreen(
     viewModel: HomeViewModel,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    passedDate: String? = null
 ) {
     val focusManager = LocalFocusManager.current
     var iin by remember { mutableStateOf("") }
@@ -47,10 +48,10 @@ fun CreateAppointmentScreen(
 
     var showNotFoundError by remember { mutableStateOf(false) }
 
-    // Defaults to today
+    // Defaults to passed date or today
     var appointmentDate by remember {
         mutableStateOf(
-            SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()).format(Calendar.getInstance().time)
+            passedDate ?: SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()).format(Calendar.getInstance().time)
         )
     }
     var selectedTime by remember { mutableStateOf("") }
@@ -135,127 +136,128 @@ fun CreateAppointmentScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .pointerInput(Unit) { detectTapGestures(onTap = { focusManager.clearFocus() }) }
-                .imePadding()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp)
-                .padding(bottom = 40.dp)
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedTextField(
-                value = iin,
-                onValueChange = {
-                    if (it.length <= 12 && it.all { char -> char.isDigit() }) iin = it
-                },
-                label = { Text(stringResource(R.string.patient_iin)) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp),
-                trailingIcon = {
-                    if (isSearching) CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                }
-            )
-
-            AnimatedVisibility(visible = showNotFoundError) {
-                Text(
-                    text = stringResource(R.string.patient_not_found),
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(top = 4.dp, start = 4.dp)
-                )
-            }
-
-            Column {
-                AnimatedVisibility(visible = patientResult != null && iin.length == 12) {
-                    Column {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        OutlinedTextField(
-                            value = patientResult!!.full_name,
-                            onValueChange = {},
-                            label = { Text(stringResource(R.string.full_name)) },
-                            readOnly = true,
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp)
-                        )
-                    }
-                }
-
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(horizontal = 20.dp)
+                    .verticalScroll(rememberScrollState()),
+            ) {
                 Spacer(modifier = Modifier.height(16.dp))
 
                 OutlinedTextField(
-                    value = appointmentDate,
-                    onValueChange = { },
-                    label = { Text(stringResource(R.string.date_of_admission)) },
-                    readOnly = true,
-                    trailingIcon = {
-                        IconButton(onClick = { showDatePicker = true }) {
-                            Icon(Icons.Default.CalendarToday, contentDescription = null)
-                        }
+                    value = iin,
+                    onValueChange = {
+                        if (it.length <= 12 && it.all { char -> char.isDigit() }) iin = it
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { showDatePicker = true },
+                    label = { Text(stringResource(R.string.patient_iin)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
                     shape = RoundedCornerShape(12.dp),
-                    enabled = false,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                        disabledBorderColor = MaterialTheme.colorScheme.outline,
-                        disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    trailingIcon = {
+                        if (isSearching) CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                    }
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    stringResource(R.string.appointment_time),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                if (availableTimes.isEmpty()) {
+                AnimatedVisibility(visible = showNotFoundError) {
                     Text(
-                        text = "Нет свободного времени на выбранную дату",
+                        text = stringResource(R.string.patient_not_found),
                         color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 4.dp, start = 4.dp)
                     )
-                } else {
-                    availableTimes.chunked(4).forEach { rowTimes ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            rowTimes.forEach { time ->
-                                val isSelected = selectedTime == time
-                                Box(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .background(
-                                            if (isSelected) MaterialTheme.colorScheme.primary
-                                            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                }
+
+                Column {
+                    AnimatedVisibility(visible = patientResult != null && iin.length == 12) {
+                        Column {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            OutlinedTextField(
+                                value = patientResult!!.full_name,
+                                onValueChange = {},
+                                label = { Text(stringResource(R.string.full_name)) },
+                                readOnly = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    OutlinedTextField(
+                        value = appointmentDate,
+                        onValueChange = { },
+                        label = { Text(stringResource(R.string.date_of_admission)) },
+                        readOnly = true,
+                        trailingIcon = {
+                            IconButton(onClick = { showDatePicker = true }) {
+                                Icon(Icons.Default.CalendarToday, contentDescription = null)
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showDatePicker = true },
+                        shape = RoundedCornerShape(12.dp),
+                        enabled = false,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                            disabledBorderColor = MaterialTheme.colorScheme.outline,
+                            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        stringResource(R.string.appointment_time),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    if (availableTimes.isEmpty()) {
+                        Text(
+                            text = "Нет свободного времени на выбранную дату",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    } else {
+                        availableTimes.chunked(4).forEach { rowTimes ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                rowTimes.forEach { time ->
+                                    val isSelected = selectedTime == time
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(
+                                                if (isSelected) MaterialTheme.colorScheme.primary
+                                                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                            )
+                                            .clickable { selectedTime = time }
+                                            .padding(vertical = 10.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = time,
+                                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
                                         )
-                                        .clickable { selectedTime = time }
-                                        .padding(vertical = 10.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = time,
-                                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
-                                    )
+                                    }
                                 }
                             }
+                            Spacer(modifier = Modifier.height(8.dp))
                         }
-                        Spacer(modifier = Modifier.height(8.dp))
                     }
                 }
             }
-
-            Spacer(modifier = Modifier.weight(1f))
-            Spacer(modifier = Modifier.height(24.dp))
 
             Button(
                 onClick = {
@@ -268,6 +270,8 @@ fun CreateAppointmentScreen(
                 enabled = patientResult != null && appointmentDate.isNotEmpty() && selectedTime.isNotEmpty(),
                 modifier = Modifier
                     .fillMaxWidth()
+                    .padding(16.dp)
+                    .imePadding()
                     .height(56.dp),
                 shape = RoundedCornerShape(16.dp)
             ) {

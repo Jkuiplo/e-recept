@@ -31,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -51,7 +52,7 @@ import kotlinx.coroutines.launch
 fun MainScreen(
     onLogout: () -> Unit,
     onChangePasswordClick: () -> Unit,
-    onNavigateToCreateAppointment: () -> Unit,
+    onNavigateToCreateAppointment: (String) -> Unit,
     onNavigateToCreateRecipe: (String) -> Unit,
     onEditRecipe: () -> Unit,
     profileViewModel: ProfileViewModel,
@@ -89,7 +90,7 @@ fun MainScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
+                    containerColor = Color.Transparent
                 )
             )
         },

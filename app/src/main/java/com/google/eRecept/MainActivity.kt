@@ -1,5 +1,8 @@
 package com.google.eRecept
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -12,6 +15,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.rememberNavController
 import com.google.eRecept.core.theme.EreceptTheme
 import com.google.eRecept.feature.profile.ProfileViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -37,9 +41,17 @@ class MainActivity : AppCompatActivity() {
                     else -> isSystemDark
                 }
 
+            val navController = rememberNavController()
+
             EreceptTheme(darkTheme = useDarkTheme) {
-                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    RootNavGraph(profileViewModel = profileViewModel)
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    RootNavGraph(
+                        profileViewModel = profileViewModel,
+                        navController = navController
+                    )
                 }
             }
         }

@@ -97,7 +97,6 @@ fun CreateRecipeScreen(
                     .fillMaxWidth()
                     .weight(1f)
                     .padding(horizontal = 20.dp)
-                    .imePadding()
                     .verticalScroll(rememberScrollState()),
             ) {
                 if (isLoading) {
@@ -314,9 +313,14 @@ fun CreateRecipeScreen(
             }
 
             if (!isLoading) {
+                val allMeds by viewModel.allMedications.collectAsStateWithLifecycle()
+                val isAllMedicationsValid = draftMedications.all { med ->
+                    med.name.isNotBlank() && allMeds.any { it.name.equals(med.name, ignoreCase = true) }
+                }
+
                 Button(
                     onClick = {
-                        if (draftMedications.any { it.name.isBlank() }) {
+                        if (!isAllMedicationsValid) {
                             showValidationErrors = true
                         } else {
                             viewModel.saveRecipe(patientResult?.full_name ?: "Неизвестно")
@@ -325,9 +329,11 @@ fun CreateRecipeScreen(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 24.dp)
+                        .imePadding()
                         .height(56.dp),
                     shape = RoundedCornerShape(16.dp),
-                    enabled = !isCreating && draftPatientIin.length == 12 && patientResult != null && draftMedications.any { it.name.isNotBlank() },
+                    enabled = !isCreating && draftPatientIin.length == 12 && patientResult != null && draftMedications.isNotEmpty() && isAllMedicationsValid,
                 ) {
                     if (isCreating) {
                         CircularProgressIndicator(
@@ -357,7 +363,11 @@ fun SmartMedicationRow(
     var nameExpanded by remember { mutableStateOf(false) }
     var fieldSize by remember { mutableStateOf(Size.Zero) }
     val suggestions by viewModel.medicationSuggestions.collectAsStateWithLifecycle()
+    val allMeds by viewModel.allMedications.collectAsStateWithLifecycle()
     val density = LocalDensity.current
+
+    val isMedicationValid = medication.name.isBlank() || allMeds.any { it.name.equals(medication.name, ignoreCase = true) }
+    val showErrorWithText = showError || (medication.name.isNotBlank() && !isMedicationValid)
 
     val dosageUnits = listOf("мг", "мл", "таб")
     val frequencies = listOf("1×", "2×", "3×", "4×")
@@ -434,9 +444,14 @@ fun SmartMedicationRow(
                         .onGloballyPositioned { fieldSize = it.size.toSize() },
                     shape = RoundedCornerShape(12.dp),
                     singleLine = true,
-                    isError = showError,
-                    supportingText = if (showError) {
-                        { Text("Заполните все поля") }
+                    isError = showErrorWithText,
+                    supportingText = if (showErrorWithText) {
+                        {
+                            Text(
+                                if (medication.name.isBlank()) "Заполните все поля"
+                                else "Медикамент не найден"
+                            )
+                        }
                     } else null
                 )
                 DropdownMenu(

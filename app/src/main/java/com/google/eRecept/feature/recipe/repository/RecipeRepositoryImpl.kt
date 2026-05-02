@@ -102,6 +102,37 @@ class RecipeRepositoryImpl
                 emptyList()
             }
 
+        override suspend fun getAllMedications(
+            limit: Int,
+            offset: Int,
+        ): List<Medication> =
+            try {
+                val response = api.getAllMedications(limit, offset)
+                if (response.isSuccessful) {
+                    response
+                        .body()
+                        ?.map { dto ->
+                            Medication(
+                                id = dto.id ?: "",
+                                name = dto.name,
+                                activeSubstance = dto.activeSubstance,
+                                category = dto.category ?: "",
+                                description = dto.description ?: "",
+                                indications = dto.indications ?: "",
+                                contraindications = dto.contraindications ?: "",
+                                sideEffects = dto.sideEffects ?: "",
+                                availableDosages = dto.availableDosages ?: emptyList(),
+                                forms = dto.forms ?: emptyList(),
+                            )
+                        }?.sortedBy { it.name } ?: emptyList()
+                } else {
+                    emptyList()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                emptyList()
+            }
+
         override suspend fun getDoctorProfile(doctorId: String): Doctor? {
             val docName = prefs.getString("doctor_name", "Иванов Иван Иванович")
             return Doctor(id = doctorId, name = docName!!, specialization = "Врач")

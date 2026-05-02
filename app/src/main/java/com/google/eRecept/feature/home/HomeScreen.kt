@@ -50,7 +50,7 @@ fun HomeScreen(
     viewModel: HomeViewModel,
     onProfileClick: () -> Unit = {},
     onCreateRecipeClick: (String) -> Unit = {},
-    onNavigateToCreateAppointment: () -> Unit,
+    onNavigateToCreateAppointment: (String) -> Unit,
     isParentNavigating: Boolean = false
 ) {
     val focusManager = LocalFocusManager.current
@@ -82,7 +82,12 @@ fun HomeScreen(
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
             floatingActionButton = {
                 FloatingActionButton(
-                    onClick = onNavigateToCreateAppointment,
+                    onClick = {
+                        val selectedDateStr = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()).format(
+                            Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, daysPagerState.currentPage) }.time
+                        )
+                        onNavigateToCreateAppointment(selectedDateStr)
+                    },
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                 ) {

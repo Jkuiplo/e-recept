@@ -79,7 +79,6 @@ fun EditRecipeScreen(
                     .fillMaxWidth()
                     .weight(1f)
                     .padding(horizontal = 20.dp)
-                    .imePadding()
                     .verticalScroll(rememberScrollState()),
             ) {
                 if (isLoading) {
@@ -231,9 +230,14 @@ fun EditRecipeScreen(
             }
 
             if (!isLoading) {
+                val allMeds by viewModel.allMedications.collectAsStateWithLifecycle()
+                val isAllMedicationsValid = draftMedications.all { med ->
+                    med.name.isNotBlank() && allMeds.any { it.name.equals(med.name, ignoreCase = true) }
+                }
+
                 Button(
                     onClick = {
-                        if (draftMedications.any { it.name.isBlank() }) {
+                        if (!isAllMedicationsValid) {
                             showValidationErrors = true
                         } else {
                             viewModel.saveRecipe("")
@@ -242,9 +246,11 @@ fun EditRecipeScreen(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 24.dp)
+                        .imePadding()
                         .height(56.dp),
                     shape = RoundedCornerShape(16.dp),
-                    enabled = !isCreating && draftMedications.any { it.name.isNotBlank() },
+                    enabled = !isCreating && draftMedications.isNotEmpty() && isAllMedicationsValid,
                 ) {
                     if (isCreating) {
                         CircularProgressIndicator(

@@ -13,6 +13,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -34,9 +36,11 @@ import com.google.eRecept.feature.recipe.EditRecipeScreen
 import com.google.eRecept.feature.recipe.RecipeViewModel
 
 @Composable
-fun RootNavGraph(profileViewModel: ProfileViewModel){
+fun RootNavGraph(
+    profileViewModel: ProfileViewModel,
+    navController: NavHostController
+){
     val focusManager = LocalFocusManager.current
-    val navController = rememberNavController()
     val authViewModel: AuthViewModel = viewModel()
 
     val context = LocalContext.current
@@ -111,7 +115,9 @@ fun RootNavGraph(profileViewModel: ProfileViewModel){
                         }
                     },
                     onChangePasswordClick = { navController.navigate("change_password") },
-                    onNavigateToCreateAppointment = { navController.navigate("create_appointment") },
+                    onNavigateToCreateAppointment = { date ->
+                        navController.navigate("create_appointment?date=$date")
+                    },
                     onNavigateToCreateRecipe = { iin ->
                         if (iin.isNotBlank()) {
                             navController.navigate("create_recipe?iin=$iin")
@@ -123,12 +129,21 @@ fun RootNavGraph(profileViewModel: ProfileViewModel){
                     profileViewModel = profileViewModel,
                 )
             }
-            composable("create_appointment") {
+            composable(
+                route = "create_appointment?date={date}",
+                arguments = listOf(navArgument("date") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                })
+            ) { backStackEntry ->
                 val homeViewModel: HomeViewModel = hiltViewModel()
+                val passedDate = backStackEntry.arguments?.getString("date")
 
                 CreateAppointmentScreen(
                     viewModel = homeViewModel,
-                    onNavigateBack = { navController.popBackStack() }
+                    onNavigateBack = { navController.popBackStack() },
+                    passedDate = passedDate
                 )
             }
 

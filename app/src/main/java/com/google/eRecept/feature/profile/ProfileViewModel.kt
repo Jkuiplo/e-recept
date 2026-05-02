@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
+import androidx.core.content.edit
 
 @HiltViewModel
 class ProfileViewModel
@@ -50,7 +51,7 @@ class ProfileViewModel
         }
 
         fun updateTheme(index: Int) {
-            prefs.edit().putInt("theme_mode", index).apply()
+            prefs.edit { putInt("theme_mode", index) }
             _themeMode.value = index
         }
     }
