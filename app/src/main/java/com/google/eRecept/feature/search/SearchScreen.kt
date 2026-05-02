@@ -39,6 +39,7 @@ fun SearchScreen(
     viewModel: SearchViewModel,
     recipeViewModel: RecipeViewModel,
     onEditRecipe: () -> Unit,
+    isParentNavigating: Boolean = false,
 ) {
     val focusManager = LocalFocusManager.current
     val tabs = listOf(
@@ -149,7 +150,7 @@ fun SearchScreen(
                 modifier = Modifier.fillMaxSize(),
                 verticalAlignment = Alignment.Top,
                 pageSpacing = 16.dp,
-                userScrollEnabled = !isLoading
+                userScrollEnabled = !isLoading && !isParentNavigating
             ) { page ->
                 PullToRefreshBox(
                     isRefreshing = isRefreshing,

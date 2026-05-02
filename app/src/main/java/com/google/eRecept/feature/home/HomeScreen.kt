@@ -50,7 +50,8 @@ fun HomeScreen(
     viewModel: HomeViewModel,
     onProfileClick: () -> Unit = {},
     onCreateRecipeClick: (String) -> Unit = {},
-    onNavigateToCreateAppointment: () -> Unit
+    onNavigateToCreateAppointment: () -> Unit,
+    isParentNavigating: Boolean = false
 ) {
     val focusManager = LocalFocusManager.current
     var selectedAppointment by remember { mutableStateOf<Appointment?>(null) }
@@ -154,7 +155,7 @@ fun HomeScreen(
                     modifier = Modifier.weight(1f),
                     verticalAlignment = Alignment.Top,
                     pageSpacing = 16.dp,
-                    userScrollEnabled = !isLoading
+                    userScrollEnabled = !isLoading && !isParentNavigating
                 ) { page ->
                     val pageDateStr = remember(page) {
                         SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()).format(

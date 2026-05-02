@@ -436,7 +436,7 @@ fun SmartMedicationRow(
                     singleLine = true,
                     isError = showError,
                     supportingText = if (showError) {
-                        { Text(stringResource(R.string.error_empty_medication)) }
+                        { Text("Заполните все поля") }
                     } else null
                 )
                 DropdownMenu(

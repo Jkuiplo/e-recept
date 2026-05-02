@@ -48,6 +48,8 @@ fun MainScreen(
     val pagerState = rememberPagerState(pageCount = { navItems.size })
     val coroutineScope = rememberCoroutineScope()
 
+    val isParentNavigating = pagerState.isScrollInProgress
+
     Scaffold(
         bottomBar = {
             NavigationBar {
@@ -98,7 +100,8 @@ fun MainScreen(
                         onNavigateToCreateAppointment = onNavigateToCreateAppointment,
                         onCreateRecipeClick = { iin ->
                             onNavigateToCreateRecipe(iin)
-                        }
+                        },
+                        isParentNavigating = isParentNavigating
                     )
                 }
 
@@ -115,6 +118,7 @@ fun MainScreen(
                         viewModel = searchViewModel,
                         recipeViewModel = recipeViewModel,
                         onEditRecipe = onEditRecipe,
+                        isParentNavigating = isParentNavigating
                     )
                 }
 
