@@ -73,16 +73,8 @@ fun SearchScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
-                .padding(horizontal = 20.dp),
+                .padding(horizontal = 16.dp),
         ) {
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                text = stringResource(R.string.search_title),
-                style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold, fontSize = 32.sp),
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(

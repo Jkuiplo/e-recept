@@ -20,7 +20,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.SubcomposeAsyncImage
 import com.google.eRecept.R
@@ -55,10 +54,11 @@ fun RecipeScreen(
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
             floatingActionButton = {
                 FloatingActionButton(
                     onClick = {
-                        viewModel.updateDraftIin("") // Reset state before opening
+                        viewModel.updateDraftIin("")
                         onNavigateToCreateRecipe()
                     },
                     containerColor = MaterialTheme.colorScheme.primary,
@@ -73,16 +73,8 @@ fun RecipeScreen(
                     .fillMaxSize()
                     .padding(padding)
                     .background(MaterialTheme.colorScheme.background)
-                    .padding(horizontal = 20.dp),
+                    .padding(horizontal = 16.dp),
             ) {
-                Spacer(modifier = Modifier.height(24.dp))
-                Text(
-                    text = stringResource(R.string.recipes_title),
-                    style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold, fontSize = 32.sp),
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-                Spacer(modifier = Modifier.height(24.dp))
-
                 PullToRefreshBox(
                     isRefreshing = isRefreshing,
                     onRefresh = { viewModel.refresh() },
@@ -98,7 +90,7 @@ fun RecipeScreen(
                     } else {
                         LazyColumn(
                             verticalArrangement = Arrangement.spacedBy(12.dp),
-                            contentPadding = PaddingValues(bottom = 88.dp),
+                            contentPadding = PaddingValues(top = 16.dp, bottom = 88.dp),
                             modifier = Modifier.fillMaxSize(),
                         ) {
                             items(todayRecipes, key = { it.id }) { recipe ->

@@ -1,24 +1,39 @@
 package com.google.eRecept
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.eRecept.core.navigation.BottomNavItem
 import com.google.eRecept.feature.home.HomeScreen
@@ -31,12 +46,13 @@ import com.google.eRecept.feature.search.SearchScreen
 import com.google.eRecept.feature.search.SearchViewModel
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     onLogout: () -> Unit,
     onChangePasswordClick: () -> Unit,
     onNavigateToCreateAppointment: () -> Unit,
-    onNavigateToCreateRecipe: (String) -> Unit, // <-- Now expects a String (IIN)
+    onNavigateToCreateRecipe: (String) -> Unit,
     onEditRecipe: () -> Unit,
     profileViewModel: ProfileViewModel,
 ) {
@@ -49,8 +65,34 @@ fun MainScreen(
     val coroutineScope = rememberCoroutineScope()
 
     val isParentNavigating = pagerState.isScrollInProgress
+    val currentTitle = navItems[pagerState.currentPage].title
 
     Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    AnimatedContent(
+                        targetState = currentTitle,
+                        transitionSpec = {
+                            fadeIn(tween(300, easing = FastOutSlowInEasing)) togetherWith
+                                    fadeOut(tween(300, easing = FastOutSlowInEasing))
+                        },
+                        label = "TitleAnimation"
+                    ) { title ->
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.headlineLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 32.sp
+                            ),
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
+            )
+        },
         bottomBar = {
             NavigationBar {
                 navItems.forEachIndexed { index, item ->

@@ -79,9 +79,10 @@ fun HomeScreen(
             .pointerInput(Unit) { detectTapGestures(onTap = { focusManager.clearFocus() }) }
     ) {
         Scaffold(
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
             floatingActionButton = {
                 FloatingActionButton(
-                    onClick = onNavigateToCreateAppointment, // TRIGGER ROUTE INSTEAD OF SHEET
+                    onClick = onNavigateToCreateAppointment,
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                 ) {
@@ -94,15 +95,8 @@ fun HomeScreen(
                     .fillMaxSize()
                     .padding(paddingValues)
                     .background(MaterialTheme.colorScheme.background)
-                    .padding(horizontal = 20.dp)
+                    .padding(horizontal = 16.dp)
             ) {
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Text(
-                    text = stringResource(R.string.schedule_txt),
-                    style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold, fontSize = 32.sp),
-                    color = MaterialTheme.colorScheme.onBackground
-                )
 
                 Text(
                     text = formattedDate,

@@ -60,9 +60,8 @@ fun ProfileScreen(
                 .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(modifier = Modifier.height(48.dp))
+        Spacer(modifier = Modifier.height(40.dp))
 
-        // Теперь doctorName доступен, используем его для инициала
         val initial = if (doctorName.isNotBlank()) doctorName.first().uppercase() else "В"
 
         Box(
