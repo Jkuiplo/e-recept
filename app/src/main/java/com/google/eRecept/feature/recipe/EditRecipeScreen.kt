@@ -72,21 +72,22 @@ fun EditRecipeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .pointerInput(Unit) { detectTapGestures(onTap = { focusManager.clearFocus() }) }
+                .imePadding()
+                .pointerInput(Unit) {
+                    detectTapGestures { focusManager.clearFocus() }
+                }
         ) {
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
                     .weight(1f)
                     .padding(horizontal = 20.dp)
-                    .verticalScroll(rememberScrollState()),
+                    .verticalScroll(rememberScrollState())
             ) {
                 if (isLoading) {
                     SkeletonList(itemCount = 3, itemHeight = 120.dp)
                 } else {
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Locked IIN Field
                     OutlinedTextField(
                         value = draftPatientIin,
                         onValueChange = { },
@@ -204,7 +205,6 @@ fun EditRecipeScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Reuse the SmartMedicationRow from CreateRecipeScreen.kt
                     draftMedications.forEachIndexed { index, med ->
                         SmartMedicationRow(
                             index = index,
@@ -228,7 +228,6 @@ fun EditRecipeScreen(
                     }
                 }
             }
-
             if (!isLoading) {
                 val allMeds by viewModel.allMedications.collectAsStateWithLifecycle()
                 val isAllMedicationsValid = draftMedications.all { med ->
@@ -247,7 +246,6 @@ fun EditRecipeScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 24.dp)
-                        .imePadding()
                         .height(56.dp),
                     shape = RoundedCornerShape(16.dp),
                     enabled = !isCreating && draftMedications.isNotEmpty() && isAllMedicationsValid,
@@ -265,4 +263,5 @@ fun EditRecipeScreen(
             }
         }
     }
+
 }

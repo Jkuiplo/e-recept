@@ -135,6 +135,7 @@ fun CreateAppointmentScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .imePadding()
                 .pointerInput(Unit) { detectTapGestures(onTap = { focusManager.clearFocus() }) }
         ) {
             Column(
@@ -271,8 +272,8 @@ fun CreateAppointmentScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
-                    .imePadding()
-                    .height(56.dp),
+                    .height(56.dp)
+                    .imePadding(),
                 shape = RoundedCornerShape(16.dp)
             ) {
                 Text(stringResource(R.string.create_record))

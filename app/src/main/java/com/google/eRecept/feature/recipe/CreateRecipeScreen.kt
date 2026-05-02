@@ -90,6 +90,7 @@ fun CreateRecipeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .imePadding()
                 .pointerInput(Unit) { detectTapGestures(onTap = { focusManager.clearFocus() }) }
         ) {
             Column(
@@ -330,7 +331,6 @@ fun CreateRecipeScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 24.dp)
-                        .imePadding()
                         .height(56.dp),
                     shape = RoundedCornerShape(16.dp),
                     enabled = !isCreating && draftPatientIin.length == 12 && patientResult != null && draftMedications.isNotEmpty() && isAllMedicationsValid,
