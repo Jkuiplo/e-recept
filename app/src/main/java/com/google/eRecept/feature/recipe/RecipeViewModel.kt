@@ -195,7 +195,7 @@ class RecipeViewModel
                                     medicationName = it.name,
                                     dosageValue = it.dosageValue,
                                     dosageUnit = it.dosageUnit,
-                                    frequency = it.frequency,
+                                    frequency = it.frequency.filter { char -> char.isDigit() },
                                     durationValue = it.durationValue,
                                     durationUnit = it.durationUnit,
                                     note = it.note,

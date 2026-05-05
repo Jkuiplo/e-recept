@@ -58,6 +58,7 @@ class RecipeRepositoryImpl
                                 medications =
                                     dto.items.map { itemDto ->
                                         MedicationItem(
+                                            id = itemDto.medicationId ?: "",
                                             name = itemDto.medicationName,
                                             dosageValue = itemDto.dosageValue,
                                             dosageUnit = itemDto.dosageUnit,
@@ -151,7 +152,7 @@ class RecipeRepositoryImpl
                     items =
                         recipe.medications.map {
                             RecipeItemDto(
-                                medicationId = it.id,
+                                medicationId = it.id.ifBlank { null },
                                 medicationName = it.name,
                                 dosageValue = it.dosageValue,
                                 dosageUnit = it.dosageUnit,
@@ -237,9 +238,11 @@ class RecipeRepositoryImpl
                     currentUserId?.let { loadRecipesFromNetwork(it) }
                     true
                 } else {
+                    println("E-RECEPT UPDATE ERROR: ${response.errorBody()?.string()}")
                     false
                 }
             } catch (e: Exception) {
+                println("E-RECEPT UPDATE ERROR (CATCH): ${e.message}")
                 e.printStackTrace()
                 false
             }
