@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Science
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,6 +29,7 @@ import com.google.eRecept.core.ui.components.CustomSegmentedControl
 fun ProfileScreen(
     onLogout: () -> Unit,
     onChangePasswordClick: () -> Unit,
+    onNavigateToExperimental: () -> Unit,
     viewModel: ProfileViewModel,
 ) {
     var showLogoutDialog by remember { mutableStateOf(false) }
@@ -191,6 +193,37 @@ fun ProfileScreen(
                     leadingContent = {
                         Icon(
                             Icons.Default.Lock,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    },
+                    trailingContent = {
+                        Icon(
+                            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Card(
+                onClick = { onNavigateToExperimental() },
+                modifier = Modifier.fillMaxWidth(),
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    ),
+                shape = MaterialTheme.shapes.large,
+            ) {
+                ListItem(
+                    headlineContent = { Text("Экспериментальные функции") },
+                    leadingContent = {
+                        Icon(
+                            Icons.Default.Science,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

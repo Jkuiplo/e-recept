@@ -57,6 +57,7 @@ fun MainScreen(
     onEditRecipe: () -> Unit,
     onNavigateToPatientDetails: (String) -> Unit,
     onNavigateToMedicationDetails: (String) -> Unit,
+    onNavigateToExperimental: () -> Unit,
     profileViewModel: ProfileViewModel,
 ) {
     val homeViewModel: HomeViewModel = hiltViewModel()
@@ -175,6 +176,7 @@ fun MainScreen(
                     ProfileScreen(
                         onLogout = onLogout,
                         onChangePasswordClick = onChangePasswordClick,
+                        onNavigateToExperimental = onNavigateToExperimental,
                         viewModel = profileViewModel,
                     )
                 }

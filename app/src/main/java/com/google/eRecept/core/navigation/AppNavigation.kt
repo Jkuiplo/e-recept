@@ -40,6 +40,8 @@ import com.google.eRecept.feature.recipe.RecipeViewModel
 import com.google.eRecept.feature.search.MedicationDetailsScreen
 import com.google.eRecept.feature.search.PatientDetailsScreen
 import com.google.eRecept.feature.search.SearchViewModel
+import com.google.eRecept.feature.experimental.ExperimentalFeaturesScreen
+import com.google.eRecept.feature.experimental.ExperimentalFeaturesViewModel
 
 @Composable
 fun RootNavGraph(
@@ -138,6 +140,9 @@ fun RootNavGraph(
                     onNavigateToMedicationDetails = { id ->
                         navController.navigate("medication_details/$id")
                     },
+                    onNavigateToExperimental = {
+                        navController.navigate("experimental_features")
+                    },
                     profileViewModel = profileViewModel,
                 )
             }
@@ -235,6 +240,14 @@ fun RootNavGraph(
                 ChangePasswordScreen(
                     onNavigateBack = { navController.popBackStack() },
                     viewModel = changePasswordViewModel,
+                )
+            }
+            composable("experimental_features") {
+                val experimentalViewModel: ExperimentalFeaturesViewModel = hiltViewModel()
+
+                ExperimentalFeaturesScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    viewModel = experimentalViewModel,
                 )
             }
         }
