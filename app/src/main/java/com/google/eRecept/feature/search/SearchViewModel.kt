@@ -89,7 +89,18 @@ class SearchViewModel
 
         private fun updateDoctorPatients(newPatients: List<Patient>) {
             val currentList = _allPatients.value
-            val combined = (currentList + newPatients).distinctBy { it.iin }
+            
+            // Объединяем списки, группируя по ИИН и выбирая объект с наиболее полной информацией
+            val combined = (currentList + newPatients)
+                .groupBy { it.iin }
+                .map { (_, patients) ->
+                    // Выбираем тот объект, где больше заполненных полей (не пустые строки)
+                    patients.maxByOrNull { patient ->
+                        listOf(patient.gender, patient.birth_date, patient.allergies)
+                            .count { it.isNotBlank() }
+                    } ?: patients.first()
+                }
+
             _allPatients.value = combined
 
             if (currentQuery.isBlank()) {

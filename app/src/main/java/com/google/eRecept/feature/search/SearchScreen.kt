@@ -171,7 +171,7 @@ fun SearchScreen(
                                 isSearching = isSearching,
                                 onNavigateToMedicationDetails = onNavigateToMedicationDetails
                             )
-                            2 -> HistoryTabContent(recipeViewModel, searchQuery, isSearching, onEditRecipe)
+                            2 -> HistoryTabContent(recipeViewModel, searchQuery, isSearching, onEditRecipe, onNavigateToPatientDetails = onNavigateToPatientDetails)
                         }
                     }
                 }

@@ -22,6 +22,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.SubcomposeAsyncImage
 import com.google.eRecept.R
 import com.google.eRecept.core.ui.components.RecipeCard
+import com.google.eRecept.core.ui.components.RecipeDetailsBottomSheet
 import com.google.eRecept.core.ui.components.SkeletonList
 import com.google.eRecept.data.model.Recipe
 import com.google.eRecept.feature.recipe.RecipeViewModel
@@ -34,7 +35,8 @@ fun HistoryTabContent(
     recipeViewModel: RecipeViewModel,
     searchQuery: String,
     isSearching: Boolean,
-    onEditRecipe: () -> Unit
+    onEditRecipe: () -> Unit,
+    onNavigateToPatientDetails: (String) -> Unit,
 ) {
     val allRecipes by recipeViewModel.recipes.collectAsStateWithLifecycle()
     var selectedRecipe by remember { mutableStateOf<Recipe?>(null) }
@@ -80,11 +82,12 @@ fun HistoryTabContent(
     }
 
     if (selectedRecipe != null) {
-        SearchRecipeDetailsDialog(
+        RecipeDetailsBottomSheet(
             recipe = selectedRecipe!!,
             onDismiss = { selectedRecipe = null },
             viewModel = recipeViewModel,
             onEdit = onEditRecipe,
+            onNavigateToPatientDetails = onNavigateToPatientDetails
         )
     }
 }

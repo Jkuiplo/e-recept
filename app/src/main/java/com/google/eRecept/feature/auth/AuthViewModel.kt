@@ -130,10 +130,10 @@ class AuthViewModel
                         startResendTimer()
                     },
                     onFailure = { exception ->
-                        if (exception.message == "NO_INTERNET") {
-                            _authState.value = AuthState.NoInternet
-                        } else {
-                            _authState.value = AuthState.Error(exception.message ?: "Неизвестная ошибка")
+                        when (exception.message) {
+                            "NO_INTERNET" -> _authState.value = AuthState.NoInternet
+                            "USER_NOT_FOUND" -> _authState.value = AuthState.Error("Пользователь с такой почтой не найден")
+                            else -> _authState.value = AuthState.Error(exception.message ?: "Неизвестная ошибка")
                         }
                     },
                 )
@@ -145,14 +145,22 @@ class AuthViewModel
             newPassword: String,
             onSuccess: () -> Unit,
         ) {
+            _authState.value = AuthState.Loading
             viewModelScope.launch {
                 val result = repository.resetPassword(token, newPassword)
                 result.fold(
                     onSuccess = { message ->
                         _uiMessage.emit(message)
+                        _authState.value = AuthState.Idle
                         onSuccess()
                     },
-                    onFailure = { error -> _uiMessage.emit(error.message ?: "Ошибка") },
+                    onFailure = { exception ->
+                        if (exception.message == "INVALID_TOKEN") {
+                            _authState.value = AuthState.Error("Ссылка недействительна или устарела. Запросите сброс пароля заново.")
+                        } else {
+                            _authState.value = AuthState.Error(exception.message ?: "Ошибка")
+                        }
+                    },
                 )
             }
         }

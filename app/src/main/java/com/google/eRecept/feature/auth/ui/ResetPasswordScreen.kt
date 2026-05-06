@@ -1,6 +1,8 @@
 package com.google.eRecept.feature.auth.ui
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -30,8 +32,12 @@ fun ResetPasswordScreen(
     viewModel: AuthViewModel = hiltViewModel(),
 ) {
     var newPassword by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var confirmPasswordVisible by remember { mutableStateOf(false) }
     val authState by viewModel.authState.collectAsState()
+
+    val isFormValid = newPassword.length >= 6 && newPassword == confirmPassword
 
     Scaffold(
         topBar = {
@@ -77,6 +83,32 @@ fun ResetPasswordScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 singleLine = true,
+                isError = authState is AuthViewModel.AuthState.Error,
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = confirmPassword,
+                onValueChange = { confirmPassword = it },
+                label = { Text("Подтвердите пароль") },
+                visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                trailingIcon = {
+                    val image = if (confirmPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility
+                    IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                        Icon(imageVector = image, contentDescription = null)
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                singleLine = true,
+                isError = (confirmPassword.isNotEmpty() && newPassword != confirmPassword) || authState is AuthViewModel.AuthState.Error,
+                supportingText = {
+                    if (confirmPassword.isNotEmpty() && newPassword != confirmPassword) {
+                        Text("Пароли не совпадают")
+                    }
+                },
             )
 
             Spacer(modifier = Modifier.height(40.dp))
@@ -92,7 +124,7 @@ fun ResetPasswordScreen(
                         .fillMaxWidth()
                         .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
-                enabled = newPassword.length >= 6 && authState !is AuthViewModel.AuthState.Loading,
+                enabled = isFormValid && authState !is AuthViewModel.AuthState.Loading,
             ) {
                 if (authState is AuthViewModel.AuthState.Loading) {
                     CircularProgressIndicator(
@@ -102,6 +134,17 @@ fun ResetPasswordScreen(
                 } else {
                     Text("Сохранить пароль", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                 }
+            }
+
+            AnimatedVisibility(visible = authState is AuthViewModel.AuthState.Error) {
+                val error = (authState as? AuthViewModel.AuthState.Error)?.message ?: ""
+                Text(
+                    text = error,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(top = 16.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    textAlign = TextAlign.Center,
+                )
             }
         }
     }

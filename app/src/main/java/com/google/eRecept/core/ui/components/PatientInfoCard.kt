@@ -79,30 +79,31 @@ fun PatientInfoCard(
                 }
             }
 
-            HorizontalDivider(
-                modifier = Modifier.padding(vertical = 12.dp),
-                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(
-                    alpha = 0.1f
-                ),
-            )
+            val hasExtraInfo = patient.gender.isNotBlank() || patient.birth_date.isNotBlank()
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                InfoTag(
-                    label = "Пол",
-                    value = patient.gender.ifEmpty { "Не указан" }
+            if (hasExtraInfo) {
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 12.dp),
+                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(
+                        alpha = 0.1f
+                    ),
                 )
-                InfoTag(
-                    label = "Дата рожд.",
-                    value = patient.birth_date.ifEmpty { "Не указана" }
-                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    if (patient.gender.isNotBlank()) {
+                        InfoTag(label = "Пол", value = patient.gender)
+                    }
+                    if (patient.birth_date.isNotBlank()) {
+                        InfoTag(label = "Дата рожд.", value = patient.birth_date)
+                    }
+                }
             }
 
-            val note = patient.allergies
-            if (note.isNotBlank()) {
-                Spacer(modifier = Modifier.height(8.dp))
+            if (patient.allergies.isNotBlank()) {
+                Spacer(modifier = Modifier.height(12.dp))
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -123,7 +124,7 @@ fun PatientInfoCard(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = note,
+                            text = patient.allergies,
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onErrorContainer,
                         )

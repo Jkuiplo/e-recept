@@ -37,6 +37,8 @@ class AuthRepositoryImpl
                 val response = api.forgotPassword(ForgotPasswordRequest(email))
                 if (response.isSuccessful && response.body() != null) {
                     Result.success(response.body()!!.detail)
+                } else if (response.code() in listOf(400, 401, 403)) {
+                    Result.failure(Exception("INVALID_TOKEN"))
                 } else {
                     Result.failure(Exception("Ошибка: ${response.code()}"))
                 }
@@ -52,6 +54,8 @@ class AuthRepositoryImpl
                 val response = api.resetPassword(ResetPasswordRequest(token, newPassword))
                 if (response.isSuccessful && response.body() != null) {
                     Result.success(response.body()!!.detail)
+                } else if (response.code() == 404) {
+                    Result.failure(Exception("USER_NOT_FOUND"))
                 } else {
                     Result.failure(Exception("Ошибка: ${response.code()}"))
                 }

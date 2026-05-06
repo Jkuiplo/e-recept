@@ -7,17 +7,19 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.google.eRecept.R
 import com.google.eRecept.core.ui.components.PatientInfoCard
 import com.google.eRecept.core.ui.components.RecipeCard
+import com.google.eRecept.core.ui.components.RecipeDetailsBottomSheet
 import com.google.eRecept.data.model.Patient
 import com.google.eRecept.data.model.Recipe
 import com.google.eRecept.feature.home.HomeViewModel
@@ -32,8 +34,15 @@ fun PatientDetailsScreen(
     recipeViewModel: RecipeViewModel,
     onNavigateBack: () -> Unit,
 ) {
-    val patientResults by searchViewModel.patientResults.collectAsState()
-    val patient = patientResults.find { it.iin == iin } ?: Patient(iin = iin, full_name = "Загрузка...")
+    val patientFromSearch by searchViewModel.patientResults.collectAsState()
+    val searchResultPatient by homeViewModel.searchPatientResult.collectAsState()
+    
+    // Используем результат поиска по ИИН как основной источник, так как он содержит полные данные
+    val patient = searchResultPatient ?: patientFromSearch.find { it.iin == iin } ?: Patient(iin = iin, full_name = "Загрузка...")
+
+    LaunchedEffect(iin) {
+        homeViewModel.searchPatient(iin)
+    }
     
     val recipes by recipeViewModel.recipes.collectAsState()
     val patientHistory = recipes.filter { it.patient_iin == iin }
@@ -47,7 +56,10 @@ fun PatientDetailsScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent
+                )
             )
         }
     ) { paddingValues ->
@@ -95,11 +107,12 @@ fun PatientDetailsScreen(
     }
 
     if (selectedRecipe != null) {
-        SearchRecipeDetailsDialog(
+        RecipeDetailsBottomSheet(
             recipe = selectedRecipe!!,
-            onDismiss = { selectedRecipe = null },
+            onDismiss = { selectedRecipe = null},
             viewModel = recipeViewModel,
-            onEdit = { /* Delegate to Main edit action if needed */ }
+            onEdit = { selectedRecipe = null },
+            // onNavigateToPatientDetails не передаем
         )
     }
 }
