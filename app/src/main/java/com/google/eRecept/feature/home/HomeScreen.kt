@@ -37,8 +37,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.eRecept.R
+import com.google.eRecept.core.ui.components.PatientInfoCard
 import com.google.eRecept.core.ui.components.SkeletonList
 import com.google.eRecept.data.model.Appointment
+import com.google.eRecept.data.model.Patient
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -51,6 +53,7 @@ fun HomeScreen(
     onProfileClick: () -> Unit = {},
     onCreateRecipeClick: (String) -> Unit = {},
     onNavigateToCreateAppointment: (String) -> Unit,
+    onNavigateToPatientDetails: (String) -> Unit,
     isParentNavigating: Boolean = false
 ) {
     val focusManager = LocalFocusManager.current
@@ -220,6 +223,10 @@ fun HomeScreen(
                 onCreateRecipeClick = {
                     selectedAppointment = null
                     onCreateRecipeClick(currentAppointment.patient_iin)
+                },
+                onPatientClick = { iin ->
+                    selectedAppointment = null
+                    onNavigateToPatientDetails(iin)
                 }
             )
         }
@@ -347,6 +354,7 @@ fun AppointmentDetailsBottomSheetContent(
     appointment: Appointment,
     onSave: (String) -> Unit,
     onCreateRecipeClick: () -> Unit,
+    onPatientClick: (String) -> Unit,
 ) {
 
 
@@ -378,21 +386,15 @@ fun AppointmentDetailsBottomSheetContent(
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text(
-            text = appointment.patient_name,
-            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        Text(
-            text = stringResource(R.string.iin, appointment.patient_iin),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = stringResource(R.string.gender, appointment.age, appointment.gender),
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        PatientInfoCard(
+            patient = Patient(
+                iin = appointment.patient_iin,
+                full_name = appointment.patient_name,
+                gender = appointment.gender,
+                birth_date = "", // Age is available but not birth date
+                allergies = "" // Allergies might be in history, but keeping it simple
+            ),
+            onClick = { onPatientClick(appointment.patient_iin) }
         )
 
         Spacer(modifier = Modifier.height(16.dp))

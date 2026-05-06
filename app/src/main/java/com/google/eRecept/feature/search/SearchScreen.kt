@@ -39,6 +39,8 @@ fun SearchScreen(
     viewModel: SearchViewModel,
     recipeViewModel: RecipeViewModel,
     onEditRecipe: () -> Unit,
+    onNavigateToPatientDetails: (String) -> Unit,
+    onNavigateToMedicationDetails: (String) -> Unit,
     isParentNavigating: Boolean = false,
 ) {
     val focusManager = LocalFocusManager.current
@@ -156,8 +158,19 @@ fun SearchScreen(
                         SkeletonList()
                     } else {
                         when (page) {
-                            0 -> PatientsTabContent(viewModel, recipeViewModel, searchQuery, isSearching)
-                            1 -> MedicationsTabContent(viewModel, searchQuery, isSearching)
+                            0 -> PatientsTabContent(
+                                viewModel = viewModel,
+                                recipeViewModel = recipeViewModel,
+                                searchQuery = searchQuery,
+                                isSearching = isSearching,
+                                onNavigateToPatientDetails = onNavigateToPatientDetails
+                            )
+                            1 -> MedicationsTabContent(
+                                viewModel = viewModel,
+                                searchQuery = searchQuery,
+                                isSearching = isSearching,
+                                onNavigateToMedicationDetails = onNavigateToMedicationDetails
+                            )
                             2 -> HistoryTabContent(recipeViewModel, searchQuery, isSearching, onEditRecipe)
                         }
                     }

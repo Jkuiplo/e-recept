@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.eRecept.R
 import com.google.eRecept.core.ui.components.CustomSegmentedControl
+import com.google.eRecept.core.ui.components.PatientInfoCard
 import com.google.eRecept.core.ui.components.SkeletonList
 import com.google.eRecept.data.model.MedicationItem
 import com.google.eRecept.feature.home.HomeViewModel
@@ -105,97 +106,10 @@ fun EditRecipeScreen(
                     )
                     if (patientResult != null) {
                         Spacer(modifier = Modifier.height(12.dp))
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f),
-                            ),
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Surface(
-                                        shape = RoundedCornerShape(12.dp),
-                                        color = MaterialTheme.colorScheme.secondary,
-                                        modifier = Modifier.size(48.dp),
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            Text(
-                                                text = patientResult!!.full_name.firstOrNull()
-                                                    ?.toString() ?: "?",
-                                                style = MaterialTheme.typography.titleLarge,
-                                                color = MaterialTheme.colorScheme.onSecondary,
-                                            )
-                                        }
-                                    }
-                                    Spacer(modifier = Modifier.width(16.dp))
-                                    Column {
-                                        Text(
-                                            text = patientResult!!.full_name,
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.Bold,
-                                        )
-                                        Text(
-                                            text = "ИИН: $draftPatientIin",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(
-                                                alpha = 0.7f
-                                            ),
-                                        )
-                                    }
-                                }
-
-                                HorizontalDivider(
-                                    modifier = Modifier.padding(vertical = 12.dp),
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.1f),
-                                )
-
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    InfoTag(
-                                        label = "Пол",
-                                        value = patientResult!!.gender ?: "Не указан"
-                                    )
-                                    InfoTag(
-                                        label = "Дата рожд.",
-                                        value = patientResult!!.birth_date ?: "Не указана"
-                                    )
-                                }
-
-                                val note = patientResult!!.allergies ?: ""
-                                if (note.isNotBlank()) {
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .background(
-                                                MaterialTheme.colorScheme.errorContainer.copy(
-                                                    alpha = 0.3f
-                                                )
-                                            )
-                                            .padding(8.dp),
-                                    ) {
-                                        Row {
-                                            Icon(
-                                                Icons.Default.Warning,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(16.dp),
-                                                tint = MaterialTheme.colorScheme.error,
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Text(
-                                                text = note,
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onErrorContainer,
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        PatientInfoCard(
+                            patient = patientResult!!,
+                            onClick = { /* Можно добавить навигацию */ }
+                        )
                     }
                     Spacer(modifier = Modifier.height(32.dp))
                     Text(

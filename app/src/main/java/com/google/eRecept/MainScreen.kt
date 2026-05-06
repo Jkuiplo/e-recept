@@ -55,6 +55,8 @@ fun MainScreen(
     onNavigateToCreateAppointment: (String) -> Unit,
     onNavigateToCreateRecipe: (String) -> Unit,
     onEditRecipe: () -> Unit,
+    onNavigateToPatientDetails: (String) -> Unit,
+    onNavigateToMedicationDetails: (String) -> Unit,
     profileViewModel: ProfileViewModel,
 ) {
     val homeViewModel: HomeViewModel = hiltViewModel()
@@ -141,6 +143,7 @@ fun MainScreen(
                             coroutineScope.launch { pagerState.scrollToPage(3) }
                         },
                         onNavigateToCreateAppointment = onNavigateToCreateAppointment,
+                        onNavigateToPatientDetails = onNavigateToPatientDetails,
                         onCreateRecipeClick = { iin ->
                             onNavigateToCreateRecipe(iin)
                         },
@@ -152,7 +155,8 @@ fun MainScreen(
                     RecipeScreen(
                         viewModel = recipeViewModel,
                         onNavigateToCreateRecipe = { onNavigateToCreateRecipe("") },
-                        onEditRecipe = onEditRecipe
+                        onEditRecipe = onEditRecipe,
+                        onNavigateToPatientDetails = onNavigateToPatientDetails
                     )
                 }
 
@@ -161,6 +165,8 @@ fun MainScreen(
                         viewModel = searchViewModel,
                         recipeViewModel = recipeViewModel,
                         onEditRecipe = onEditRecipe,
+                        onNavigateToPatientDetails = onNavigateToPatientDetails,
+                        onNavigateToMedicationDetails = onNavigateToMedicationDetails,
                         isParentNavigating = isParentNavigating
                     )
                 }

@@ -223,7 +223,7 @@ class RecipeViewModel
                                 expire_date = expireTime,
                                 medications = meds,
                                 notes = notes,
-                                status = "Активен", // Обязательно указываем статус
+                                status = "Активен",
                             )
                         repository.createRecipe(recipe)
                     }

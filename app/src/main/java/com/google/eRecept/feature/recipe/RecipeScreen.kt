@@ -23,12 +23,14 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.SubcomposeAsyncImage
 import com.google.eRecept.R
+import com.google.eRecept.core.ui.components.PatientInfoCard
 import com.google.eRecept.data.model.Recipe
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import com.google.eRecept.core.ui.components.RecipeCard
 import androidx.compose.material.icons.filled.Add
+import com.google.eRecept.data.model.Patient
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,6 +38,7 @@ fun RecipeScreen(
     viewModel: RecipeViewModel,
     onNavigateToCreateRecipe: () -> Unit,
     onEditRecipe: () -> Unit,
+    onNavigateToPatientDetails: (String) -> Unit,
 ) {
     var selectedRecipe by remember { mutableStateOf<Recipe?>(null) }
     val allRecipes by viewModel.recipes.collectAsStateWithLifecycle()
@@ -113,7 +116,8 @@ fun RecipeScreen(
             recipe = selectedRecipe!!,
             onDismiss = { selectedRecipe = null },
             viewModel = viewModel,
-            onEdit = onEditRecipe
+            onEdit = onEditRecipe,
+            onNavigateToPatientDetails = onNavigateToPatientDetails
         )
     }
 }
@@ -124,6 +128,7 @@ fun RecipeDetailsDialog(
     onDismiss: () -> Unit,
     viewModel: RecipeViewModel,
     onEdit: () -> Unit,
+    onNavigateToPatientDetails: (String) -> Unit,
 ) {
     val sdf = SimpleDateFormat("dd.MM.yyyy", Locale("ru"))
     val dateStr = sdf.format(Date(recipe.date))
@@ -272,12 +277,16 @@ fun RecipeDetailsDialog(
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    stringResource(R.string.patient_name_format, recipe.patient_name),
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold,
+                PatientInfoCard(
+                    patient = Patient(
+                        iin = recipe.patient_iin,
+                        full_name = recipe.patient_name
+                    ),
+                    onClick = {
+                        onDismiss()
+                        onNavigateToPatientDetails(recipe.patient_iin)
+                    }
                 )
-                Text(stringResource(R.string.iin, recipe.patient_iin), style = MaterialTheme.typography.bodyMedium)
                 Spacer(modifier = Modifier.height(16.dp))
                 HorizontalDivider()
                 Spacer(modifier = Modifier.height(8.dp))

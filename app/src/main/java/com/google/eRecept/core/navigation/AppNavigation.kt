@@ -1,6 +1,7 @@
 package com.google.eRecept.core.navigation
 
 import android.content.Context.MODE_PRIVATE
+import android.widget.Toast
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,8 +10,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -34,6 +37,9 @@ import com.google.eRecept.feature.profile.ProfileViewModel
 import com.google.eRecept.feature.recipe.CreateRecipeScreen
 import com.google.eRecept.feature.recipe.EditRecipeScreen
 import com.google.eRecept.feature.recipe.RecipeViewModel
+import com.google.eRecept.feature.search.MedicationDetailsScreen
+import com.google.eRecept.feature.search.PatientDetailsScreen
+import com.google.eRecept.feature.search.SearchViewModel
 
 @Composable
 fun RootNavGraph(
@@ -126,7 +132,45 @@ fun RootNavGraph(
                         }
                     },
                     onEditRecipe = { navController.navigate("edit_recipe") },
+                    onNavigateToPatientDetails = { iin ->
+                        navController.navigate("patient_details/$iin")
+                    },
+                    onNavigateToMedicationDetails = { id ->
+                        navController.navigate("medication_details/$id")
+                    },
                     profileViewModel = profileViewModel,
+                )
+            }
+
+            composable(
+                route = "patient_details/{iin}",
+                arguments = listOf(navArgument("iin") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val iin = backStackEntry.arguments?.getString("iin") ?: ""
+                val searchViewModel: SearchViewModel = hiltViewModel()
+                val homeViewModel: HomeViewModel = hiltViewModel()
+                val recipeViewModel: RecipeViewModel = hiltViewModel()
+
+                PatientDetailsScreen(
+                    iin = iin,
+                    searchViewModel = searchViewModel,
+                    homeViewModel = homeViewModel,
+                    recipeViewModel = recipeViewModel,
+                    onNavigateBack = { navController.popBackStack() },
+                )
+            }
+
+            composable(
+                route = "medication_details/{medicationId}",
+                arguments = listOf(navArgument("medicationId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val medicationId = backStackEntry.arguments?.getString("medicationId") ?: ""
+                val searchViewModel: SearchViewModel = hiltViewModel()
+
+                MedicationDetailsScreen(
+                    medicationId = medicationId,
+                    viewModel = searchViewModel,
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
             composable(

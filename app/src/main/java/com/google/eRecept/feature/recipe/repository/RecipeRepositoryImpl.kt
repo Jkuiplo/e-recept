@@ -53,7 +53,7 @@ class RecipeRepositoryImpl
                                 date = parseIsoDate(dto.createdAt),
                                 expire_date = parseIsoDate(dto.expireDate),
                                 notes = dto.notes,
-                                status = dto.status ?: "Активен", // Маппим статус с бекенда
+                                status = dto.status ?: "Активен",
                                 qr_data = dto.qrData ?: "",
                                 medications =
                                     dto.items.map { itemDto ->
@@ -62,7 +62,7 @@ class RecipeRepositoryImpl
                                             name = itemDto.medicationName,
                                             dosageValue = itemDto.dosageValue,
                                             dosageUnit = itemDto.dosageUnit,
-                                            frequency = itemDto.frequency,
+                                            frequency = if (itemDto.frequency.contains("×")) itemDto.frequency else "${itemDto.frequency}×",
                                             durationValue = itemDto.durationValue,
                                             durationUnit = itemDto.durationUnit,
                                             note = itemDto.note,
@@ -203,9 +203,8 @@ class RecipeRepositoryImpl
 
                     if (index != -1) {
                         val oldRecipe = currentList[index]
-                        val newStatus = updatedDto?.status ?: "Отозван" // Резервный статус, если бекенд вернул null
+                        val newStatus = updatedDto?.status ?: "Отозван"
 
-                        // Реактивно обновляем конкретный элемент
                         val revokedRecipe =
                             oldRecipe.copy(
                                 status = newStatus,
@@ -214,7 +213,6 @@ class RecipeRepositoryImpl
                         currentList[index] = revokedRecipe
                         _recipes.value = currentList
                     } else {
-                        // Если элемента локально нет (маловероятно), просто дергаем сеть
                         currentUserId?.let { loadRecipesFromNetwork(it) }
                     }
                     true

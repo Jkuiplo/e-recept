@@ -35,13 +35,10 @@ fun PatientsTabContent(
     viewModel: SearchViewModel,
     recipeViewModel: RecipeViewModel,
     searchQuery: String,
-    isSearching: Boolean
+    isSearching: Boolean,
+    onNavigateToPatientDetails: (String) -> Unit
 ) {
     val patientResults by viewModel.patientResults.collectAsStateWithLifecycle()
-    val allRecipes by recipeViewModel.recipes.collectAsStateWithLifecycle()
-
-    var selectedPatient by remember { mutableStateOf<Patient?>(null) }
-    var selectedRecipeFromProfile by remember { mutableStateOf<Recipe?>(null) }
 
     if (isSearching && patientResults.isEmpty()) {
         SkeletonList()
@@ -60,32 +57,9 @@ fun PatientsTabContent(
             modifier = Modifier.fillMaxSize(),
         ) {
             items(patientResults, key = { it.iin }) { patient ->
-                PatientListItem(patient = patient, onClick = { selectedPatient = patient })
+                PatientListItem(patient = patient, onClick = { onNavigateToPatientDetails(patient.iin) })
             }
         }
-    }
-
-    if (selectedPatient != null) {
-        val patientRecipes = allRecipes.filter { it.patient_iin == selectedPatient!!.iin }
-        PatientProfileSheet(
-            patient = selectedPatient!!,
-            recipes = patientRecipes,
-            onRecipeClick = { recipe ->
-                selectedPatient = null
-                selectedRecipeFromProfile = recipe
-            },
-            onDismiss = { selectedPatient = null },
-        )
-    }
-
-    // Opens if a recipe is clicked from the patient's profile history
-    if (selectedRecipeFromProfile != null) {
-        SearchRecipeDetailsDialog(
-            recipe = selectedRecipeFromProfile!!,
-            onDismiss = { selectedRecipeFromProfile = null },
-            viewModel = recipeViewModel,
-            onEdit = { /* Delegate to Main edit action if needed */ }
-        )
     }
 }
 
@@ -119,7 +93,7 @@ fun PatientListItem(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PatientProfileSheet(
+private fun PatientProfileSheet(
     patient: Patient,
     recipes: List<Recipe>,
     onRecipeClick: (Recipe) -> Unit,

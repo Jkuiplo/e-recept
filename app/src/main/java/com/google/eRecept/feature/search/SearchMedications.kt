@@ -29,10 +29,10 @@ import com.google.eRecept.data.model.Medication
 fun MedicationsTabContent(
     viewModel: SearchViewModel,
     searchQuery: String,
-    isSearching: Boolean
+    isSearching: Boolean,
+    onNavigateToMedicationDetails: (String) -> Unit
 ) {
     val medicationResults by viewModel.medicationResults.collectAsStateWithLifecycle()
-    var selectedMedication by remember { mutableStateOf<Medication?>(null) }
 
     if (isSearching && medicationResults.isEmpty()) {
         SkeletonList()
@@ -51,13 +51,9 @@ fun MedicationsTabContent(
             modifier = Modifier.fillMaxSize(),
         ) {
             items(medicationResults, key = { it.id }) { medication ->
-                MedicationListItem(medication = medication, onClick = { selectedMedication = medication })
+                MedicationListItem(medication = medication, onClick = { onNavigateToMedicationDetails(medication.id) })
             }
         }
-    }
-
-    if (selectedMedication != null) {
-        MedicationInfoSheet(medication = selectedMedication!!, onDismiss = { selectedMedication = null })
     }
 }
 
@@ -91,7 +87,7 @@ fun MedicationListItem(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MedicationInfoSheet(
+private fun MedicationInfoSheet(
     medication: Medication,
     onDismiss: () -> Unit,
 ) {
