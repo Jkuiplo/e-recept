@@ -30,7 +30,9 @@ import com.google.eRecept.core.navigation.RootNavGraph
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags("ru"))
+        if (AppCompatDelegate.getApplicationLocales().isEmpty) {
+            AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags("ru"))
+        }
         enableEdgeToEdge()
 
         setContent {

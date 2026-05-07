@@ -144,6 +144,7 @@ fun ProfileScreen(
                                     else -> "ru"
                                 }
 
+                            viewModel.updateLanguage(tag)
                             AppCompatDelegate.setApplicationLocales(
                                 LocaleListCompat.forLanguageTags(
                                     tag

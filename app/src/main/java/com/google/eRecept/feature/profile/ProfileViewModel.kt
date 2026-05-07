@@ -38,8 +38,15 @@ class ProfileViewModel
         private val _themeMode = MutableStateFlow(prefs.getInt("theme_mode", 2))
         val themeMode: StateFlow<Int> = _themeMode.asStateFlow()
 
+        private val _language = MutableStateFlow(prefs.getString("language", "ru") ?: "ru")
+        val language: StateFlow<String> = _language.asStateFlow()
+
         init {
             loadProfile()
+            // Ensure default language is set if not present
+            if (!prefs.contains("language")) {
+                prefs.edit { putString("language", "ru") }
+            }
         }
 
         private fun loadProfile() {
@@ -53,5 +60,10 @@ class ProfileViewModel
         fun updateTheme(index: Int) {
             prefs.edit { putInt("theme_mode", index) }
             _themeMode.value = index
+        }
+
+        fun updateLanguage(tag: String) {
+            prefs.edit { putString("language", tag) }
+            _language.value = tag
         }
     }
