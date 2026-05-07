@@ -52,3 +52,26 @@ data class UpdateRecipeRequest(
     @SerializedName("expire_days") val expireDays: Int,
     val items: List<RecipeItemDto>,
 )
+
+data class AiScribeRequest(
+    val text: String
+)
+
+data class AiRecipeItemDto(
+    @SerializedName("medication_id") val medicationId: String?,
+    @SerializedName("medication_name") val medicationName: String?,
+    @SerializedName("dosage_value") val dosageValue: String?,
+    @SerializedName("dosage_unit") val dosageUnit: String?,
+    val frequency: String?,
+    @SerializedName("duration_value") val durationValue: String?,
+    @SerializedName("duration_unit") val durationUnit: String?,
+    val note: String?
+)
+
+data class AiScribeResponse(
+    val history: String?,
+    @SerializedName("appointment_type") val appointmentType: String?,
+    @SerializedName("recipe_notes") val recipeNotes: String?,
+    @SerializedName("recipe_items") val recipeItems: List<AiRecipeItemDto>?,
+    @SerializedName("unrecognized_medications") val unrecognizedMedications: List<String>?
+)

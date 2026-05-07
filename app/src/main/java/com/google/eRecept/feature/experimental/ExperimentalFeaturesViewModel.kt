@@ -9,10 +9,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ExperimentalFeaturesViewModel @Inject constructor(
-    private val dataStore: SettingsDataStore // Hilt сам передаст сюда объект благодаря AppModule!
+    private val dataStore: SettingsDataStore
 ) : ViewModel() {
 
-    // Сразу отдаем Flow в UI, ViewModel даже не нужно хранить свой стейт
     val isVoiceEnabled = dataStore.isVoiceRecipeEnabled
     val isAiEnabled = dataStore.isAiAssistantEnabled
 

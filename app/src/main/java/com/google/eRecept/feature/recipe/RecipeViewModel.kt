@@ -236,4 +236,121 @@ class RecipeViewModel
                 }
             }
         }
+        fun parseVoiceRecipe(recognizedText: String) {
+            viewModelScope.launch {
+                try {
+                    val response = repository.parseVoiceRecipe(recognizedText)
+
+                    if (response != null) {
+
+                        // 1. Бронебойный маппер для дозировки ("МГ" -> "мг", "таблетки" -> "таб")
+                        fun mapDosageUnit(unit: String?): String {
+                            if (unit.isNullOrBlank()) return ""
+                            val lower = unit.lowercase()
+                            return when {
+                                lower.contains("мг") || lower.contains("mg") -> "мг"
+                                lower.contains("мл") || lower.contains("ml") -> "мл"
+                                lower.contains("таб") || lower.contains("кап") -> "таб"
+                                else -> ""
+                            }
+                        }
+
+                        // 2. Бронебойный маппер для кратности (ограничиваем от 1 до 4)
+                        fun mapFrequency(aiFreq: String?): String {
+                            if (aiFreq.isNullOrBlank()) return ""
+                            // Ищем числа в строке (например, "50" из "50 раз в день")
+                            val digitMatch = Regex("\\d+").find(aiFreq)
+                            if (digitMatch != null) {
+                                val count = digitMatch.value.toIntOrNull() ?: 1
+                                // Ограничиваем значение так, чтобы оно попадало в наши кнопки (1, 2, 3, 4)
+                                val safeCount = count.coerceIn(1, 4)
+                                return "$safeCount×"
+                            }
+                            // Если цифр нет, но есть слова
+                            val lower = aiFreq.lowercase()
+                            return when {
+                                lower.contains("один") || lower.contains("раз") -> "1×"
+                                lower.contains("два") || lower.contains("двух") -> "2×"
+                                lower.contains("три") || lower.contains("трех") -> "3×"
+                                lower.contains("четыре") -> "4×"
+                                else -> ""
+                            }
+                        }
+
+                        // 3. Бронебойный маппер длительности
+                        fun mapDurationUnit(unit: String?): String {
+                            if (unit.isNullOrBlank()) return ""
+                            val lower = unit.lowercase()
+                            return when {
+                                lower.contains("нед") -> "нед"
+                                lower.contains("мес") -> "мес"
+                                lower.contains("дн") || lower.contains("ден") -> "дней"
+                                else -> ""
+                            }
+                        }
+
+                        // Превращаем DTO в UI-модели с жесткой фильтрацией
+                        val aiParsedItems = response.recipeItems?.map { aiMed ->
+                            MedicationItem(
+                                id = aiMed.medicationId ?: "",
+                                name = aiMed.medicationName ?: "",
+                                dosageValue = aiMed.dosageValue ?: "",
+                                dosageUnit = mapDosageUnit(aiMed.dosageUnit),
+                                frequency = mapFrequency(aiMed.frequency),
+                                durationValue = aiMed.durationValue ?: "",
+                                durationUnit = mapDurationUnit(aiMed.durationUnit),
+                                note = aiMed.note ?: ""
+                            )
+                        } ?: emptyList()
+
+                        val currentDraft = _draftMedications.value.toMutableList()
+
+                        // Умное слияние (Smart Merging)
+                        aiParsedItems.forEach { aiMed ->
+                            val existingIndex = currentDraft.indexOfFirst { it.name.equals(aiMed.name, ignoreCase = true) }
+
+                            if (existingIndex != -1) {
+                                val existing = currentDraft[existingIndex]
+                                currentDraft[existingIndex] = existing.copy(
+                                    dosageValue = aiMed.dosageValue.ifEmpty { existing.dosageValue },
+                                    dosageUnit = aiMed.dosageUnit.ifEmpty { existing.dosageUnit },
+                                    frequency = aiMed.frequency.ifEmpty { existing.frequency },
+                                    durationValue = aiMed.durationValue.ifEmpty { existing.durationValue },
+                                    durationUnit = aiMed.durationUnit.ifEmpty { existing.durationUnit },
+                                    note = aiMed.note.ifEmpty { existing.note },
+                                    id = aiMed.id.ifEmpty { existing.id }
+                                )
+                            } else {
+                                if (currentDraft.size == 1 && currentDraft[0].name.isBlank()) {
+                                    currentDraft[0] = aiMed
+                                } else {
+                                    currentDraft.add(aiMed)
+                                }
+                            }
+                        }
+
+                        _draftMedications.value = currentDraft
+
+                        // Обработка рекомендаций и мусора
+                        var combinedNotes = _draftNotes.value
+
+                        if (!response.recipeNotes.isNullOrBlank()) {
+                            combinedNotes = if (combinedNotes.isEmpty()) response.recipeNotes else "$combinedNotes\n${response.recipeNotes}"
+                        }
+
+                        if (!response.unrecognizedMedications.isNullOrEmpty()) {
+                            val unrecog = "Требует внимания врача: ${response.unrecognizedMedications.joinToString(", ")}"
+                            combinedNotes = if (combinedNotes.isEmpty()) unrecog else "$combinedNotes\n$unrecog"
+                        }
+
+                        _draftNotes.value = combinedNotes
+                    }
+                } catch (e: Exception) {
+                    val extraNotes = "Ошибка ИИ. Распознано: $recognizedText"
+                    _draftNotes.value = if (_draftNotes.value.isEmpty()) extraNotes else "${_draftNotes.value}\n$extraNotes"
+                } finally {
+                    _isLoading.value = false
+                }
+            }
+        }
     }

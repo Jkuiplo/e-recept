@@ -25,6 +25,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
@@ -41,6 +42,8 @@ import com.google.eRecept.R
 import com.google.eRecept.core.ui.components.CustomSegmentedControl
 import com.google.eRecept.core.ui.components.PatientInfoCard
 import com.google.eRecept.core.ui.components.SkeletonList
+import com.google.eRecept.core.ui.components.VoiceRecordButton
+import com.google.eRecept.core.utils.SettingsDataStore
 import com.google.eRecept.data.model.MedicationItem
 import com.google.eRecept.feature.home.HomeViewModel
 import kotlin.math.roundToInt
@@ -50,9 +53,15 @@ import kotlin.math.roundToInt
 fun CreateRecipeScreen(
     viewModel: RecipeViewModel,
     homeViewModel: HomeViewModel,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onNavigateToPatientDetails: (String) -> Unit
 ) {
     val focusManager = LocalFocusManager.current
+
+    val context = LocalContext.current
+    val dataStore = remember { SettingsDataStore(context) }
+
+    val isVoiceEnabled by dataStore.isVoiceRecipeEnabled.collectAsStateWithLifecycle(initialValue = false)
 
     val draftPatientIin by viewModel.draftPatientIin.collectAsStateWithLifecycle()
     val draftMedications by viewModel.draftMedications.collectAsStateWithLifecycle()
@@ -154,7 +163,7 @@ fun CreateRecipeScreen(
                         Spacer(modifier = Modifier.height(12.dp))
                         PatientInfoCard(
                             patient = patientResult!!,
-                            onClick = { /* Можно добавить навигацию в детали */ }
+                            onClick = {onNavigateToPatientDetails(draftPatientIin)}
                         )
                     }
 
@@ -227,36 +236,60 @@ fun CreateRecipeScreen(
                 }
             }
 
-            if (!isLoading) {
-                val allMeds by viewModel.allMedications.collectAsStateWithLifecycle()
-                val isAllMedicationsValid = draftMedications.all { med ->
-                    med.name.isNotBlank() && allMeds.any { it.name.equals(med.name, ignoreCase = true) }
-                }
+            // Внизу файла CreateRecipeScreen.kt:
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 24.dp)
+            ) {
+                if (!isLoading) {
+                    val allMeds by viewModel.allMedications.collectAsStateWithLifecycle()
+                    val isAllMedicationsValid = draftMedications.all { med ->
+                        med.name.isNotBlank() && allMeds.any { it.name.equals(med.name, ignoreCase = true) }
+                    }
 
-                Button(
-                    onClick = {
-                        if (!isAllMedicationsValid) {
-                            showValidationErrors = true
-                        } else {
-                            viewModel.saveRecipe(patientResult?.full_name ?: "Неизвестно")
-                            onNavigateBack()
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Основная кнопка (занимает доступное пространство)
+                        Button(
+                            onClick = {
+                                if (!isAllMedicationsValid) {
+                                    showValidationErrors = true
+                                } else {
+                                    viewModel.saveRecipe(patientResult?.full_name ?: "Неизвестно")
+                                    onNavigateBack()
+                                }
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(56.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            enabled = !isCreating && draftPatientIin.length == 12 && patientResult != null && draftMedications.isNotEmpty() && isAllMedicationsValid,
+                        ) {
+                            if (isCreating) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp),
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    strokeWidth = 2.dp,
+                                )
+                            } else {
+                                Text(stringResource(R.string.write_prescription), style = MaterialTheme.typography.titleMedium)
+                            }
                         }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 24.dp)
-                        .height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    enabled = !isCreating && draftPatientIin.length == 12 && patientResult != null && draftMedications.isNotEmpty() && isAllMedicationsValid,
-                ) {
-                    if (isCreating) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            strokeWidth = 2.dp,
-                        )
-                    } else {
-                        Text(stringResource(R.string.write_prescription), style = MaterialTheme.typography.titleMedium)
+
+                        // Experimental voice act
+                        if (isVoiceEnabled) {
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            VoiceRecordButton(
+                                onVoiceResult = { recognizedText ->
+                                    viewModel.parseVoiceRecipe(recognizedText)
+                                },
+                                modifier = Modifier.weight(0.2f)
+                            )
+                        }
                     }
                 }
             }

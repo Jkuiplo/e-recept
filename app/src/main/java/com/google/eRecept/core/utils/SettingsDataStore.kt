@@ -19,14 +19,12 @@ class SettingsDataStore(private val context: Context) {
         val THEME_PALETTE_SWITCHER = booleanPreferencesKey("theme_palette_switcher")
     }
 
-    // Потоки данных для UI
     val isVoiceRecipeEnabled: Flow<Boolean> = context.dataStore.data
         .map { preferences -> preferences[VOICE_RECIPE_ENABLED] ?: false }
 
     val isAiAssistantEnabled: Flow<Boolean> = context.dataStore.data
         .map { preferences -> preferences[AI_ASSISTANT_ENABLED] ?: false }
 
-    // Методы для обновления
     suspend fun toggleVoiceRecipe(enabled: Boolean) {
         context.dataStore.edit { it[VOICE_RECIPE_ENABLED] = enabled }
     }

@@ -1,5 +1,7 @@
 package com.google.eRecept.data.network.api
 
+import com.google.eRecept.data.network.dto.AiScribeRequest
+import com.google.eRecept.data.network.dto.AiScribeResponse
 import com.google.eRecept.data.network.dto.AppointmentDto
 import com.google.eRecept.data.network.dto.CreateRecipeRequest
 import com.google.eRecept.data.network.dto.MedicationDto
@@ -51,4 +53,9 @@ interface RecipeApi {
         @Path("recipe_id") recipeId: String,
         @Body request: UpdateRecipeRequest,
     ): Response<RecipeResponseDto>
+
+    @POST("ai/scribe")
+    suspend fun parseVoice(
+        @Body request: AiScribeRequest
+    ): Response<AiScribeResponse>
 }

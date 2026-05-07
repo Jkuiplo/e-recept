@@ -34,7 +34,8 @@ import com.google.eRecept.feature.home.HomeViewModel
 fun EditRecipeScreen(
     viewModel: RecipeViewModel,
     onNavigateBack: () -> Unit,
-    homeViewModel: HomeViewModel
+    homeViewModel: HomeViewModel,
+    onNavigateToPatientDetails: (String) -> Unit
 ) {
     val focusManager = LocalFocusManager.current
 
@@ -100,8 +101,8 @@ fun EditRecipeScreen(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         singleLine = true,
-                        readOnly = true, // Prevents typing
-                        enabled = false, // Visually indicates it cannot be changed
+                        readOnly = true,
+                        enabled = false,
                         colors = OutlinedTextFieldDefaults.colors(
                             disabledBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
                             disabledTextColor = MaterialTheme.colorScheme.onSurface,
@@ -112,7 +113,7 @@ fun EditRecipeScreen(
                         Spacer(modifier = Modifier.height(12.dp))
                         PatientInfoCard(
                             patient = patientResult!!,
-                            onClick = { /* Можно добавить навигацию */ }
+                            onClick = { onNavigateToPatientDetails(draftPatientIin) }
                         )
                     }
                     Spacer(modifier = Modifier.height(32.dp))

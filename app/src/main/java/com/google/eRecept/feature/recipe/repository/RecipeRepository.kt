@@ -31,4 +31,5 @@ interface RecipeRepository {
     suspend fun getDoctorProfile(doctorId: String): Doctor?
 
     suspend fun createRecipe(recipe: Recipe)
+    suspend fun parseVoiceRecipe(text: String): com.google.eRecept.data.network.dto.AiScribeResponse?
 }

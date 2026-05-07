@@ -244,4 +244,17 @@ class RecipeRepositoryImpl
                 e.printStackTrace()
                 false
             }
+        override suspend fun parseVoiceRecipe(text: String): com.google.eRecept.data.network.dto.AiScribeResponse? =
+            try {
+                val response = api.parseVoice(com.google.eRecept.data.network.dto.AiScribeRequest(text))
+                if (response.isSuccessful) {
+                    response.body()
+                } else {
+                    println("E-RECEPT AI ERROR: ${response.errorBody()?.string()}")
+                    null
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                null
+            }
     }

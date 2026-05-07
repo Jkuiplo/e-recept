@@ -219,6 +219,9 @@ fun RootNavGraph(
                 CreateRecipeScreen(
                     viewModel = recipeViewModel,
                     homeViewModel = homeViewModel,
+                    onNavigateToPatientDetails = { iin ->
+                        navController.navigate("patient_details/$iin")
+                    },
                     onNavigateBack = { navController.popBackStack() }
                 )
             }
@@ -231,6 +234,9 @@ fun RootNavGraph(
                 EditRecipeScreen(
                     viewModel = recipeViewModel,
                     homeViewModel = homeViewModel,
+                    onNavigateToPatientDetails = { iin ->
+                        navController.navigate("patient_details/$iin")
+                    },
                     onNavigateBack = { navController.popBackStack() }
                 )
             }
