@@ -101,7 +101,7 @@
     <string name="no_recipes_yet">Рецептов пока нет</string>
     <string name="no_recipes_description">Вы еще не выписали ни одного рецепта.\nНажмите +, чтобы создать первый.</string>
     <string name="general_recommendations_format">Общие рекомендации: %1$s</string>
-
+    <string name="profile">Профиль</string>
     <string name="search_title">Поиск</string>
     <string name="tab_patients">Пациенты</string>
     <string name="tab_medications">Препараты</string>
@@ -131,4 +131,18 @@
     <string name="side_effects">Побочные действия</string>
     <string name="no_medications_specified">• Нет указанных препаратов</string>
     <string name="recommendations_format">Рекомендации: %1$s</string>
+    <string name="experimental_features">Экспериментальные функции</string>
+    <string name="lab">Лабаратория</string>
+    <string name="warning_msg">Эти функции находятся в разработке и могут работать нестабильно.</string>
+    <string name="voice_heading">Голосовая диктовка рецепта</string>
+    <string name="voice_desc">Позволяет заполнять список лекарств с помощью голоса.</string>
+    <string name="assistant_heading">AI Ассистент (Чат)</string>
+    <string name="assistant_desc">Добавляет вкладку с ИИ-помощником в навигацию.</string>
+    <string name="no">Нет</string>
+    <string name="edit">Редактировать</string>
+    <string name="revoke">Отозвать</string>
+    <string name="revoked_today">Отозван: Сегодня</string>
+    <string name="revoke_recipe">Отозвать рецепт?</string>
+    <string name="confirmation_recipe_revoking">Вы уверены, что хотите деактивировать этот рецепт? После отзыва пациент не сможет получить по нему препараты в аптеке.</string>
+    <string name="ai_title">Ассистент</string>
 </resources>

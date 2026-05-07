@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,6 +7,12 @@ plugins {
     alias(libs.plugins.hiltAndroid)
     alias(libs.plugins.kotlin.compose)
 }
+
+val properties = Properties()
+properties.load(rootProject.file("local.properties").inputStream())
+
+val geminiApiKey = properties.getProperty("GEMINI_API_KEY")
+    ?: throw GradleException("GEMINI_API_KEY not found")
 
 android {
     namespace = "com.google.eRecept"
@@ -15,6 +23,11 @@ android {
     }
 
     defaultConfig {
+        buildConfigField(
+            "String",
+            "GEMINI_API_KEY",
+            "\"$geminiApiKey\""
+        )
         applicationId = "com.google.eRecept"
         minSdk = 24
         targetSdk = 35
@@ -39,6 +52,7 @@ android {
         isCoreLibraryDesugaringEnabled = true
     }
     buildFeatures {
+        buildConfig = true
         compose = true
     }
     kotlinOptions {
@@ -47,6 +61,7 @@ android {
 }
 
 dependencies {
+    implementation("com.google.ai.client.generativeai:generativeai:0.7.0")
     implementation("androidx.core:core-splashscreen:1.0.1")
     implementation(libs.hilt.android)
     implementation(libs.androidx.compose.animation.core)
@@ -59,6 +74,8 @@ dependencies {
     implementation(libs.okhttp.logging)
 
     implementation("io.coil-kt:coil-compose:2.6.0")
+
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
 
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
     implementation(libs.androidx.navigation.compose)

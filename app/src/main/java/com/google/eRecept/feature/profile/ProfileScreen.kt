@@ -123,41 +123,6 @@ fun ProfileScreen(
                 shape = MaterialTheme.shapes.large,
             ) {
                 Column(modifier = Modifier.padding(vertical = 12.dp)) {
-                    Text(
-                        text = stringResource(R.string.app_language),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                    )
-
-                    CustomSegmentedControl(
-                        options = languages,
-                        selectedOption = languages[selectedLanguageIndex],
-                        onOptionSelected = { selectedLanguage ->
-                            val index = languages.indexOf(selectedLanguage)
-                            selectedLanguageIndex = index
-
-                            val tag =
-                                when (index) {
-                                    1 -> "kk"
-                                    2 -> "en"
-                                    else -> "ru"
-                                }
-
-                            viewModel.updateLanguage(tag)
-                            AppCompatDelegate.setApplicationLocales(
-                                LocaleListCompat.forLanguageTags(
-                                    tag
-                                )
-                            )
-                        },
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                    )
-
-                    HorizontalDivider(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                    )
 
                     Text(
                         text = stringResource(R.string.app_theme),

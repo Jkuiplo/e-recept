@@ -28,6 +28,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
@@ -37,7 +38,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.eRecept.core.navigation.BottomNavItem
+import com.google.eRecept.feature.ai.AiAssistantScreen
+import com.google.eRecept.feature.experimental.ExperimentalFeaturesViewModel
 import com.google.eRecept.feature.home.HomeScreen
 import com.google.eRecept.feature.home.HomeViewModel
 import com.google.eRecept.feature.profile.ProfileScreen
@@ -65,38 +69,51 @@ fun MainScreen(
     val recipeViewModel: RecipeViewModel = hiltViewModel()
     val searchViewModel: SearchViewModel = hiltViewModel()
 
-    val navItems = BottomNavItem.entries.toTypedArray()
+    val experimentalViewModel: ExperimentalFeaturesViewModel = hiltViewModel()
+    val isAiEnabled by experimentalViewModel.isAiEnabled.collectAsStateWithLifecycle(initialValue = false)
+
+    val navItems = remember(isAiEnabled) {
+        if (isAiEnabled) {
+            BottomNavItem.entries.toTypedArray()
+        } else {
+            BottomNavItem.entries.filter { it != BottomNavItem.AiAssistant }.toTypedArray()
+        }
+    }
     val pagerState = rememberPagerState(pageCount = { navItems.size })
     val coroutineScope = rememberCoroutineScope()
 
     val isParentNavigating = pagerState.isScrollInProgress
     val currentTitle = stringResource(navItems[pagerState.currentPage].title)
+    val currentItem = navItems[pagerState.currentPage]
+
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    AnimatedContent(
-                        targetState = currentTitle,
-                        transitionSpec = {
-                            fadeIn(tween(300, easing = FastOutSlowInEasing)) togetherWith
-                                    fadeOut(tween(300, easing = FastOutSlowInEasing))
-                        },
-                        label = "TitleAnimation"
-                    ) { title ->
-                        Text(
-                            text = title,
-                            style = MaterialTheme.typography.headlineLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 32.sp
-                            ),
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent
+            if (currentItem != BottomNavItem.AiAssistant) {
+                TopAppBar(
+                    title = {
+                        AnimatedContent(
+                            targetState = currentTitle,
+                            transitionSpec = {
+                                fadeIn(tween(300, easing = FastOutSlowInEasing)) togetherWith
+                                        fadeOut(tween(300, easing = FastOutSlowInEasing))
+                            },
+                            label = "TitleAnimation"
+                        ) { title ->
+                            Text(
+                                text = title,
+                                style = MaterialTheme.typography.headlineLarge.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 32.sp
+                                ),
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent
+                    )
                 )
-            )
+            }
         },
         bottomBar = {
             NavigationBar {
@@ -139,7 +156,7 @@ fun MainScreen(
                 snapPositionalThreshold = 0.15f
             )
         ) { page ->
-            when (navItems[page]) {
+            when (navItems.getOrNull(page)) {
                 BottomNavItem.Schedule -> {
                     HomeScreen(
                         viewModel = homeViewModel,
@@ -163,7 +180,9 @@ fun MainScreen(
                         onNavigateToPatientDetails = onNavigateToPatientDetails
                     )
                 }
-
+                BottomNavItem.AiAssistant -> {
+                    AiAssistantScreen()
+                }
                 BottomNavItem.Search -> {
                     SearchScreen(
                         viewModel = searchViewModel,
@@ -174,7 +193,6 @@ fun MainScreen(
                         isParentNavigating = isParentNavigating
                     )
                 }
-
                 BottomNavItem.Profile -> {
                     ProfileScreen(
                         onLogout = onLogout,
@@ -182,6 +200,9 @@ fun MainScreen(
                         onNavigateToExperimental = onNavigateToExperimental,
                         viewModel = profileViewModel,
                     )
+                }
+                null -> {
+
                 }
             }
         }

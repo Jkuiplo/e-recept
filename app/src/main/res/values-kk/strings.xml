@@ -29,7 +29,7 @@
     <string name="no_appointments_for_day">Бұл күнге ешқандай қабылдау\nжоспарланбаған</string>
     <string name="appointment_time">Қабылдау уақыты</string>
     <string name="ok">OK</string>
-
+    <string name="profile">Профиль</string>
     <string name="back">Артқа</string>
     <string name="email">Email</string>
     <string name="password">Құпия сөз</string>
@@ -132,4 +132,22 @@
     <string name="side_effects">Жанама әсерлер</string>
     <string name="no_medications_specified">• Дәрілер көрсетілмеген</string>
     <string name="recommendations_format">Ұсынымдар: %1$s</string>
+    <string name="experimental_features">Эксперименттік функциялар</string>
+    <string name="lab">Лабаратория</string>
+    <string name="warning_msg">Бұл мүмкіндіктер әзірленуде және тұрақсыз жұмыс істеуі мүмкін.</string>
+    <string name="voice_heading">Рецепттерді дауыспен жазу</string>
+    <string name="voice_desc">Дәрі-дәрмектер тізімін дауыспен толтыруға мүмкіндік береді.</string>
+
+    <string name="assistant_heading">AI көмекші (Чат)</string>
+    <string name="assistant_desc">Навигацияға AI көмекшісі қойындысын қосады.</string>
+
+    <string name="no">Жоқ</string>
+    <string name="edit">Өңдеу</string>
+    <string name="revoke">Жою</string>
+    <string name="revoked_today">Жойылды: Бүгін</string>
+    <string name="revoke_recipe">Рецептті жою керек пе?</string>
+    <string name="confirmation_recipe_revoking">Сіз бұл рецептті өшіргіңіз келетініне сенімдісіз бе? Қайтарып алғаннан кейін пациент дәріханада оған дәрі ала алмайды.</string>
+
+    <string name="ai_title">Ассистент</string>
+
 </resources>

@@ -29,7 +29,7 @@
     <string name="no_appointments_for_day">You have no appointments\nscheduled for this day</string>
     <string name="appointment_time">Appointment Time</string>
     <string name="ok">OK</string>
-
+    <string name="profile">Profile</string>
     <string name="back">Back</string>
     <string name="email">Email</string>
     <string name="password">Password</string>
@@ -132,4 +132,23 @@
     <string name="side_effects">Side Effects</string>
     <string name="no_medications_specified">• No medications specified</string>
     <string name="recommendations_format">Recommendations: %1$s</string>
+    <string name="experimental_features">Experimental features</string>
+    <string name="lab">Lab</string>
+    <string name="warning_msg">These functions are under development and may not work well.</string>
+    <string name="voice_heading">Voice dictation of a recipe</string>
+    <string name="voice_desc">Allows you to fill in the list of medications using your voice.</string>
+
+    <string name="assistant_heading">AI Assistant (Chat)</string>
+    <string name="assistant_desc">Adds a tab with an AI assistant to navigation.</string>
+    <string name="no">No</string>
+    <string name="edit">Edit</string>
+    <string name="revoke">Revoke</string>
+    <string name="revoked_today">Revoked: Today</string>
+    <string name="revoke_recipe">Revoke recipe?</string>
+    <string name="confirmation_recipe_revoking">Are you sure you want to deactivate this recipe? After the recall, the patient will not be able to receive drugs from the pharmacy.</string>
+    <string name="ai_title">Assitant</string>
+
+
+
+
 </resources>
