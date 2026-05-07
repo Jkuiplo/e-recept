@@ -3,6 +3,7 @@ package com.google.eRecept.feature.home.repository
 import android.content.Context
 import com.google.eRecept.data.model.DoctorSchedule
 import com.google.eRecept.data.model.Appointment
+import com.google.eRecept.data.model.AppointmentStatus
 import com.google.eRecept.data.model.Patient
 import com.google.eRecept.data.network.api.HomeApi
 import com.google.eRecept.data.network.dto.CreateAppointmentRequest
@@ -117,7 +118,7 @@ class HomeRepositoryImpl
                     appointmentDate = formatToApiDate(appointment.date),
                     appointmentTime = appointment.time,
                     type = "Первичный",
-                    status = "Запланирована",
+                    status = AppointmentStatus.PLANNED.backendValue,
                     history = appointment.history,
                 )
 

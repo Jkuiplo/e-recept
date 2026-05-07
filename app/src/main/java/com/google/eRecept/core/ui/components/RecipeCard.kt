@@ -133,7 +133,6 @@ fun RecipeCard(
                                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                                 color = badgeContentColor,
                             )
-                            // Add a small dropdown arrow if active to indicate it's clickable
                             if (isGreenBadge) {
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Icon(
@@ -146,14 +145,13 @@ fun RecipeCard(
                         }
                     }
 
-                    // The Dropdown Menu anchored to the Status Badge
                     if (isGreenBadge) {
                         DropdownMenu(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false },
                         ) {
                             DropdownMenuItem(
-                                text = { Text("Редактировать") },
+                                text = { Text(stringResource(R.string.edit)) },
                                 onClick = {
                                     showMenu = false
                                     viewModel.openEditSheet(recipe)
@@ -164,7 +162,7 @@ fun RecipeCard(
                                 },
                             )
                             DropdownMenuItem(
-                                text = { Text("Отозвать", color = MaterialTheme.colorScheme.error) },
+                                text = { Text(stringResource(R.string.revoke), color = MaterialTheme.colorScheme.error) },
                                 onClick = {
                                     showMenu = false
                                     showRevokeConfirm = true
@@ -185,7 +183,7 @@ fun RecipeCard(
 
                 if (isRevoked) {
                     Text(
-                        text = "Отозван: Сегодня",
+                        text = stringResource(R.string.revoked_today),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.error,
                     )
@@ -203,10 +201,10 @@ fun RecipeCard(
     if (showRevokeConfirm) {
         AlertDialog(
             onDismissRequest = { if (!isRevoking) showRevokeConfirm = false },
-            title = { Text("Отозвать рецепт?", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.revoke_recipe), fontWeight = FontWeight.Bold) },
             text = {
                 Text(
-                    "Вы уверены, что хотите деактивировать этот рецепт? После отзыва пациент не сможет получить по нему препараты в аптеке.",
+                    stringResource(R.string.confirmation_recipe_revoking),
                 )
             },
             confirmButton = {
@@ -225,13 +223,13 @@ fun RecipeCard(
                             strokeWidth = 2.dp,
                         )
                     } else {
-                        Text("Отозвать", color = MaterialTheme.colorScheme.onError)
+                        Text(stringResource(R.string.revoke), color = MaterialTheme.colorScheme.onError)
                     }
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showRevokeConfirm = false }, enabled = !isRevoking) {
-                    Text("Отмена")
+                    Text(stringResource(R.string.cancel))
                 }
             },
         )

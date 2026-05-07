@@ -1,5 +1,6 @@
 package com.google.eRecept.core.navigation
 
+import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.automirrored.outlined.Assignment
@@ -10,34 +11,37 @@ import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.google.eRecept.R
 
 enum class BottomNavItem(
     val route: String,
-    val title: String,
+
+    @StringRes
+    val title: Int,
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector,
 ) {
     Schedule(
         route = "schedule",
-        title = "Расписание",
+        title = R.string.schedule_txt,
         selectedIcon = Icons.Filled.CalendarToday,
         unselectedIcon = Icons.Outlined.CalendarToday,
     ),
     Recipes(
         route = "recipes",
-        title = "Рецепты",
+        title = R.string.recipes_title,
         selectedIcon = Icons.AutoMirrored.Filled.Assignment,
         unselectedIcon = Icons.AutoMirrored.Outlined.Assignment,
     ),
     Search(
         route = "search",
-        title = "Поиск",
+        title = R.string.search_title,
         selectedIcon = Icons.Filled.Search,
         unselectedIcon = Icons.Outlined.Search,
     ),
     Profile(
         route = "profile",
-        title = "Профиль",
+        title = R.string.profile,
         selectedIcon = Icons.Filled.AccountCircle,
         unselectedIcon = Icons.Outlined.AccountCircle,
     ),

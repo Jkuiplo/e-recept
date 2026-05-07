@@ -40,7 +40,9 @@ import com.google.eRecept.R
 import com.google.eRecept.core.ui.components.PatientInfoCard
 import com.google.eRecept.core.ui.components.SkeletonList
 import com.google.eRecept.data.model.Appointment
+import com.google.eRecept.data.model.AppointmentStatus
 import com.google.eRecept.data.model.Patient
+import com.google.eRecept.data.model.toLocalizedString
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -237,24 +239,28 @@ fun HomeScreen(
 fun AppointmentCard(
     appointment: Appointment,
     onClick: () -> Unit,
-    onStatusChange: (String) -> Unit,
+    onStatusChange: (AppointmentStatus) -> Unit, // Используем наш Enum
 ) {
     var statusExpanded by remember { mutableStateOf(false) }
+
+    // Список всех статусов для выпадающего меню
     val statuses = listOf(
-        stringResource(R.string.status_planned),
-        stringResource(R.string.status_completed),
-        stringResource(R.string.status_didnt_came),
-        stringResource(R.string.status_cancel),
+        AppointmentStatus.PLANNED,
+        AppointmentStatus.COMPLETED,
+        AppointmentStatus.NO_SHOW,
+        AppointmentStatus.CANCELLED
     )
+
+    // Парсим текущий статус
+    val currentStatus = AppointmentStatus.fromBackendString(appointment.status)
 
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors =
-            CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-            ),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        ),
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -283,59 +289,49 @@ fun AppointmentCard(
                 )
             }
 
-            val containerColor =
-                when (appointment.status) {
-                    stringResource(R.string.status_completed) -> MaterialTheme.colorScheme.secondaryContainer
+            // Динамические цвета в зависимости от статуса
+            val containerColor = when (currentStatus) {
+                AppointmentStatus.COMPLETED -> MaterialTheme.colorScheme.secondaryContainer
+                AppointmentStatus.NO_SHOW, AppointmentStatus.CANCELLED -> MaterialTheme.colorScheme.errorContainer
+                else -> MaterialTheme.colorScheme.primaryContainer
+            }
+            val contentColor = when (currentStatus) {
+                AppointmentStatus.COMPLETED -> MaterialTheme.colorScheme.onSecondaryContainer
+                AppointmentStatus.NO_SHOW, AppointmentStatus.CANCELLED -> MaterialTheme.colorScheme.onErrorContainer
+                else -> MaterialTheme.colorScheme.onPrimaryContainer
+            }
 
-                    stringResource(
-                        R.string.status_didnt_came,
-                    ), stringResource(R.string.status_cancel),
-                    -> MaterialTheme.colorScheme.errorContainer
-
-                    else -> MaterialTheme.colorScheme.primaryContainer
-                }
-            val contentColor =
-                when (appointment.status) {
-                    stringResource(R.string.status_completed) -> MaterialTheme.colorScheme.onSecondaryContainer
-
-                    stringResource(
-                        R.string.status_didnt_came,
-                    ), stringResource(R.string.status_cancel),
-                    -> MaterialTheme.colorScheme.onErrorContainer
-
-                    else -> MaterialTheme.colorScheme.onPrimaryContainer
-                }
-
+            // Обертка для фона и вызова меню
             Box {
                 Box(
-                    modifier =
-                        Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(containerColor)
-                            .clickable { statusExpanded = true }
-                            .padding(horizontal = 8.dp, vertical = 6.dp),
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(containerColor)
+                        .clickable { statusExpanded = true } // Возвращаем клик
+                        .padding(horizontal = 8.dp, vertical = 6.dp),
                 ) {
                     Text(
-                        text = appointment.status,
+                        text = currentStatus.toLocalizedString(), // Локализованный текст
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                         color = contentColor,
                     )
                 }
 
+                // Само выпадающее меню
                 DropdownMenu(
                     expanded = statusExpanded,
                     onDismissRequest = { statusExpanded = false }
                 ) {
-                    statuses.forEach { status ->
+                    statuses.forEach { statusEnum ->
                         DropdownMenuItem(
-                            text = { Text(status) },
+                            text = { Text(statusEnum.toLocalizedString()) }, // Локализованный текст в меню
                             onClick = {
-                                onStatusChange(status)
+                                onStatusChange(statusEnum)
                                 statusExpanded = false
                             },
                             leadingIcon = {
                                 RadioButton(
-                                    selected = appointment.status == status,
+                                    selected = currentStatus == statusEnum,
                                     onClick = null
                                 )
                             }
@@ -352,30 +348,29 @@ fun AppointmentCard(
 @Composable
 fun AppointmentDetailsBottomSheetContent(
     appointment: Appointment,
-    onSave: (String) -> Unit,
+    onSave: (AppointmentStatus) -> Unit,
     onCreateRecipeClick: () -> Unit,
     onPatientClick: (String) -> Unit,
 ) {
 
+    val statuses = listOf(
+        AppointmentStatus.PLANNED,
+        AppointmentStatus.COMPLETED,
+        AppointmentStatus.NO_SHOW,
+        AppointmentStatus.CANCELLED
+    )
 
-
-    val statuses =
-        listOf(
-            stringResource(R.string.status_planned),
-            stringResource(R.string.status_completed),
-            stringResource(R.string.status_didnt_came),
-            stringResource(R.string.status_cancel),
-        )
-    var selectedStatus by remember(appointment.status) { mutableStateOf(appointment.status) }
+    var selectedStatus by remember(appointment.status) {
+        mutableStateOf(AppointmentStatus.fromBackendString(appointment.status))
+    }
 
     Column(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 40.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 24.dp)
+            .padding(bottom = 40.dp),
     ) {
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -391,8 +386,8 @@ fun AppointmentDetailsBottomSheetContent(
                 iin = appointment.patient_iin,
                 full_name = appointment.patient_name,
                 gender = appointment.gender,
-                birth_date = "", // Age is available but not birth date
-                allergies = "" // Allergies might be in history, but keeping it simple
+                birth_date = "",
+                allergies = ""
             ),
             onClick = { onPatientClick(appointment.patient_iin) }
         )
@@ -414,22 +409,20 @@ fun AppointmentDetailsBottomSheetContent(
             statuses.forEach { status ->
                 val isSelected = selectedStatus == status
                 Row(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .border(
-                                width = 1.dp,
-                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-                                shape = RoundedCornerShape(12.dp),
-                            ).background(
-                                if (isSelected) {
-                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                                } else {
-                                    Color.Transparent
-                                },
-                            ).clickable { selectedStatus = status }
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .border(
+                            width = 1.dp,
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                            shape = RoundedCornerShape(12.dp),
+                        )
+                        .background(
+                            if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                            else Color.Transparent
+                        )
+                        .clickable { selectedStatus = status }
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     RadioButton(
@@ -439,11 +432,11 @@ fun AppointmentDetailsBottomSheetContent(
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        text = status,
-                        style =
-                            MaterialTheme.typography.bodyLarge.copy(
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                            ),
+                        // 3. ИСПРАВИЛИ selectedStatus НА status
+                        text = status.toLocalizedString(),
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                        ),
                         color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                     )
                 }
@@ -460,8 +453,9 @@ fun AppointmentDetailsBottomSheetContent(
             color = MaterialTheme.colorScheme.onSurface,
         )
         Spacer(modifier = Modifier.height(4.dp))
+        val historyText = appointment.history.ifEmpty { stringResource(R.string.no) }
         Text(
-            text = appointment.history.ifEmpty { stringResource(R.string.no_data) },
+            text = stringResource(R.string.note_format, historyText),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -469,11 +463,11 @@ fun AppointmentDetailsBottomSheetContent(
         Spacer(modifier = Modifier.height(32.dp))
 
         Button(
+            // 4. ИСПРАВИЛИ: ПЕРЕДАЕМ САМ ENUM, А НЕ ТЕКСТ
             onClick = { onSave(selectedStatus) },
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
             shape = RoundedCornerShape(16.dp),
         ) {
             Text(stringResource(R.string.save), style = MaterialTheme.typography.titleMedium)
@@ -483,10 +477,9 @@ fun AppointmentDetailsBottomSheetContent(
 
         FilledTonalButton(
             onClick = onCreateRecipeClick,
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
             shape = RoundedCornerShape(16.dp),
         ) {
             Text(stringResource(R.string.write_prescription), style = MaterialTheme.typography.titleMedium)

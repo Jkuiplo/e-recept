@@ -221,7 +221,7 @@ fun ProfileScreen(
                 shape = MaterialTheme.shapes.large,
             ) {
                 ListItem(
-                    headlineContent = { Text("Экспериментальные функции") },
+                    headlineContent = { Text(stringResource(R.string.experimental_features))},
                     leadingContent = {
                         Icon(
                             Icons.Default.Science,

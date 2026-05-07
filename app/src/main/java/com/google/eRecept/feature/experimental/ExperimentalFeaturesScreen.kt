@@ -8,8 +8,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.google.eRecept.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -23,7 +25,9 @@ fun ExperimentalFeaturesScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Эксперименты") },
+                title = {
+                    Text(stringResource(R.string.lab))
+                        },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
@@ -42,7 +46,7 @@ fun ExperimentalFeaturesScreen(
                 .padding(16.dp)
         ) {
             Text(
-                text = "Эти функции находятся в разработке и могут работать нестабильно.",
+                text = stringResource(R.string.warning_msg),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -50,8 +54,8 @@ fun ExperimentalFeaturesScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             ExperimentalItem(
-                title = "Голосовая диктовка рецепта",
-                description = "Позволяет заполнять список лекарств с помощью голоса.",
+                title = stringResource(R.string.voice_heading),
+                description = stringResource(R.string.voice_desc),
                 isEnabled = voiceEnabled,
                 onToggle = { viewModel.toggleVoice(it) }
             )
@@ -59,8 +63,8 @@ fun ExperimentalFeaturesScreen(
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
             ExperimentalItem(
-                title = "AI Ассистент (Чат)",
-                description = "Добавляет вкладку с ИИ-помощником в навигацию.",
+                title = stringResource(R.string.assistant_heading),
+                description = stringResource(R.string.assistant_desc),
                 isEnabled = aiEnabled,
                 onToggle = { viewModel.toggleAi(it) }
             )

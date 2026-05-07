@@ -32,6 +32,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -69,7 +70,7 @@ fun MainScreen(
     val coroutineScope = rememberCoroutineScope()
 
     val isParentNavigating = pagerState.isScrollInProgress
-    val currentTitle = navItems[pagerState.currentPage].title
+    val currentTitle = stringResource(navItems[pagerState.currentPage].title)
 
     Scaffold(
         topBar = {
@@ -102,14 +103,16 @@ fun MainScreen(
                 navItems.forEachIndexed { index, item ->
                     val isSelected = pagerState.currentPage == index
 
+                    val title = stringResource(item.title)
+
                     NavigationBarItem(
                         icon = {
                             Icon(
                                 imageVector = if (isSelected) item.selectedIcon else item.unselectedIcon,
-                                contentDescription = item.title,
+                                contentDescription = title,
                             )
                         },
-                        label = { Text(item.title) },
+                        label = { Text(title)},
                         selected = isSelected,
                         onClick = {
                             coroutineScope.launch {

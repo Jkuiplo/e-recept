@@ -3,6 +3,7 @@ package com.google.eRecept.feature.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.eRecept.data.model.Appointment
+import com.google.eRecept.data.model.AppointmentStatus
 import com.google.eRecept.data.model.Patient
 import com.google.eRecept.data.model.DoctorSchedule
 import com.google.eRecept.feature.home.repository.HomeRepository
@@ -70,7 +71,7 @@ class HomeViewModel
 
             val bookedTimes =
                 _appointments.value
-                    .filter { it.date == date && it.status != "Отменена" }
+                    .filter { it.date == date && AppointmentStatus.fromBackendString(it.status) != AppointmentStatus.CANCELLED }
                     .map { it.time }
 
             val slots = mutableListOf<String>()
@@ -169,8 +170,8 @@ class HomeViewModel
                         type = "",
                         age = age,
                         gender = patient.gender,
-                        history = "Примечание: ${patient.allergies.ifEmpty { "Нет" }}",
-                        status = "Запланирован",
+                        history = patient.allergies,
+                        status = AppointmentStatus.PLANNED.backendValue,
                         is_completed = false,
                     )
                 repository.createAppointment(appointment)
@@ -179,11 +180,11 @@ class HomeViewModel
 
         fun changeAppointmentStatus(
             appointment: Appointment,
-            newStatus: String,
+            newStatus: AppointmentStatus,
         ) {
             viewModelScope.launch {
-                val isCompleted = newStatus == "Состоялась" || newStatus == "Не явился"
-                repository.updateAppointmentStatus(appointment.id, newStatus, isCompleted)
+                val isCompleted = newStatus == AppointmentStatus.COMPLETED || newStatus == AppointmentStatus.NO_SHOW
+                repository.updateAppointmentStatus(appointment.id, newStatus.backendValue, isCompleted)
             }
         }
 
