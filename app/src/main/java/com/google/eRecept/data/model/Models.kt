@@ -73,7 +73,7 @@ data class Medication(
     val description: String = "",
     val indications: String = "",
     val contraindications: String = "",
-    val sideEffects: String = "", // Убрать надо бы
+    val sideEffects: String = "",
     val availableDosages: List<String> = emptyList(),
     val forms: List<String> = emptyList(),
 )

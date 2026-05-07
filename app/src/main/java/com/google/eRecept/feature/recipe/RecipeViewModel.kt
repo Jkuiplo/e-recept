@@ -243,7 +243,6 @@ class RecipeViewModel
 
                     if (response != null) {
 
-                        // 1. Бронебойный маппер для дозировки ("МГ" -> "мг", "таблетки" -> "таб")
                         fun mapDosageUnit(unit: String?): String {
                             if (unit.isNullOrBlank()) return ""
                             val lower = unit.lowercase()
@@ -255,18 +254,14 @@ class RecipeViewModel
                             }
                         }
 
-                        // 2. Бронебойный маппер для кратности (ограничиваем от 1 до 4)
                         fun mapFrequency(aiFreq: String?): String {
                             if (aiFreq.isNullOrBlank()) return ""
-                            // Ищем числа в строке (например, "50" из "50 раз в день")
                             val digitMatch = Regex("\\d+").find(aiFreq)
                             if (digitMatch != null) {
                                 val count = digitMatch.value.toIntOrNull() ?: 1
-                                // Ограничиваем значение так, чтобы оно попадало в наши кнопки (1, 2, 3, 4)
                                 val safeCount = count.coerceIn(1, 4)
                                 return "$safeCount×"
                             }
-                            // Если цифр нет, но есть слова
                             val lower = aiFreq.lowercase()
                             return when {
                                 lower.contains("один") || lower.contains("раз") -> "1×"
@@ -277,7 +272,6 @@ class RecipeViewModel
                             }
                         }
 
-                        // 3. Бронебойный маппер длительности
                         fun mapDurationUnit(unit: String?): String {
                             if (unit.isNullOrBlank()) return ""
                             val lower = unit.lowercase()
@@ -289,7 +283,6 @@ class RecipeViewModel
                             }
                         }
 
-                        // Превращаем DTO в UI-модели с жесткой фильтрацией
                         val aiParsedItems = response.recipeItems?.map { aiMed ->
                             MedicationItem(
                                 id = aiMed.medicationId ?: "",
@@ -305,7 +298,6 @@ class RecipeViewModel
 
                         val currentDraft = _draftMedications.value.toMutableList()
 
-                        // Умное слияние (Smart Merging)
                         aiParsedItems.forEach { aiMed ->
                             val existingIndex = currentDraft.indexOfFirst { it.name.equals(aiMed.name, ignoreCase = true) }
 
@@ -331,7 +323,6 @@ class RecipeViewModel
 
                         _draftMedications.value = currentDraft
 
-                        // Обработка рекомендаций и мусора
                         var combinedNotes = _draftNotes.value
 
                         if (!response.recipeNotes.isNullOrBlank()) {

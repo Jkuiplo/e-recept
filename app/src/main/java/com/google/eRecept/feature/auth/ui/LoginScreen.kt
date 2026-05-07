@@ -190,7 +190,7 @@ fun LoginScreen(
                 ) {
                     Checkbox(
                         checked = rememberMe,
-                        onCheckedChange = null, // Toggle handled by Row
+                        onCheckedChange = null,
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(

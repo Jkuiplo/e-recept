@@ -108,7 +108,6 @@ class SearchRepositoryImpl
             offset: Int,
         ): List<Medication> =
             try {
-                // ИСПРАВЛЕНО: Вызываем api.getAllMedications, а не searchMedications
                 val response = api.getAllMedications(limit, offset)
                 if (response.isSuccessful) {
                     response

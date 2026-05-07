@@ -41,7 +41,7 @@ data class RecipeResponseDto(
     @SerializedName("created_at") val createdAt: String,
     @SerializedName("expire_date") val expireDate: String,
     val notes: String,
-    val status: String?, // <-- ДОБАВЛЕН СТАТУС
+    val status: String?,
     @SerializedName("patient_full_name") val patientFullName: String?,
     @SerializedName("qr_data") val qrData: String?,
     val items: List<RecipeItemDto>,

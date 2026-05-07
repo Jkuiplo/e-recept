@@ -49,7 +49,6 @@ fun CreateAppointmentScreen(
 
     var showNotFoundError by remember { mutableStateOf(false) }
 
-    // Defaults to passed date or today
     var appointmentDate by remember {
         mutableStateOf(
             passedDate ?: SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()).format(Calendar.getInstance().time)

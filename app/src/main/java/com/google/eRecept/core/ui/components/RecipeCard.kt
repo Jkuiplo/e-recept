@@ -83,11 +83,10 @@ fun RecipeCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp), // Unified padding for a cleaner look
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Left Column: Recipe Info
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = stringResource(R.string.recipe_number_format, recipeNum),
@@ -113,10 +112,8 @@ fun RecipeCard(
             val badgeContainerColor = if (isGreenBadge) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer
             val badgeContentColor = if (isGreenBadge) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onErrorContainer
 
-            // Right Column: Status & Menu
             Column(horizontalAlignment = Alignment.End) {
                 Box {
-                    // The Status Badge acting as the dropdown trigger
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))

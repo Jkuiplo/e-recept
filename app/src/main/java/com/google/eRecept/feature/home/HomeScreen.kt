@@ -203,7 +203,6 @@ fun HomeScreen(
         }
     }
 
-    // Keep AppointmentDetailsBottomSheetContent here for now as you requested to do this step-by-step
     if (selectedAppointment != null) {
         val currentAppointment = appointments.find { it.id == selectedAppointment!!.id } ?: selectedAppointment!!
 
@@ -239,11 +238,10 @@ fun HomeScreen(
 fun AppointmentCard(
     appointment: Appointment,
     onClick: () -> Unit,
-    onStatusChange: (AppointmentStatus) -> Unit, // Используем наш Enum
+    onStatusChange: (AppointmentStatus) -> Unit,
 ) {
     var statusExpanded by remember { mutableStateOf(false) }
 
-    // Список всех статусов для выпадающего меню
     val statuses = listOf(
         AppointmentStatus.PLANNED,
         AppointmentStatus.COMPLETED,
@@ -251,7 +249,6 @@ fun AppointmentCard(
         AppointmentStatus.CANCELLED
     )
 
-    // Парсим текущий статус
     val currentStatus = AppointmentStatus.fromBackendString(appointment.status)
 
     Card(
@@ -289,7 +286,6 @@ fun AppointmentCard(
                 )
             }
 
-            // Динамические цвета в зависимости от статуса
             val containerColor = when (currentStatus) {
                 AppointmentStatus.COMPLETED -> MaterialTheme.colorScheme.secondaryContainer
                 AppointmentStatus.NO_SHOW, AppointmentStatus.CANCELLED -> MaterialTheme.colorScheme.errorContainer
@@ -301,30 +297,28 @@ fun AppointmentCard(
                 else -> MaterialTheme.colorScheme.onPrimaryContainer
             }
 
-            // Обертка для фона и вызова меню
             Box {
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
                         .background(containerColor)
-                        .clickable { statusExpanded = true } // Возвращаем клик
+                        .clickable { statusExpanded = true }
                         .padding(horizontal = 8.dp, vertical = 6.dp),
                 ) {
                     Text(
-                        text = currentStatus.toLocalizedString(), // Локализованный текст
+                        text = currentStatus.toLocalizedString(),
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                         color = contentColor,
                     )
                 }
 
-                // Само выпадающее меню
                 DropdownMenu(
                     expanded = statusExpanded,
                     onDismissRequest = { statusExpanded = false }
                 ) {
                     statuses.forEach { statusEnum ->
                         DropdownMenuItem(
-                            text = { Text(statusEnum.toLocalizedString()) }, // Локализованный текст в меню
+                            text = { Text(statusEnum.toLocalizedString()) },
                             onClick = {
                                 onStatusChange(statusEnum)
                                 statusExpanded = false
@@ -401,7 +395,6 @@ fun AppointmentDetailsBottomSheetContent(
         )
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Новый вертикальный список выбора статусов
         Column(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -432,7 +425,6 @@ fun AppointmentDetailsBottomSheetContent(
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        // 3. ИСПРАВИЛИ selectedStatus НА status
                         text = status.toLocalizedString(),
                         style = MaterialTheme.typography.bodyLarge.copy(
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
@@ -463,7 +455,6 @@ fun AppointmentDetailsBottomSheetContent(
         Spacer(modifier = Modifier.height(32.dp))
 
         Button(
-            // 4. ИСПРАВИЛИ: ПЕРЕДАЕМ САМ ENUM, А НЕ ТЕКСТ
             onClick = { onSave(selectedStatus) },
             modifier = Modifier
                 .fillMaxWidth()

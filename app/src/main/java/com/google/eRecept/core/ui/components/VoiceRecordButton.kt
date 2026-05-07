@@ -64,7 +64,6 @@ fun VoiceRecordButton(
         }
     }
 
-    // Обработка успешного распознавания от Google
     LaunchedEffect(voiceState) {
         when (voiceState) {
             is VoiceState.Success -> {
@@ -85,7 +84,6 @@ fun VoiceRecordButton(
         }
     }
 
-    // Анимация пульсации при записи
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val scale by infiniteTransition.animateFloat(
         initialValue = 1f,
@@ -143,11 +141,9 @@ fun VoiceRecordButton(
                     }
 
                     if (isRecording) {
-                        // Останавливаем и ждем финального результата
                         vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
                         recognizerManager.stopListening()
                     } else {
-                        // Начинаем запись
                         isRecording = true
                         vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
                         recognizerManager.startListening()

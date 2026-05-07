@@ -81,7 +81,7 @@ fun PatientListItem(
                 Text(
                     text = patient.full_name,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface // Fixed text color
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             },
             supportingContent = { Text(stringResource(R.string.iin, patient.iin)) },

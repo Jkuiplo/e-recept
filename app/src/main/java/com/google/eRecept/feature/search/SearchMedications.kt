@@ -75,7 +75,7 @@ fun MedicationListItem(
                 Text(
                     text = medication.name,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface // Fixed text color
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             },
             supportingContent = { Text(medication.activeSubstance) },

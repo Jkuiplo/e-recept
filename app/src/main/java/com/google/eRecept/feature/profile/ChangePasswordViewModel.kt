@@ -29,7 +29,7 @@ sealed class ChangePasswordState {
 class ChangePasswordViewModel
     @Inject
     constructor(
-        private val authApi: AuthApi, // Или ваш репозиторий, если вы используете его между ViewModel и API
+        private val authApi: AuthApi,
         application: Application,
     ) : AndroidViewModel(application) {
         private val prefs = application.getSharedPreferences("erecept_prefs", Context.MODE_PRIVATE)

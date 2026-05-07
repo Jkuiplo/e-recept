@@ -46,7 +46,6 @@ fun RecipeDetailsBottomSheet(
     var showRevokeConfirm by remember { mutableStateOf(false) }
     val isRevoking by viewModel.isRevoking.collectAsStateWithLifecycle(initialValue = false)
 
-    // Вычисляем статусы
     val isExpired = recipe.expire_date < System.currentTimeMillis()
     val displayStatusCaps = when {
         recipe.status == "Активен" && isExpired -> stringResource(R.string.status_expired_caps)
@@ -238,7 +237,6 @@ fun RecipeDetailsBottomSheet(
             HorizontalDivider()
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Медикаменты
             if (recipe.medications.isEmpty()) {
                 Text(stringResource(R.string.no_medications_specified), modifier = Modifier.padding(vertical = 4.dp))
             } else {

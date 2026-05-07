@@ -57,7 +57,6 @@ fun ForgotPasswordScreen(
     val authState by viewModel.authState.collectAsState()
     val timer by viewModel.resendTimer.collectAsState()
 
-    // валидация почты
     val isEmailValid =
         Patterns.EMAIL_ADDRESS
             .matcher(email)
@@ -84,7 +83,6 @@ fun ForgotPasswordScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             if (!isSent) {
-                // Ввод почты
                 Text(
                     text = "Восстановление доступа",
                     style = MaterialTheme.typography.headlineMedium,
@@ -134,7 +132,6 @@ fun ForgotPasswordScreen(
                     }
                 }
             } else {
-                // Успешно отпправлено
                 Icon(
                     imageVector = Icons.Default.CheckCircle,
                     contentDescription = null,
@@ -179,7 +176,6 @@ fun ForgotPasswordScreen(
                 }
             }
 
-            // Показ ошибки бэка
             AnimatedVisibility(visible = authState is AuthViewModel.AuthState.Error) {
                 val error = (authState as? AuthViewModel.AuthState.Error)?.message ?: ""
                 Text(

@@ -43,7 +43,6 @@ class ProfileViewModel
 
         init {
             loadProfile()
-            // Ensure default language is set if not present
             if (!prefs.contains("language")) {
                 prefs.edit { putString("language", "ru") }
             }

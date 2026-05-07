@@ -64,7 +64,6 @@ class AuthViewModel
             password: String,
             rememberMe: Boolean,
         ) {
-            // ... проверки валидации оставляем без изменений ...
 
             viewModelScope.launch {
                 val result = repository.login(email, password)
@@ -76,7 +75,6 @@ class AuthViewModel
                             putString("doctor_name", loginResponse.fullName)
                             putString("doctor_specialization", loginResponse.specialization)
 
-                            // Сохраняем выбор пользователя для следующего запуска
                             putBoolean("remember_me", rememberMe)
 
                             if (rememberMe) {

@@ -191,7 +191,7 @@ class HomeViewModel
         private fun parseTime(timeStr: String): Calendar {
             val cal =
                 Calendar.getInstance().apply {
-                    set(Calendar.YEAR, 2000) // Фиксированная дата, нас интересует только время
+                    set(Calendar.YEAR, 2000)
                     set(Calendar.MONTH, 0)
                     set(Calendar.DAY_OF_MONTH, 1)
                 }

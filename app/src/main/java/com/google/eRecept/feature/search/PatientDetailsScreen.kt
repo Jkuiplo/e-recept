@@ -37,7 +37,6 @@ fun PatientDetailsScreen(
     val patientFromSearch by searchViewModel.patientResults.collectAsState()
     val searchResultPatient by homeViewModel.searchPatientResult.collectAsState()
     
-    // Используем результат поиска по ИИН как основной источник, так как он содержит полные данные
     val patient = searchResultPatient ?: patientFromSearch.find { it.iin == iin } ?: Patient(iin = iin, full_name = "Загрузка...")
 
     LaunchedEffect(iin) {
@@ -112,7 +111,6 @@ fun PatientDetailsScreen(
             onDismiss = { selectedRecipe = null},
             viewModel = recipeViewModel,
             onEdit = { selectedRecipe = null },
-            // onNavigateToPatientDetails не передаем
         )
     }
 }

@@ -236,7 +236,6 @@ fun CreateRecipeScreen(
                 }
             }
 
-            // Внизу файла CreateRecipeScreen.kt:
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -252,7 +251,6 @@ fun CreateRecipeScreen(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Основная кнопка (занимает доступное пространство)
                         Button(
                             onClick = {
                                 if (!isAllMedicationsValid) {
@@ -279,7 +277,6 @@ fun CreateRecipeScreen(
                             }
                         }
 
-                        // Experimental voice act
                         if (isVoiceEnabled) {
                             Spacer(modifier = Modifier.width(12.dp))
 

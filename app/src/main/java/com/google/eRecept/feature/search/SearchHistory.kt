@@ -137,7 +137,6 @@ fun SearchRecipeDetailsDialog(
                     )
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Active Status Badge
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
@@ -173,7 +172,6 @@ fun SearchRecipeDetailsDialog(
                     }
                 }
 
-                // 3 Dots options menu securely at the top right
                 if (isGreenBadge) {
                     Box {
                         IconButton(onClick = { showMenu = true }, modifier = Modifier.offset(x = 12.dp, y = (-12).dp)) {

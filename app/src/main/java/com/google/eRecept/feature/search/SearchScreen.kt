@@ -180,7 +180,6 @@ fun SearchScreen(
     }
 }
 
-// --- Shared UI Components ---
 
 @Composable
 fun SearchEmptyState(
