@@ -1,6 +1,7 @@
 package com.google.eRecept.core.di
 
 import android.content.Context
+import com.google.eRecept.data.local.dao.AiChatDao
 import com.google.eRecept.feature.auth.repository.AuthRepository
 import com.google.eRecept.feature.home.repository.HomeRepository
 import com.google.eRecept.feature.recipe.repository.RecipeRepository
@@ -9,6 +10,8 @@ import com.google.eRecept.data.network.api.AuthApi
 import com.google.eRecept.data.network.api.HomeApi
 import com.google.eRecept.data.network.api.RecipeApi
 import com.google.eRecept.data.network.api.SearchApi
+import com.google.eRecept.feature.ai.repository.AiChatRepository
+import com.google.eRecept.feature.ai.repository.AiChatRepositoryImpl
 import com.google.eRecept.feature.auth.repository.AuthRepositoryImpl
 import com.google.eRecept.feature.home.repository.HomeRepositoryImpl
 import com.google.eRecept.feature.recipe.repository.RecipeRepositoryImpl
@@ -46,4 +49,10 @@ object RepositoryModule {
         api: SearchApi,
         @ApplicationContext context: Context,
     ): SearchRepository = SearchRepositoryImpl(api, context)
+
+    @Provides
+    @Singleton
+    fun provideAiChatRepository(dao: AiChatDao): AiChatRepository {
+        return AiChatRepositoryImpl(dao)
+    }
 }

@@ -11,12 +11,22 @@ plugins {
 val properties = Properties()
 properties.load(rootProject.file("local.properties").inputStream())
 
+val localStorePassword = properties.getProperty("MYAPP_STORE_PASSWORD")
+    ?: throw GradleException("MYAPP_STORE_PASSWORD not found")
+
+val localKeyPassword = properties.getProperty("MYAPP_KEY_PASSWORD")
+    ?: throw GradleException("MYAPP_KEY_PASSWORD not found")
+
 val geminiApiKey = properties.getProperty("GEMINI_API_KEY")
     ?: throw GradleException("GEMINI_API_KEY not found")
 
 android {
     namespace = "com.google.eRecept"
     compileSdk = 35
+
+    lint {
+        disable += "NullSafeMutableLiveData"
+    }
 
     androidResources {
         generateLocaleConfig = true
@@ -37,8 +47,18 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("my-release-key.jks")
+            storePassword = localStorePassword
+            keyAlias = "my-key-alias"
+            keyPassword = localKeyPassword
+        }
+    }
+
     buildTypes {
-        release {
+        getByName("release") {
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -61,6 +81,10 @@ android {
 }
 
 dependencies {
+    implementation("com.github.jeziellago:compose-markdown:0.7.2")
+    implementation("androidx.room:room-runtime:2.6.1")
+    implementation("androidx.room:room-ktx:2.6.1")
+    kapt("androidx.room:room-compiler:2.6.1")
     implementation("com.google.ai.client.generativeai:generativeai:0.7.0")
     implementation("androidx.core:core-splashscreen:1.0.1")
     implementation(libs.hilt.android)

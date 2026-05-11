@@ -1,6 +1,9 @@
 package com.google.eRecept.feature.ai
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
@@ -27,6 +30,9 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.launch
 import com.google.eRecept.R
+import com.google.eRecept.data.local.entity.ChatEntity
+import dev.jeziellago.compose.markdowntext.MarkdownText
+
 @Composable
 fun AiAssistantScreen(
     viewModel: AiAssistantViewModel = hiltViewModel(),
@@ -52,10 +58,18 @@ fun AiAssistantScreen(
                             bottomRight = 0.dp
                         )
                     ) {
-                        HistoryDrawerContent(onNewChat = {
-                            viewModel.createNewChat()
-                            scope.launch { drawerState.close() }
-                        })
+                        HistoryDrawerContent(
+                            chats = uiState.chatHistory,
+                            onNewChat = {
+                                viewModel.createNewChat()
+                                scope.launch { drawerState.close() }
+                            },
+                            onChatSelected = { chatId ->
+                                viewModel.loadChat(chatId)
+                                scope.launch { drawerState.close() }
+                            },
+                            onRenameChat = { id, newTitle -> viewModel.renameChat(id, newTitle) }
+                        )
                     }
                 }
             }
@@ -75,7 +89,9 @@ fun AiAssistantScreen(
                     ChatMainContent(
                         modifier = Modifier.weight(1f),
                         uiState = uiState,
-                        onSend = { text -> viewModel.sendMessage(text) }
+                        onSend = { text -> viewModel.sendMessage(text) },
+                        onEditMessage = { msgId, newText -> viewModel.editMessage(msgId, newText) },
+                        onRegenerate = { viewModel.regenerateLastResponse() }
                     )
                 }
             }
@@ -141,7 +157,7 @@ fun AiChatTopBar(
                     DropdownMenuItem(
                         text = { Text("Pro (Умный)") },
                         onClick = {
-                            onModelChange("gemini-1.5-pro")
+                            onModelChange("gemini-2.5-pro")
                             expanded = false
                         }
                     )
@@ -162,10 +178,14 @@ fun AiChatTopBar(
 fun ChatMainContent(
     modifier: Modifier,
     uiState: AiChatUiState,
-    onSend: (String) -> Unit
+    onSend: (String) -> Unit,
+    onEditMessage: (String, String) -> Unit,
+    onRegenerate: () -> Unit
 ) {
     val scrollState = rememberLazyListState()
     var inputText by remember { mutableStateOf("") }
+
+    var editingMessage by remember { mutableStateOf<AiMessage?>(null) }
 
     LaunchedEffect(uiState.messages.size) {
         if (uiState.messages.isNotEmpty()) {
@@ -176,14 +196,20 @@ fun ChatMainContent(
     Column(modifier = modifier) {
         LazyColumn(
             state = scrollState,
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth(),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            items(uiState.messages) { msg ->
-                MessageBubble(msg)
+            items(uiState.messages.size) { index ->
+                val msg = uiState.messages[index]
+                val isLastAiMessage = !msg.isUser && index == uiState.messages.lastIndex
+
+                MessageBubble(
+                    msg = msg,
+                    isLastAiMessage = isLastAiMessage,
+                    onRegenerate = onRegenerate,
+                    onEditClick = { editingMessage = msg }
+                )
             }
             if (uiState.isLoading) {
                 item { LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) }
@@ -193,29 +219,19 @@ fun ChatMainContent(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color.Transparent)
                 .padding(horizontal = 8.dp)
-                .windowInsetsPadding(
-                    WindowInsets.ime.only(WindowInsetsSides.Bottom)
-                )
+                .windowInsetsPadding(WindowInsets.ime.only(WindowInsetsSides.Bottom))
                 .padding(bottom = 16.dp),
             verticalAlignment = Alignment.CenterVertically
-
         ) {
-            IconButton(onClick = { /* Логика прикрепления фото */ }) {
-                Icon(Icons.Default.AddCircleOutline, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-            }
             OutlinedTextField(
                 value = inputText,
                 onValueChange = { inputText = it },
                 modifier = Modifier.weight(1f),
                 placeholder = { Text("Задайте вопрос ИИ...") },
                 shape = RoundedCornerShape(24.dp),
-                maxLines = 4,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                    focusedContainerColor = Color.Transparent,
                     unfocusedContainerColor = Color.Transparent
                 )
             )
@@ -227,55 +243,151 @@ fun ChatMainContent(
                         inputText = ""
                     }
                 },
-                enabled = inputText.isNotBlank() && !uiState.isLoading,
-                shape = RoundedCornerShape(16.dp)
+                enabled = inputText.isNotBlank() && !uiState.isLoading
             ) {
                 Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null)
             }
         }
     }
-}
 
-@Composable
-fun MessageBubble(msg: AiMessage) {
-    val alignment = if (msg.isUser) Alignment.End else Alignment.Start
-    val color = if (msg.isUser) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
-    val textColor = if (msg.isUser) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-
-    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = alignment) {
-        Box(
-            modifier = Modifier
-                .widthIn(max = 300.dp)
-                .clip(
-                    RoundedCornerShape(
-                        topStart = 16.dp, topEnd = 16.dp,
-                        bottomStart = if (msg.isUser) 16.dp else 4.dp,
-                        bottomEnd = if (msg.isUser) 4.dp else 16.dp
-                    ))
-                .background(color)
-                .padding(14.dp)
-        ) {
-            Text(text = msg.text, color = textColor, fontSize = 16.sp, lineHeight = 22.sp)
-        }
+    if (editingMessage != null) {
+        var newText by remember { mutableStateOf(editingMessage!!.text) }
+        AlertDialog(
+            onDismissRequest = { editingMessage = null },
+            title = { Text("Редактировать запрос") },
+            text = {
+                OutlinedTextField(
+                    value = newText,
+                    onValueChange = { newText = it },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    onEditMessage(editingMessage!!.id, newText)
+                    editingMessage = null
+                }) { Text("Отправить заново") }
+            },
+            dismissButton = {
+                TextButton(onClick = { editingMessage = null }) { Text("Отмена") }
+            }
+        )
     }
 }
 
 @Composable
-fun HistoryDrawerContent(onNewChat: () -> Unit) {
-    Column(modifier = Modifier
-        .padding(16.dp)
-        .fillMaxSize()) {
-        Text("История чатов", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(bottom = 16.dp))
-        Button(
-            onClick = onNewChat,
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp)
+fun MessageBubble(
+    msg: AiMessage,
+    isLastAiMessage: Boolean,
+    onRegenerate: () -> Unit,
+    onEditClick: () -> Unit
+) {
+    val alignment = if (msg.isUser) Alignment.End else Alignment.Start
+    val color = if (msg.isUser) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Transparent
+    val textColor = MaterialTheme.colorScheme.onSurface
+
+    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = alignment) {
+        Box(
+            modifier = Modifier
+                .widthIn(max = 320.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(color)
+                .padding(12.dp)
         ) {
+            if (msg.isUser) {
+                Text(text = msg.text, color = textColor, fontSize = 16.sp, lineHeight = 22.sp)
+            } else {
+                MarkdownText(
+                    markdown = msg.text,
+                    isTextSelectable = true
+                )
+            }
+        }
+
+        Row(modifier = Modifier.padding(top = 4.dp, start = 8.dp, end = 8.dp)) {
+            if (msg.isUser) {
+                IconButton(onClick = onEditClick, modifier = Modifier.size(24.dp)) {
+                    Icon(Icons.Default.Edit, contentDescription = "Изменить", tint = Color.Gray, modifier = Modifier.size(16.dp))
+                }
+            } else if (isLastAiMessage) {
+                IconButton(onClick = onRegenerate, modifier = Modifier.size(24.dp)) {
+                    Icon(Icons.Default.Refresh, contentDescription = "Перегенерировать", tint = Color.Gray, modifier = Modifier.size(16.dp))
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun HistoryDrawerContent(
+    chats: List<ChatEntity>,
+    onNewChat: () -> Unit,
+    onChatSelected: (String) -> Unit,
+    onRenameChat: (String, String) -> Unit
+) {
+    var chatToRename by remember { mutableStateOf<ChatEntity?>(null) }
+
+    Column(modifier = Modifier.padding(16.dp).fillMaxSize()) {
+        Text("История чатов", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(bottom = 16.dp))
+        Button(onClick = onNewChat, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
             Icon(Icons.Default.Add, null)
             Spacer(modifier = Modifier.width(8.dp))
             Text("Новый чат")
         }
         Spacer(modifier = Modifier.height(24.dp))
-        Text("У вас пока нет сохраненных чатов", color = Color.Gray, fontSize = 14.sp)
+
+        LazyColumn {
+            items(chats.size) { index ->
+                val chat = chats[index]
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .combinedClickable(
+                            onClick = { onChatSelected(chat.id) },
+                            onLongClick = { chatToRename = chat }
+                        )
+                        .padding(vertical = 12.dp, horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                        Icon(Icons.Default.ChatBubbleOutline, null, tint = MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(chat.title, maxLines = 1, style = MaterialTheme.typography.bodyMedium)
+                    }
+                    IconButton(onClick = { chatToRename = chat }, modifier = Modifier.size(24.dp)) {
+                        Icon(Icons.Default.Edit, contentDescription = "Переименовать", tint = Color.Gray, modifier = Modifier.size(16.dp))
+                    }
+                }
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+            }
+        }
+    }
+
+    if (chatToRename != null) {
+        var newTitle by remember { mutableStateOf(chatToRename!!.title) }
+        AlertDialog(
+            onDismissRequest = { chatToRename = null },
+            title = { Text("Переименовать чат") },
+            text = {
+                OutlinedTextField(
+                    value = newTitle,
+                    onValueChange = { newTitle = it },
+                    singleLine = true
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (newTitle.isNotBlank()) {
+                        onRenameChat(chatToRename!!.id, newTitle)
+                    }
+                    chatToRename = null
+                }) { Text("Сохранить") }
+            },
+            dismissButton = {
+                TextButton(onClick = { chatToRename = null }) { Text("Отмена") }
+            }
+        )
     }
 }
