@@ -23,8 +23,6 @@ import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.eRecept.R
 import com.google.eRecept.core.ui.components.CustomSegmentedControl
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,8 +46,6 @@ fun ExperimentalFeaturesScreen(
         )
     }
 
-    var isRecreating by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -57,7 +53,7 @@ fun ExperimentalFeaturesScreen(
                 TopAppBar(
                     title = { Text(stringResource(R.string.lab)) },
                     navigationIcon = {
-                        IconButton(onClick = onNavigateBack, enabled = !isRecreating) {
+                        IconButton(onClick = onNavigateBack) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
                         }
                     },
@@ -158,24 +154,6 @@ fun ExperimentalFeaturesScreen(
                         }
                     }
                 }
-            }
-        }
-
-        AnimatedVisibility(
-            visible = isRecreating,
-            enter = fadeIn(),
-            exit = fadeOut()
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background.copy(alpha = 0.8f))
-                    .clickable(enabled = false) {},
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(
-                    color = MaterialTheme.colorScheme.primary
-                )
             }
         }
     }
