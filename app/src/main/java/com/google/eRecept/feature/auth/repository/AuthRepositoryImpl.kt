@@ -64,6 +64,5 @@ class AuthRepositoryImpl
             }
 
         override fun logout() {
-            // Очистка токена будет происходить во ViewModel
         }
     }

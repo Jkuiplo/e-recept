@@ -141,7 +141,6 @@ fun ExperimentalFeaturesScreen(
                                     if (index == selectedLanguageIndex) return@CustomSegmentedControl
 
                                     selectedLanguageIndex = index
-                                    isRecreating = true
 
                                     val tag = when (index) {
                                         1 -> "kk"
@@ -149,13 +148,10 @@ fun ExperimentalFeaturesScreen(
                                         else -> "ru"
                                     }
 
-                                    scope.launch {
-                                        delay(300)
-                                        viewModel.updateLanguage(tag)
-                                        AppCompatDelegate.setApplicationLocales(
-                                            LocaleListCompat.forLanguageTags(tag)
-                                        )
-                                    }
+                                    viewModel.updateLanguage(tag)
+                                    AppCompatDelegate.setApplicationLocales(
+                                        LocaleListCompat.forLanguageTags(tag)
+                                    )
                                 },
                                 modifier = Modifier.fillMaxWidth()
                             )

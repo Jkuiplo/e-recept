@@ -106,7 +106,7 @@ fun RecipeDetailsBottomSheet(
                         Text(
                             text = stringResource(R.string.valid_until_date, expireStr),
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant, // Заодно поправили цвет, он тут был ошибочно красным (error)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 4.dp),
                         )
                     }
