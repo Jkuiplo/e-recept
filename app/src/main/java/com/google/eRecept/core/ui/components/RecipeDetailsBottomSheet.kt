@@ -102,18 +102,11 @@ fun RecipeDetailsBottomSheet(
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(stringResource(R.string.prescribed_date, dateStr), style = MaterialTheme.typography.bodySmall)
 
-                    if (isRevoked) {
-                        Text(
-                            text = "Отозван: Сегодня",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.padding(top = 4.dp),
-                        )
-                    } else {
+                    if (!isRevoked) {
                         Text(
                             text = stringResource(R.string.valid_until_date, expireStr),
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.error,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant, // Заодно поправили цвет, он тут был ошибочно красным (error)
                             modifier = Modifier.padding(top = 4.dp),
                         )
                     }

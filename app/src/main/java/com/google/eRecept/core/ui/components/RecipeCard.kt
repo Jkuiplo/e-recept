@@ -178,13 +178,7 @@ fun RecipeCard(
 
                 Spacer(modifier = Modifier.height(6.dp))
 
-                if (isRevoked) {
-                    Text(
-                        text = stringResource(R.string.revoked_today),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                } else {
+                if (!isRevoked) {
                     Text(
                         text = stringResource(R.string.until_date_format, expireStr),
                         style = MaterialTheme.typography.labelSmall,
