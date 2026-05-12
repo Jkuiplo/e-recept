@@ -1,16 +1,10 @@
 package com.google.eRecept
 
-import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.tween
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -21,10 +15,10 @@ import androidx.compose.ui.Modifier
 import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
+import com.google.eRecept.core.navigation.RootNavGraph
 import com.google.eRecept.core.theme.EreceptTheme
 import com.google.eRecept.feature.profile.ProfileViewModel
 import dagger.hilt.android.AndroidEntryPoint
-import com.google.eRecept.core.navigation.RootNavGraph
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {

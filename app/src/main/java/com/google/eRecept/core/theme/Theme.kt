@@ -81,22 +81,20 @@ fun EreceptTheme(
             }
         }
 
-    val colorScheme = targetColorScheme
-
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val activity = view.context as? Activity
             if (activity != null && !activity.isFinishing && !activity.isDestroyed) {
                 val window = activity.window
-                window.statusBarColor = colorScheme.background.toArgb()
+                window.statusBarColor = targetColorScheme.background.toArgb()
                 WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
             }
         }
     }
 
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme = targetColorScheme,
         typography = Typography,
         content = content,
     )

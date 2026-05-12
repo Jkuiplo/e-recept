@@ -149,5 +149,7 @@
     <string name="confirmation_recipe_revoking">Сіз бұл рецептті өшіргіңіз келетініне сенімдісіз бе? Қайтарып алғаннан кейін пациент дәріханада оған дәрі ала алмайды.</string>
 
     <string name="ai_title">Ассистент</string>
+    <string name="no_recepts_for_today">Бүгінгі күні рецепттер жоқ</string>
+    <string name="no_prescriptions_written">Сіз бүгінгі күні бірде-бір рецепт жазған жоқсыз.</string>
 
 </resources>

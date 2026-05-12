@@ -1,7 +1,6 @@
 package com.google.eRecept.core.navigation
 
 import android.content.Context.MODE_PRIVATE
-import android.widget.Toast
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,18 +9,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.AnnotatedString
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
 import com.google.eRecept.MainScreen
@@ -29,6 +24,8 @@ import com.google.eRecept.feature.auth.AuthViewModel
 import com.google.eRecept.feature.auth.ui.ForgotPasswordScreen
 import com.google.eRecept.feature.auth.ui.LoginScreen
 import com.google.eRecept.feature.auth.ui.ResetPasswordScreen
+import com.google.eRecept.feature.experimental.ExperimentalFeaturesScreen
+import com.google.eRecept.feature.experimental.ExperimentalFeaturesViewModel
 import com.google.eRecept.feature.home.CreateAppointmentScreen
 import com.google.eRecept.feature.home.HomeViewModel
 import com.google.eRecept.feature.profile.ChangePasswordScreen
@@ -40,8 +37,6 @@ import com.google.eRecept.feature.recipe.RecipeViewModel
 import com.google.eRecept.feature.search.MedicationDetailsScreen
 import com.google.eRecept.feature.search.PatientDetailsScreen
 import com.google.eRecept.feature.search.SearchViewModel
-import com.google.eRecept.feature.experimental.ExperimentalFeaturesScreen
-import com.google.eRecept.feature.experimental.ExperimentalFeaturesViewModel
 
 @Composable
 fun RootNavGraph(

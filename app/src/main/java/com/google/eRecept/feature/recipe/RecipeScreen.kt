@@ -138,13 +138,13 @@ fun EmptyRecipesState() {
         )
         Spacer(modifier = Modifier.height(24.dp))
         Text(
-            text = "Сегодня рецептов нет",
+            text = stringResource(R.string.no_recepts_for_today),
             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurface,
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Вы еще не выписали ни одного рецепта за сегодняшний день.",
+            text = stringResource(R.string.no_prescriptions_written),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,

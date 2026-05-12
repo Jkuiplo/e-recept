@@ -145,4 +145,6 @@
     <string name="revoke_recipe">Отозвать рецепт?</string>
     <string name="confirmation_recipe_revoking">Вы уверены, что хотите деактивировать этот рецепт? После отзыва пациент не сможет получить по нему препараты в аптеке.</string>
     <string name="ai_title">Ассистент</string>
+    <string name="no_recepts_for_today">Сегодня рецептов нет</string>
+    <string name="no_prescriptions_written">Вы еще не выписали ни одного рецепта за сегодняшний день.</string>
 </resources>

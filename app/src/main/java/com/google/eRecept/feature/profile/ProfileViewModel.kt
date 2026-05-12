@@ -25,11 +25,11 @@ class ProfileViewModel
 
         val doctorName: StateFlow<String> =
             prefs
-                .getStringFlow("doctor_name", "Неизвестно")
+                .getStringFlow("doctor_name", "Doctor who")
                 .stateIn(
                     scope = viewModelScope,
                     started = SharingStarted.Companion.WhileSubscribed(5000),
-                    initialValue = prefs.getString("doctor_name", "Неизвестно") ?: "",
+                    initialValue = prefs.getString("doctor_name", "Doctor who") ?: "Doctor who",
                 )
 
         private val _doctorProfile = MutableStateFlow<Doctor?>(null)

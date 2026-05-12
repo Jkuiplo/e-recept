@@ -147,8 +147,6 @@
     <string name="revoke_recipe">Revoke recipe?</string>
     <string name="confirmation_recipe_revoking">Are you sure you want to deactivate this recipe? After the recall, the patient will not be able to receive drugs from the pharmacy.</string>
     <string name="ai_title">Assitant</string>
-
-
-
-
+    <string name="no_recepts_for_today">There are no recipes today</string>
+    <string name="no_prescriptions_written">You haven\'t written any prescriptions for today yet.</string>
 </resources>

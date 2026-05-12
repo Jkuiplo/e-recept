@@ -52,7 +52,6 @@ import java.util.Locale
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
-    onProfileClick: () -> Unit = {},
     onCreateRecipeClick: (String) -> Unit = {},
     onNavigateToCreateAppointment: (String) -> Unit,
     onNavigateToPatientDetails: (String) -> Unit,
@@ -208,7 +207,7 @@ fun HomeScreen(
 
         ModalBottomSheet(
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            onDismissRequest = { selectedAppointment = null },
+            onDismissRequest = { },
             contentWindowInsets = { WindowInsets(0, 0, 0, 0) }
         ) {
             val view = LocalView.current
@@ -219,14 +218,11 @@ fun HomeScreen(
                 appointment = currentAppointment,
                 onSave = { newStatus ->
                     viewModel.changeAppointmentStatus(currentAppointment, newStatus)
-                    selectedAppointment = null
                 },
                 onCreateRecipeClick = {
-                    selectedAppointment = null
                     onCreateRecipeClick(currentAppointment.patient_iin)
                 },
                 onPatientClick = { iin ->
-                    selectedAppointment = null
                     onNavigateToPatientDetails(iin)
                 }
             )
